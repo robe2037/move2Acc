@@ -25,13 +25,18 @@ as_acc.default <- function(x, ...) {
 #' @export
 as_acc.move2 <- function(x, ...) {
   if (all(c("tilt_x", "tilt_y", "tilt_z", "start_timestamp") %in% colnames(x))) {
-    return(as_acc_move2_ornitella(x, ...))
+    acc <- as_acc_move2_ornitella(x, ...)
+  } else if (has_eobs_burst_cols(x)) {
+    acc <- as_acc_move2_eobs(x, ...)
+  } else if (has_acc_burst_cols(x)) {
+    acc <- as_acc_move2_burst(x)
+  } else {
+    stop("No acc conversion implemented")
   }
-  if (all(c("eobs_acceleration_axes", "eobs_acceleration_sampling_frequency_per_axis", "eobs_accelerations_raw") %in% colnames(x))) {
-    return(as_acc_move2_eobs(x, ...))
-  }
-  stop("No acc conversion implemented")
+  
+  acc
 }
+
 as_acc_move2_ornitella <- function(x, ...) {
   assertthat::assert_that(units(x$tilt_x)==units(x$tilt_y))
   assertthat::assert_that(units(x$tilt_x)==units(x$tilt_z))
@@ -56,13 +61,82 @@ as_acc_move2_ornitella <- function(x, ...) {
   acc[s] <- new_acc(lst, frq)
   acc
 }
-as_acc_move2_eobs <- function(x, ...) {
-  colnms <- strsplit(as.character(x$eobs_acceleration_axes), "")
-  n_axis <- nchar(as.character(x$eobs_acceleration_axes))
-  mlist <- strsplit(x$eobs_accelerations_raw, " ") |> lapply(as.integer)
+
+as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
+  colnms <- strsplit(as.character(axes), "")
+  n_axis <- nchar(as.character(axes))
+  mlist <- strsplit(acc, " ") |> lapply(as.integer)
   i <- !is.na(n_axis)
   mlist[!i] <- list(NULL)
   mlist[i] <- mapply(matrix, mlist[i], ncol = n_axis[i], MoreArgs = list(byrow = TRUE), SIMPLIFY = FALSE)
   mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
-  new_acc(mlist, frequency = x$eobs_acceleration_sampling_frequency_per_axis)
+  new_acc(mlist, frequency = freq)
+}
+
+as_acc_move2_eobs <- function(x, ...) {
+  assertthat::assert_that(has_eobs_burst_cols(x))
+  
+  as_acc_burst(
+    x[["eobs_accelerations_raw"]],
+    x[["eobs_acceleration_axes"]],
+    x[["eobs_acceleration_sampling_frequency_per_axis"]]
+  )
+}
+
+as_acc_move2_burst <- function(x, ...) {
+  assertthat::assert_that(has_acc_burst_cols(x))
+  
+  as_acc_burst(
+    x[["accelerations_raw"]],
+    x[["acceleration_axes"]],
+    x[["acceleration_sampling_frequency_per_axis"]]
+  )
+}
+
+has_eobs_burst_cols <- function(x) { # Suppose we will also need to check which of these columns actually has data...
+  all(eobs_burst_cols() %in% colnames(x))
+}
+
+has_acc_burst_cols <- function(x) {
+  all(acc_burst_cols() %in% colnames(x))
+}
+
+has_acc_raw_xyz_cols <- function(x) {
+  any(acc_raw_xyz_cols() %in% colnames(x))
+}
+
+has_acc_xyz_cols <- function(x) {
+  any(acc_xyz_cols() %in% colnames(x))
+}
+
+eobs_burst_cols <- function() {
+  c(
+    "eobs_acceleration_axes", 
+    "eobs_acceleration_sampling_frequency_per_axis", 
+    "eobs_accelerations_raw"
+  )
+}
+
+acc_burst_cols <- function() {
+  c(
+    "acceleration_axes",
+    "acceleration_sampling_frequency_per_axis",
+    "accelerations_raw"
+  )
+}
+
+acc_raw_xyz_cols <- function() {
+  c(
+    "acceleration_raw_x", 
+    "acceleration_raw_y", 
+    "acceleration_raw_z"
+  )
+}
+
+acc_xyz_cols <- function() {
+  c(
+    "acceleration_x", 
+    "acceleration_y", 
+    "acceleration_z"
+  )
 }
