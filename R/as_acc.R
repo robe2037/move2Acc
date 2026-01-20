@@ -24,9 +24,7 @@ as_acc.default <- function(x, ...) {
 
 #' @export
 as_acc.move2 <- function(x, tolerance = 0.5, ...) {
-  if (all(c(acc_tilt_cols(), "start_timestamp") %in% colnames(x))) {
-    acc <- as_acc_move2_ornitella(x, ...)
-  } else if (has_acc_eobs_cols(x)) {
+  if (has_acc_eobs_cols(x)) {
     acc <- as_acc_move2_eobs(x, ...)
   } else if (has_acc_burst_cols(x)) {
     acc <- as_acc_move2_burst(x, ...)
@@ -40,31 +38,6 @@ as_acc.move2 <- function(x, tolerance = 0.5, ...) {
     stop("No acc conversion implemented")
   }
   
-  acc
-}
-
-as_acc_move2_ornitella <- function(x, ...) {
-  assert_matched_acc_units(x, active_acc_cols(x))
-  
-  assertthat::assert_that(!any(unlist(lapply(lapply(split( move2::mt_track_id(x),x$start_timestamp),unique), length))!=1))
-  m<-as.matrix(data.frame(x)[, c("tilt_x", "tilt_y", "tilt_z")])* units::as_units(units::deparse_unit(x$tilt_x))
-  lst<-purrr::map(split(seq_len(nrow(m)), x$start_timestamp), ~m[.x,])
-  
-  frq <- do.call(c, lapply(
-    lapply(
-      diffs<- lapply(
-        split(
-          move2::mt_time(x),
-          x$start_timestamp
-        ), diff
-      ), units::as_units
-    ),
-    \(x) mean(1 / x)
-  ))
-  assertthat::assert_that( all(unlist(diffs)>0))
-  acc <- vec_rep(new_acc(list(NULL), units::set_units(NA, "Hz")), nrow(x))
-  s <- !duplicated(x$start_timestamp) & !is.na(x$start_timestamp)
-  acc[s] <- new_acc(lst, frq)
   acc
 }
 
