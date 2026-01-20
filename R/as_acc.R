@@ -23,13 +23,19 @@ as_acc.default <- function(x, ...) {
 }
 
 #' @export
-as_acc.move2 <- function(x, ...) {
-  if (all(c("tilt_x", "tilt_y", "tilt_z", "start_timestamp") %in% colnames(x))) {
+as_acc.move2 <- function(x, tolerance = 0.5, ...) {
+  if (all(c(acc_tilt_cols(), "start_timestamp") %in% colnames(x))) {
     acc <- as_acc_move2_ornitella(x, ...)
-  } else if (has_eobs_burst_cols(x)) {
+  } else if (has_acc_eobs_cols(x)) {
     acc <- as_acc_move2_eobs(x, ...)
   } else if (has_acc_burst_cols(x)) {
-    acc <- as_acc_move2_burst(x)
+    acc <- as_acc_move2_burst(x, ...)
+  } else if (has_acc_xyz_cols(x)) {
+    acc <- as_acc_move2_xyz(x, tolerance = tolerance, ...)
+  } else if (has_acc_raw_xyz_cols(x)) {
+    acc <- as_acc_move2_raw_xyz(x, tolerance = tolerance, ...)
+  } else if (has_acc_tilt_cols(x)) {
+    acc <- as_acc_move2_tilt(x, tolerance = tolerance, ...)
   } else {
     stop("No acc conversion implemented")
   }
@@ -38,28 +44,86 @@ as_acc.move2 <- function(x, ...) {
 }
 
 as_acc_move2_ornitella <- function(x, ...) {
-  assertthat::assert_that(units(x$tilt_x)==units(x$tilt_y))
-  assertthat::assert_that(units(x$tilt_x)==units(x$tilt_z))
+  assert_matched_acc_units(x, active_acc_cols(x))
+  
   assertthat::assert_that(!any(unlist(lapply(lapply(split( move2::mt_track_id(x),x$start_timestamp),unique), length))!=1))
   m<-as.matrix(data.frame(x)[, c("tilt_x", "tilt_y", "tilt_z")])* units::as_units(units::deparse_unit(x$tilt_x))
   lst<-purrr::map(split(seq_len(nrow(m)), x$start_timestamp), ~m[.x,])
-
+  
   frq <- do.call(c, lapply(
-      lapply(
-       diffs<- lapply(
-          split(
-            move2::mt_time(x),
-            x$start_timestamp
-          ), diff
-        ), units::as_units
-      ),
-      \(x) mean(1 / x)
+    lapply(
+      diffs<- lapply(
+        split(
+          move2::mt_time(x),
+          x$start_timestamp
+        ), diff
+      ), units::as_units
+    ),
+    \(x) mean(1 / x)
   ))
   assertthat::assert_that( all(unlist(diffs)>0))
   acc <- vec_rep(new_acc(list(NULL), units::set_units(NA, "Hz")), nrow(x))
   s <- !duplicated(x$start_timestamp) & !is.na(x$start_timestamp)
   acc[s] <- new_acc(lst, frq)
   acc
+}
+
+as_acc_long <- function(x, tolerance = 1, acc_cols = active_acc_cols(x), ...) {
+  assertthat::assert_that(is_valid_acc_colset(acc_cols))
+  assert_matched_acc_units(x, acc_cols)
+  
+  m <- as.matrix(data.frame(x)[, acc_cols])
+  
+  # TODO: may want a safer way to handle units. Some acc will have units, others not
+  if (inherits(x[[acc_cols[[1]]]], "units")) {
+    m <- m * units::as_units(units::deparse_unit(x[[acc_cols[[1]]]]))
+  }
+  
+  # Generate vector of ids for each distinct burst based on sequential
+  # timestamps within a given temporal tolerance
+  ts_grps <- group_timestamps(x, tolerance = tolerance)
+  
+  # Split all rows with acc data into burst groups based on timestamp groups
+  idx <- unname(split(which_acc_vals(x), ts_grps))
+  
+  # Extract records for each burst into a separate matrix
+  acc_lst <- lapply(idx, function(i) m[i, , drop = FALSE])
+  
+  # Calculate mean frequency for each burst
+  freq <- unname(unlist(
+    lapply(
+      split(move2::mt_time(x[which_acc_vals(x), ]), ts_grps), 
+      function(y) {
+        ifelse(length(y) <= 1, NA, mean(1 / units::as_units(diff(y))))
+      }
+    )
+  ))
+  
+  # Attach acc bursts to index of the first record that belongs to that burst
+  acc <- vec_rep(new_acc(list(NULL), units::set_units(NA, "Hz")), nrow(x))
+  s <- sapply(idx, function(x) x[1]) # first index of each ts group
+  
+  if (length(s) > 0) {
+    acc[s] <- new_acc(acc_lst, units::as_units(freq, "Hz"))
+  }
+  
+  acc
+}
+
+as_acc_move2_raw_xyz <- function(x, tolerance = 0.5, ...) {
+  assertthat::assert_that(has_acc_raw_xyz_cols(x))
+  as_acc_long(x, tolerance = tolerance, acc_cols = acc_raw_xyz_cols())
+}
+
+as_acc_move2_xyz <- function(x, tolerance = 0.5, ...) {
+  assertthat::assert_that(has_acc_xyz_cols(x))
+  as_acc_long(x, tolerance = tolerance, acc_cols = acc_xyz_cols())
+}
+
+# TODO: decide whether tilt is supported? It seems to co-occur with raw xyz cols
+as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
+  assertthat::assert_that(has_acc_tilt_cols(x))
+  as_acc_long(x, tolerance = tolerance, acc_cols = acc_tilt_cols())
 }
 
 as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
@@ -74,7 +138,7 @@ as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
 }
 
 as_acc_move2_eobs <- function(x, ...) {
-  assertthat::assert_that(has_eobs_burst_cols(x))
+  assertthat::assert_that(has_acc_eobs_cols(x))
   
   as_acc_burst(
     x[["eobs_accelerations_raw"]],
@@ -93,8 +157,58 @@ as_acc_move2_burst <- function(x, ...) {
   )
 }
 
-has_eobs_burst_cols <- function(x) { # Suppose we will also need to check which of these columns actually has data...
-  all(eobs_burst_cols() %in% colnames(x))
+which_acc_vals <- function(x, 
+                           acc_cols = active_acc_cols(x), 
+                           non_na = "any") {
+  x <- as.data.frame(x) # Drop sticky move2 columns
+  non_na <- rlang::arg_match(non_na, values = c("any", "all"))
+  
+  if (non_na == "any") {
+    has_vals <- which(rowSums(!is.na(x[acc_cols])) > 0)
+  } else {
+    has_vals <- which(rowSums(!is.na(x[acc_cols])) == length(acc_cols))
+  }
+  
+  has_vals
+}
+
+group_timestamps <- function(x, tolerance = 0.5) { # TODO: units for tolerance?
+  acc_i <- which_acc_vals(x)
+  idx <- split(acc_i, as.character(mt_track_id(x[acc_i, ])))
+  
+  grps <- lapply(
+    idx,
+    function(i) {
+      i[cumsum(c(TRUE, diff(mt_time(x[i, ])) > tolerance))]
+    }
+  )
+  
+  unname(unlist(grps))
+}
+
+valid_acc_colsets <- function() {
+  list(
+    acc_eobs_cols(), 
+    acc_burst_cols(),
+    acc_raw_xyz_cols(),
+    acc_xyz_cols(),
+    acc_tilt_cols()
+  )
+}
+
+is_valid_acc_colset <- function(cols) {
+  any(
+    unlist(
+      lapply(
+        valid_acc_colsets(),
+        function(x) all(x == cols)
+      )
+    )
+  )
+}
+
+has_acc_eobs_cols <- function(x) {
+  all(acc_eobs_cols() %in% colnames(x))
 }
 
 has_acc_burst_cols <- function(x) {
@@ -109,7 +223,11 @@ has_acc_xyz_cols <- function(x) {
   any(acc_xyz_cols() %in% colnames(x))
 }
 
-eobs_burst_cols <- function() {
+has_acc_tilt_cols <- function(x) {
+  any(acc_tilt_cols() %in% colnames(x))
+}
+
+acc_eobs_cols <- function() {
   c(
     "eobs_acceleration_axes", 
     "eobs_acceleration_sampling_frequency_per_axis", 
@@ -140,3 +258,54 @@ acc_xyz_cols <- function() {
     "acceleration_z"
   )
 }
+
+acc_tilt_cols <- function() {
+  c(
+    "tilt_x",
+    "tilt_y",
+    "tilt_z"
+  )
+}
+
+active_acc_cols <- function(x) {
+  if (has_acc_eobs_cols(x)) {
+    cols <- acc_eobs_cols()
+  } else if (has_acc_burst_cols(x)) {
+    cols <- acc_burst_cols()
+  } else if (has_acc_xyz_cols(x)) {
+    cols <- acc_xyz_cols()
+  } else if (has_acc_raw_xyz_cols(x)) {
+    cols <- acc_raw_xyz_cols()
+  } else if (has_acc_tilt_cols(x)) {
+    cols <- acc_tilt_cols()
+  } else {
+    abort_unsupported_cols(x)
+  }
+  
+  cols
+}
+
+abort_unsupported_cols <- function(x, call = rlang::caller_env()) {
+  rlang::abort(
+    "No recognized acceleration columns found in the input data.",
+    call = call
+  )
+}
+
+assert_matched_acc_units <- function(x, cols) {
+  for (i in seq_len(length(cols) - 1)) {
+    assertthat::assert_that(
+      get_units(x[[cols[[1]]]]) == get_units(x[[cols[[i + 1]]]])
+    )
+  }
+}
+
+# Hacky unit comparison for now. Some acc cols don't come with units
+get_units <- function(x) {
+  if (inherits(x, "units")) {
+    units(x)
+  } else {
+    "None"
+  }
+}
+
