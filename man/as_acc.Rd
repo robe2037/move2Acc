@@ -7,16 +7,25 @@
 as_acc(x, ...)
 }
 \arguments{
-\item{x}{A \code{move2} containing acceleration data as collected by EOBS or ornitella tracking devices. Most of the time
-this will be either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded using \link[move2:movebank_download_study]{move2::movebank_download_study}.}
+\item{x}{A \code{move2} containing acceleration data as collected by EOBS,
+Ornitela, or similar tracking devices. Most of the time this will be
+either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded using
+\link[move2:movebank_download_study]{move2::movebank_download_study}.}
 
 \item{...}{currently not used}
+
+\item{tolerance}{Numeric value indicating the maximum allowable gap (in
+seconds) between consecutive timestamps that should be included in the
+same burst. Ignored for acceleration data that are already grouped
+into bursts (e.g. e-obs data).}
 }
 \description{
-In many cases the \code{as_acc} function will directly create an acceleration vector from input data
+In many cases the \code{as_acc} function will directly create an acceleration
+vector from input data
 }
 \details{
-The resulting vector will be as long as the input. This means it can, for example, be added as a column to a
-\code{data.frame}. For some tags this means \code{NA} values are inserted when one burst is stored over multiple rows of a
-\code{data.frame}.
+The resulting vector will be as long as the input. This means it
+can, for example, be added as a column to a \code{data.frame}. For some tags
+this means \code{NA} values are inserted when one burst is stored over multiple
+rows of a \code{data.frame}.
 }

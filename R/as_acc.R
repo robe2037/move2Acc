@@ -1,22 +1,28 @@
 #' Convert to acc
 #'
-#' In many cases the `as_acc` function will directly create an acceleration vector from input data
+#' In many cases the `as_acc` function will directly create an acceleration 
+#' vector from input data
 #'
-#' @param x A `move2` containing acceleration data as collected by EOBS or ornitella tracking devices. Most of the time
-#'   this will be either loaded from disk using [move2::mt_read] or downloaded using [move2::movebank_download_study].
-#'
+#' @param x A `move2` containing acceleration data as collected by EOBS,
+#'   Ornitela, or similar tracking devices. Most of the time this will be 
+#'   either loaded from disk using [move2::mt_read] or downloaded using 
+#'   [move2::movebank_download_study].
+#' @param tolerance Numeric value indicating the maximum allowable gap (in
+#'   seconds) between consecutive timestamps that should be included in the 
+#'   same burst. Ignored for acceleration data that are already grouped 
+#'   into bursts (e.g. e-obs data).
 #' @param ... currently not used
 #'
-#' @details The resulting vector will be as long as the input. This means it can, for example, be added as a column to a
-#' `data.frame`. For some tags this means `NA` values are inserted when one burst is stored over multiple rows of a
-#' `data.frame`.
-#'
+#' @details The resulting vector will be as long as the input. This means it 
+#' can, for example, be added as a column to a `data.frame`. For some tags 
+#' this means `NA` values are inserted when one burst is stored over multiple 
+#' rows of a `data.frame`.
 #'
 #' @export
-
 as_acc <- function(x, ...) {
   UseMethod("as_acc")
 }
+
 #' @export
 as_acc.default <- function(x, ...) {
   vctrs::vec_cast(x, new_acc())
@@ -33,10 +39,114 @@ as_acc.move2 <- function(x, tolerance = 0.5, ...) {
     "xyz" = as_acc_move2_xyz(x, tolerance = tolerance, ...),
     "raw_xyz" = as_acc_move2_raw_xyz(x, tolerance = tolerance, ...),
     "tilt" = as_acc_move2_tilt(x, tolerance = tolerance, ...),
-    rlang::abort("No acceleration conversion implemented.")
+    abort_unsupported_cols()
   )
   
   acc
+}
+
+#' Get acceleration columns from a `move2` object
+#' 
+#' @description
+#' Get the names of the acceleration columns that will be used when parsing
+#' acceleration bursts in a `move2` object using `as_acc()`. 
+#' 
+#' In the event
+#' that multiple acceleration column sets are present in the input object,
+#' the set that contains data values will be identified as the active
+#' column set. If multiple sets contain data values, the first such set will
+#' be used.
+#'
+#' @inheritParams as_acc
+#' @param quiet Logical indicating whether to warn if multiple acceleration
+#'   column sets are detected in `x`.
+#'
+#' @returns Character vector of acceleration column names
+#' @export
+active_acc_cols <- function(x, quiet = FALSE) {
+  i <- which(
+    c(
+      has_acc_eobs_cols(x),
+      has_acc_burst_cols(x),
+      has_acc_xyz_cols(x),
+      has_acc_raw_xyz_cols(x),
+      has_acc_tilt_cols(x)
+    )
+  )
+  
+  if (length(i) == 0) {
+    abort_unsupported_cols()
+  }
+  
+  colsets <- valid_acc_colsets()[i]
+  
+  # If multiple column sets present, check if only one has data and use that
+  if (length(colsets) > 1) {
+    has_vals <- unlist(
+      lapply(
+        colsets, 
+        function(cols) {
+          length(which_acc_vals(x, intersect(cols, colnames(x)))) > 0
+        }
+      )
+    )
+    
+    if (length(which(has_vals)) == 0) {
+      # Trivial case, no acc columns have data. Return first set
+      colsets <- colsets[1]
+    } else if (length(which(has_vals)) > 1) {
+      # If multiple have values, use the first one that has values
+      colsets <- colsets[which(has_vals)[1]]
+      
+      if (!quiet) {
+        rlang::warn(
+          c(
+            "Detected multiple valid acceleration column sets.",
+            "i" = paste0(
+              "Using `", 
+              paste0(colsets[[1]], collapse = "`, `"), "`"
+            )
+          )
+        )
+      }
+    } else {
+      colsets <- colsets[has_vals]
+    }
+  }
+  
+  # Intersect to ensure that full set is not returned if only a partial set
+  # is present in the data (e.g. `acceleration_x` without `y` or `z`)
+  intersect(colsets[[1]], colnames(x))
+}
+
+#' List valid acceleration data column sets
+#'
+#' @description
+#' These columns are used by `as_acc()` when parsing acceleration bursts
+#' contained in a `move2` object. A `move2` object must contain one
+#' of these column sets to be processed by `as_acc()`. 
+#' 
+#' If the `move2` object contains one of the first two sets, it must contain
+#' all three of the listed columns in that set. If it contains one of the 
+#' final three sets, any subset of the set's listed columns are sufficient.
+#'
+#' To determine which columns will be used by `as_acc()` for a given
+#' `move2` object, see [active_acc_cols()].
+#'
+#' @returns List of vectors of valid column sets
+#' 
+#' @export
+#' 
+#' @examples
+#' valid_acc_colsets()
+valid_acc_colsets <- function() {
+  list(
+    acc_eobs_cols(), 
+    acc_burst_cols(),
+    acc_xyz_cols(),
+    acc_raw_xyz_cols(),
+    acc_tilt_cols()
+  )
 }
 
 as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
@@ -172,16 +282,6 @@ group_timestamps <- function(x, tolerance = 0.5) {
   unname(unlist(grps))
 }
 
-valid_acc_colsets <- function() {
-  list(
-    acc_eobs_cols(), 
-    acc_burst_cols(),
-    acc_xyz_cols(),
-    acc_raw_xyz_cols(),
-    acc_tilt_cols()
-  )
-}
-
 is_valid_acc_colset <- function(cols) {
   any(
     unlist(
@@ -257,68 +357,12 @@ acc_types <- function() {
   c("eobs", "burst", "xyz", "raw_xyz", "tilt")
 }
 
-active_acc_cols <- function(x, quiet = FALSE) {
-  i <- which(
-    c(
-      has_acc_eobs_cols(x),
-      has_acc_burst_cols(x),
-      has_acc_xyz_cols(x),
-      has_acc_raw_xyz_cols(x),
-      has_acc_tilt_cols(x)
-    )
-  )
-  
-  if (length(i) == 0) {
-    abort_unsupported_cols(x)
-  }
-  
-  colsets <- valid_acc_colsets()[i]
-  
-  # If multiple column sets present, check if only one has data and use that
-  if (length(colsets) > 1) {
-    has_vals <- unlist(
-      lapply(
-        colsets, 
-        function(cols) {
-          length(which_acc_vals(x, intersect(cols, colnames(x)))) > 0
-        }
-      )
-    )
-    
-    if (length(which(has_vals)) == 0) {
-      # Trivial case, no acc columns have data. Return first set
-      colsets <- colsets[1]
-    } else if (length(which(has_vals)) > 1) {
-      # If multiple have values, use the first one that has values
-      colsets <- colsets[which(has_vals)[1]]
-      
-      if (!quiet) {
-        rlang::warn(
-          c(
-            "Detected multiple valid acceleration column sets.",
-            "i" = paste0(
-              "Using `", 
-              paste0(colsets[[1]], collapse = "`, `"), "`"
-            )
-          )
-        )
-      }
-    } else {
-      colsets <- colsets[has_vals]
-    }
-  }
-  
-  # Intersect to ensure that full set is not returned if only a partial set
-  # is present in the data (e.g. `acceleration_x` without `y` or `z`)
-  intersect(colsets[[1]], colnames(x))
-}
-
 acc_cols_to_type <- function(acc_cols) {
   i <- purrr::map_lgl(valid_acc_colsets(), function(x) all(acc_cols %in% x))
   acc_types()[i]
 }
 
-abort_unsupported_cols <- function(x, call = rlang::caller_env()) {
+abort_unsupported_cols <- function(call = rlang::caller_env()) {
   rlang::abort(
     c(
       "Could not identify a full acceleration column set in the input data.",
