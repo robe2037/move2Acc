@@ -243,26 +243,65 @@ acc_tilt_cols <- function() {
 }
 
 active_acc_cols <- function(x) {
-  if (has_acc_eobs_cols(x)) {
-    cols <- acc_eobs_cols()
-  } else if (has_acc_burst_cols(x)) {
-    cols <- acc_burst_cols()
-  } else if (has_acc_xyz_cols(x)) {
-    cols <- acc_xyz_cols()
-  } else if (has_acc_raw_xyz_cols(x)) {
-    cols <- acc_raw_xyz_cols()
-  } else if (has_acc_tilt_cols(x)) {
-    cols <- acc_tilt_cols()
-  } else {
+  i <- which(
+    c(
+      has_acc_eobs_cols(x),
+      has_acc_burst_cols(x),
+      has_acc_raw_xyz_cols(x),
+      has_acc_xyz_cols(x),
+      has_acc_tilt_cols(x)
+    )
+  )
+  
+  if (length(i) == 0) {
     abort_unsupported_cols(x)
   }
   
-  cols
+  colsets <- valid_acc_colsets()[i]
+  
+  # If multiple column sets present, check if only one has data and use that
+  if (length(colsets) > 1) {
+    has_vals <- unlist(
+      lapply(
+        colsets, 
+        function(cols) {
+          length(which_acc_vals(x, intersect(cols, colnames(x)))) > 0
+        }
+      )
+    )
+    
+    if (length(which(has_vals)) == 0) {
+      # Trivial case, no acc columns have data. Return first set
+      colsets <- colsets[1]
+    } else if (length(which(has_vals)) > 1) {
+      # If multiple have values, use the first one that has values
+      colsets <- colsets[which(has_vals)[1]]
+      
+      rlang::warn(
+        c(
+          "Detected multiple valid acceleration columns.",
+          "i" = paste0(
+            "Using `", 
+            paste0(colsets[[1]], collapse = "`, `"), "`"
+          )
+        )
+      )
+    } else {
+      colsets <- colsets[has_vals]
+    }
+  }
+  
+  # Intersect to ensure that full set is not returned if only a partial set
+  # is present in the data (e.g. `acceleration_x` without `y` or `z`)
+  intersect(colsets[[1]], colnames(x))
 }
 
 abort_unsupported_cols <- function(x, call = rlang::caller_env()) {
   rlang::abort(
-    "No recognized acceleration columns found in the input data.",
+    c(
+      "Could not identify a full acceleration column set in the input data.",
+      "i" = "Use `valid_acc_colsets()` to see supported acceleration column sets"
+    ),
     call = call
   )
 }
