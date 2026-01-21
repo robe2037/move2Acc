@@ -145,14 +145,16 @@ which_acc_vals <- function(x,
   has_vals
 }
 
-group_timestamps <- function(x, tolerance = 0.5) { # TODO: units for tolerance?
+group_timestamps <- function(x, tolerance = 0.5) {
+  tolerance <- units::as_units(tolerance, "s")
   acc_i <- which_acc_vals(x)
   idx <- split(acc_i, as.character(mt_track_id(x[acc_i, ])))
   
   grps <- lapply(
     idx,
     function(i) {
-      i[cumsum(c(TRUE, diff(mt_time(x[i, ])) > tolerance))]
+      d <- units::as_units(diff(mt_time(x[i, ])), "s")
+      i[cumsum(c(TRUE, d > tolerance))]
     }
   )
   
