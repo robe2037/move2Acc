@@ -24,24 +24,24 @@ as_acc.default <- function(x, ...) {
 
 #' @export
 as_acc.move2 <- function(x, tolerance = 0.5, ...) {
-  if (has_acc_eobs_cols(x)) {
-    acc <- as_acc_move2_eobs(x, ...)
-  } else if (has_acc_burst_cols(x)) {
-    acc <- as_acc_move2_burst(x, ...)
-  } else if (has_acc_xyz_cols(x)) {
-    acc <- as_acc_move2_xyz(x, tolerance = tolerance, ...)
-  } else if (has_acc_raw_xyz_cols(x)) {
-    acc <- as_acc_move2_raw_xyz(x, tolerance = tolerance, ...)
-  } else if (has_acc_tilt_cols(x)) {
-    acc <- as_acc_move2_tilt(x, tolerance = tolerance, ...)
-  } else {
-    stop("No acc conversion implemented")
-  }
+  acc_cols <- active_acc_cols(x)
+  
+  acc <- switch(
+    acc_cols_to_type(acc_cols),
+    "eobs" = as_acc_move2_eobs(x, ...),
+    "burst" = as_acc_move2_burst(x, ...),
+    "xyz" = as_acc_move2_xyz(x, tolerance = tolerance, ...),
+    "raw_xyz" = as_acc_move2_raw_xyz(x, tolerance = tolerance, ...),
+    "tilt" = as_acc_move2_tilt(x, tolerance = tolerance, ...),
+    rlang::abort("No acceleration conversion implemented.")
+  )
   
   acc
 }
 
-as_acc_long <- function(x, tolerance = 1, acc_cols = active_acc_cols(x), ...) {
+as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
+  acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
+  
   assertthat::assert_that(is_valid_acc_colset(acc_cols))
   assert_matched_acc_units(x, acc_cols)
   
@@ -102,11 +102,22 @@ as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
 as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
   colnms <- strsplit(as.character(axes), "")
   n_axis <- nchar(as.character(axes))
-  mlist <- strsplit(acc, " ") |> lapply(as.integer)
+  mlist <- lapply(strsplit(acc, " "), as.integer)
+  
   i <- !is.na(n_axis)
+  
   mlist[!i] <- list(NULL)
-  mlist[i] <- mapply(matrix, mlist[i], ncol = n_axis[i], MoreArgs = list(byrow = TRUE), SIMPLIFY = FALSE)
+  
+  mlist[i] <- mapply(
+    matrix, 
+    mlist[i], 
+    ncol = n_axis[i], 
+    MoreArgs = list(byrow = TRUE), 
+    SIMPLIFY = FALSE
+  )
+  
   mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
+  
   new_acc(mlist, frequency = freq)
 }
 
@@ -130,9 +141,9 @@ as_acc_move2_burst <- function(x, ...) {
   )
 }
 
-which_acc_vals <- function(x, 
-                           acc_cols = active_acc_cols(x), 
-                           non_na = "any") {
+which_acc_vals <- function(x, acc_cols = NULL, non_na = "any") {
+  acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
+  
   x <- as.data.frame(x) # Drop sticky move2 columns
   non_na <- rlang::arg_match(non_na, values = c("any", "all"))
   
@@ -242,7 +253,11 @@ acc_tilt_cols <- function() {
   )
 }
 
-active_acc_cols <- function(x) {
+acc_types <- function() {
+  c("eobs", "burst", "xyz", "raw_xyz", "tilt")
+}
+
+active_acc_cols <- function(x, quiet = FALSE) {
   i <- which(
     c(
       has_acc_eobs_cols(x),
@@ -277,15 +292,17 @@ active_acc_cols <- function(x) {
       # If multiple have values, use the first one that has values
       colsets <- colsets[which(has_vals)[1]]
       
-      rlang::warn(
-        c(
-          "Detected multiple valid acceleration columns.",
-          "i" = paste0(
-            "Using `", 
-            paste0(colsets[[1]], collapse = "`, `"), "`"
+      if (!quiet) {
+        rlang::warn(
+          c(
+            "Detected multiple valid acceleration column sets.",
+            "i" = paste0(
+              "Using `", 
+              paste0(colsets[[1]], collapse = "`, `"), "`"
+            )
           )
         )
-      )
+      }
     } else {
       colsets <- colsets[has_vals]
     }
@@ -296,11 +313,16 @@ active_acc_cols <- function(x) {
   intersect(colsets[[1]], colnames(x))
 }
 
+acc_cols_to_type <- function(acc_cols) {
+  i <- purrr::map_lgl(valid_acc_colsets(), function(x) all(acc_cols %in% x))
+  acc_types()[i]
+}
+
 abort_unsupported_cols <- function(x, call = rlang::caller_env()) {
   rlang::abort(
     c(
       "Could not identify a full acceleration column set in the input data.",
-      "i" = "Use `valid_acc_colsets()` to see supported acceleration column sets"
+      "i" = "Use `valid_acc_colsets()` to see supported acceleration column sets."
     ),
     call = call
   )
