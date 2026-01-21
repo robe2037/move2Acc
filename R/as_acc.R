@@ -176,8 +176,8 @@ valid_acc_colsets <- function() {
   list(
     acc_eobs_cols(), 
     acc_burst_cols(),
-    acc_raw_xyz_cols(),
     acc_xyz_cols(),
+    acc_raw_xyz_cols(),
     acc_tilt_cols()
   )
 }
@@ -229,19 +229,19 @@ acc_burst_cols <- function() {
   )
 }
 
-acc_raw_xyz_cols <- function() {
-  c(
-    "acceleration_raw_x", 
-    "acceleration_raw_y", 
-    "acceleration_raw_z"
-  )
-}
-
 acc_xyz_cols <- function() {
   c(
     "acceleration_x", 
     "acceleration_y", 
     "acceleration_z"
+  )
+}
+
+acc_raw_xyz_cols <- function() {
+  c(
+    "acceleration_raw_x", 
+    "acceleration_raw_y", 
+    "acceleration_raw_z"
   )
 }
 
@@ -262,8 +262,8 @@ active_acc_cols <- function(x, quiet = FALSE) {
     c(
       has_acc_eobs_cols(x),
       has_acc_burst_cols(x),
-      has_acc_raw_xyz_cols(x),
       has_acc_xyz_cols(x),
+      has_acc_raw_xyz_cols(x),
       has_acc_tilt_cols(x)
     )
   )
