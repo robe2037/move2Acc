@@ -34,3 +34,5 @@ Roxygen: list(markdown = TRUE)
 VignetteBuilder: knitr
 URL: https://github.com/bart1/move2Acc, https://bart1.github.io/move2Acc/
 BugReports: https://github.com/bart1/move2Acc/issues
+Depends: 
+    R (>= 3.5)
