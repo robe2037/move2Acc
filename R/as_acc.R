@@ -110,6 +110,7 @@ as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
   assert_matched_acc_units(x, acc_cols)
   
   m <- as.matrix(data.frame(x)[, acc_cols])
+  colnames(m) <- toupper(regmatches(acc_cols, regexpr("(.)$", acc_cols)))
   
   # TODO: may want a safer way to handle units. Some acc will have units, others not
   if (inherits(x[[acc_cols[[1]]]], "units")) {
