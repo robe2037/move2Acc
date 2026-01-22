@@ -195,18 +195,18 @@ as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
 
 as_acc_move2_raw_xyz <- function(x, tolerance = 0.5, ...) {
   assertthat::assert_that(has_acc_raw_xyz_cols(x))
-  as_acc_long(x, tolerance = tolerance, acc_cols = acc_raw_xyz_cols())
+  as_acc_long(x, tolerance = tolerance)
 }
 
 as_acc_move2_xyz <- function(x, tolerance = 0.5, ...) {
   assertthat::assert_that(has_acc_xyz_cols(x))
-  as_acc_long(x, tolerance = tolerance, acc_cols = acc_xyz_cols())
+  as_acc_long(x, tolerance = tolerance)
 }
 
 # TODO: decide whether tilt is supported? It seems to co-occur with raw xyz cols
 as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
   assertthat::assert_that(has_acc_tilt_cols(x))
-  as_acc_long(x, tolerance = tolerance, acc_cols = acc_tilt_cols())
+  as_acc_long(x, tolerance = tolerance)
 }
 
 as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
@@ -283,16 +283,37 @@ group_timestamps <- function(x, tolerance = 0.5) {
 }
 
 is_valid_acc_colset <- function(cols) {
-  any(
-    unlist(
-      lapply(
-        valid_acc_colsets(),
-        function(x) all(x == cols)
-      )
-    )
-  )
+  is_acc_eobs_cols(cols) ||
+    is_acc_burst_cols(cols) ||
+    is_acc_xyz_cols(cols) ||
+    is_acc_raw_xyz_cols(cols) ||
+    is_acc_tilt_cols(cols)
 }
 
+# is_* functions designed to check whether a vector represents a given colset
+# while accounting for fact that subsets are allowed for certain colsets
+is_acc_eobs_cols <- function(x) {
+  setequal(x, acc_eobs_cols()) && length(x) == length(acc_eobs_cols())
+}
+
+is_acc_burst_cols <- function(x) {
+  setequal(x, acc_burst_cols()) && length(x) == length(acc_burst_cols())
+}
+
+is_acc_raw_xyz_cols <- function(x) {
+  all(x %in% acc_raw_xyz_cols()) && !anyDuplicated(x)
+}
+
+is_acc_xyz_cols <- function(x) {
+  all(x %in% acc_xyz_cols()) && !anyDuplicated(x)
+}
+
+is_acc_tilt_cols <- function(x) {
+  all(x %in% acc_tilt_cols()) && !anyDuplicated(x)
+}
+
+# has_* functions designed to check whether an input move2 contains a given
+# colset while accounting for fact that subsets are allowed for certain colsets
 has_acc_eobs_cols <- function(x) {
   all(acc_eobs_cols() %in% colnames(x))
 }
