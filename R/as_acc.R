@@ -45,6 +45,64 @@ as_acc.move2 <- function(x, tolerance = 0.5, ...) {
   acc
 }
 
+as_acc_move2_eobs <- function(x, ...) {
+  assertthat::assert_that(has_acc_eobs_cols(x))
+  
+  as_acc_burst(
+    x[["eobs_accelerations_raw"]],
+    x[["eobs_acceleration_axes"]],
+    x[["eobs_acceleration_sampling_frequency_per_axis"]]
+  )
+}
+
+as_acc_move2_burst <- function(x, ...) {
+  assertthat::assert_that(has_acc_burst_cols(x))
+  
+  as_acc_burst(
+    x[["accelerations_raw"]],
+    x[["acceleration_axes"]],
+    x[["acceleration_sampling_frequency_per_axis"]]
+  )
+}
+
+as_acc_move2_raw_xyz <- function(x, tolerance = 0.5, ...) {
+  assertthat::assert_that(has_acc_raw_xyz_cols(x))
+  as_acc_long(x, tolerance = tolerance)
+}
+
+as_acc_move2_xyz <- function(x, tolerance = 0.5, ...) {
+  assertthat::assert_that(has_acc_xyz_cols(x))
+  as_acc_long(x, tolerance = tolerance)
+}
+
+# TODO: decide whether tilt is supported? It seems to co-occur with raw xyz cols
+as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
+  assertthat::assert_that(has_acc_tilt_cols(x))
+  as_acc_long(x, tolerance = tolerance)
+}
+
+as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
+  colnms <- strsplit(as.character(axes), "")
+  n_axis <- nchar(as.character(axes))
+  mlist <- lapply(strsplit(acc, " "), as.integer)
+  
+  i <- !is.na(n_axis)
+  
+  mlist[!i] <- list(NULL)
+  
+  mlist[i] <- mapply(
+    matrix, 
+    mlist[i], 
+    ncol = n_axis[i], 
+    MoreArgs = list(byrow = TRUE), 
+    SIMPLIFY = FALSE
+  )
+  
+  mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
+  
+  new_acc(mlist, frequency = freq)
+}
+
 as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
   acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
   
@@ -87,64 +145,6 @@ as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
   }
   
   acc
-}
-
-as_acc_move2_raw_xyz <- function(x, tolerance = 0.5, ...) {
-  assertthat::assert_that(has_acc_raw_xyz_cols(x))
-  as_acc_long(x, tolerance = tolerance)
-}
-
-as_acc_move2_xyz <- function(x, tolerance = 0.5, ...) {
-  assertthat::assert_that(has_acc_xyz_cols(x))
-  as_acc_long(x, tolerance = tolerance)
-}
-
-# TODO: decide whether tilt is supported? It seems to co-occur with raw xyz cols
-as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
-  assertthat::assert_that(has_acc_tilt_cols(x))
-  as_acc_long(x, tolerance = tolerance)
-}
-
-as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
-  colnms <- strsplit(as.character(axes), "")
-  n_axis <- nchar(as.character(axes))
-  mlist <- lapply(strsplit(acc, " "), as.integer)
-  
-  i <- !is.na(n_axis)
-  
-  mlist[!i] <- list(NULL)
-  
-  mlist[i] <- mapply(
-    matrix, 
-    mlist[i], 
-    ncol = n_axis[i], 
-    MoreArgs = list(byrow = TRUE), 
-    SIMPLIFY = FALSE
-  )
-  
-  mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
-  
-  new_acc(mlist, frequency = freq)
-}
-
-as_acc_move2_eobs <- function(x, ...) {
-  assertthat::assert_that(has_acc_eobs_cols(x))
-  
-  as_acc_burst(
-    x[["eobs_accelerations_raw"]],
-    x[["eobs_acceleration_axes"]],
-    x[["eobs_acceleration_sampling_frequency_per_axis"]]
-  )
-}
-
-as_acc_move2_burst <- function(x, ...) {
-  assertthat::assert_that(has_acc_burst_cols(x))
-  
-  as_acc_burst(
-    x[["accelerations_raw"]],
-    x[["acceleration_axes"]],
-    x[["acceleration_sampling_frequency_per_axis"]]
-  )
 }
 
 which_acc_vals <- function(x, acc_cols = NULL, non_na = "any") {
