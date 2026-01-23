@@ -15,4 +15,4 @@ albatrosses <- move2::movebank_download_study(
   timestamp_end = as.POSIXct(d1) + 3600
 )
 
-usethis::use_data(albatrosses, overwrite = TRUE)
+saveRDS(albatrosses, "inst/extdata/albatrosses.rds")

@@ -1,33 +1,37 @@
 test_that("Can get acc from burst-format acc data", {
-  x <- as_acc(albatrosses)
+  alb_data <- albatrosses()
   
-  i <- which(!is.na(x))[1]
+  acc <- as_acc(alb_data)
   
-  expect_s3_class(x, "acc")
+  i <- which(!is.na(acc))[1]
+  
+  expect_s3_class(acc, "acc")
   expect_equal(
-    colnames(field(x, "bursts")[[i]]), 
-    strsplit(as.character(albatrosses$eobs_acceleration_axes[i]), "")[[1]]
+    colnames(field(acc, "bursts")[[i]]), 
+    strsplit(as.character(alb_data$eobs_acceleration_axes[i]), "")[[1]]
   )
-  expect_length(x, nrow(albatrosses))
-  expect_equal(is.na(x), is.na(albatrosses$eobs_accelerations_raw))
-  expect_true(is_uniform(x))
+  expect_length(acc, nrow(alb_data))
+  expect_equal(is.na(acc), is.na(alb_data$eobs_accelerations_raw))
+  expect_true(is_uniform(acc))
 })
 
 test_that("Can get acc from long-format acc data", {
-  acc_i <- which(gulls$sensor_type_id == 2365683)
+  gulls_data <- gulls()
+  
+  acc_i <- which(gulls_data$sensor_type_id == 2365683)
   
   expect_warning(
-    x <- as_acc(gulls), 
+    acc <- as_acc(gulls_data), 
     "Detected multiple valid acceleration column sets"
   )
   
-  expect_s3_class(x, "acc")
-  expect_length(x, nrow(gulls))
-  expect_equal(sum(!is.na(x)), length(unique(parse_bursts(gulls)))) 
-  expect_equal(is.na(x[acc_i]), duplicated(parse_bursts(gulls)))
-  expect_true(is_uniform(x))
+  expect_s3_class(acc, "acc")
+  expect_length(acc, nrow(gulls_data))
+  expect_equal(sum(!is.na(acc)), length(unique(parse_bursts(gulls_data)))) 
+  expect_equal(is.na(acc[acc_i]), duplicated(parse_bursts(gulls_data)))
+  expect_true(is_uniform(acc))
   expect_equal(
-    unique(purrr::map(field(x[!is.na(x)], "bursts"), colnames))[[1]],
+    unique(purrr::map(field(acc[!is.na(acc)], "bursts"), colnames))[[1]],
     c("X", "Y", "Z")
   )
 })

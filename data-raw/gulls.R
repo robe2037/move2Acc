@@ -15,4 +15,4 @@ gulls <- move2::movebank_download_study(
   timestamp_end = as.POSIXct(d2 + 1)
 )
 
-usethis::use_data(gulls, overwrite = TRUE)
+saveRDS(gulls, "inst/extdata/gulls.rds")

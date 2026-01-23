@@ -20,15 +20,18 @@ test_that("Can validate colsets", {
 })
 
 test_that("Can find active colsets in move2 object", {
-  expect_identical(active_acc_cols(albatrosses), acc_eobs_cols())
+  alb_data <- albatrosses()
+  gulls_data <- gulls()
+  
+  expect_identical(active_acc_cols(alb_data), acc_eobs_cols())
   expect_warning(
-    gulls_cols <- active_acc_cols(gulls), 
+    gulls_cols <- active_acc_cols(gulls_data), 
     "Detected multiple valid acceleration column sets"
   )
   expect_identical(gulls_cols, acc_raw_xyz_cols())
   
   # Subsets allowed for long format acc cols
-  gulls_sub <- gulls[, setdiff(colnames(gulls), "acceleration_raw_y")]
+  gulls_sub <- gulls_data[, setdiff(colnames(gulls_data), "acceleration_raw_y")]
   expect_identical(
     active_acc_cols(gulls_sub, quiet = TRUE),
     c("acceleration_raw_x", "acceleration_raw_z")
@@ -36,17 +39,19 @@ test_that("Can find active colsets in move2 object", {
 })
 
 test_that("Error if no colset detected", {
-  col_subset <- setdiff(colnames(albatrosses), "eobs_acceleration_axes")
-  albatrosses <- albatrosses[, col_subset]
+  alb_data <- albatrosses()
+  
+  col_subset <- setdiff(colnames(alb_data), "eobs_acceleration_axes")
+  alb_data <- alb_data[, col_subset]
   
   expect_error(
-    active_acc_cols(albatrosses),
+    active_acc_cols(alb_data),
     "Could not identify a full acceleration column set"
   )
 })
 
 test_that("Use data values to determine active colset if multiple present", {
-  gulls_na <- gulls
+  gulls_na <- gulls()
   
   # Missing data shouldn't matter if at least one of the set still contains data
   gulls_na[["acceleration_raw_x"]] <- NA
