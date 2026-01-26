@@ -4,6 +4,7 @@
 \alias{n_axis}
 \alias{n_samples}
 \alias{is_uniform}
+\alias{is.na.acc}
 \alias{is_acc}
 \title{Functions to explore an \code{acc} vector}
 \usage{
@@ -12,6 +13,8 @@ n_axis(x)
 n_samples(x)
 
 is_uniform(x)
+
+\method{is.na}{acc}(x)
 
 is_acc(x)
 }

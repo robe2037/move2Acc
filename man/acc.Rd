@@ -4,12 +4,18 @@
 \alias{acc}
 \title{Create a \code{acc} vector}
 \usage{
-acc(bursts = list(), frequency = units::set_units(double(), "Hz"))
+acc(
+  bursts = list(),
+  frequency = units::set_units(double(), "Hz"),
+  start = NULL
+)
 }
 \arguments{
 \item{bursts}{a list of matrices}
 
 \item{frequency}{The frequency of the acceleration recordings. Either the same length of \code{bursts} or it will be recycled}
+
+\item{start}{Start time of the burst, in POSIXct format}
 }
 \description{
 Create a \code{acc} vector

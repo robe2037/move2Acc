@@ -51,7 +51,8 @@ as_acc_move2_eobs <- function(x, ...) {
   as_acc_burst(
     x[["eobs_accelerations_raw"]],
     x[["eobs_acceleration_axes"]],
-    x[["eobs_acceleration_sampling_frequency_per_axis"]]
+    x[["eobs_acceleration_sampling_frequency_per_axis"]],
+    timestamp = move2::mt_time(x)
   )
 }
 
@@ -61,7 +62,8 @@ as_acc_move2_burst <- function(x, ...) {
   as_acc_burst(
     x[["accelerations_raw"]],
     x[["acceleration_axes"]],
-    x[["acceleration_sampling_frequency_per_axis"]]
+    x[["acceleration_sampling_frequency_per_axis"]],
+    timestamp = move2::mt_time(x)
   )
 }
 
@@ -81,7 +83,7 @@ as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
   as_acc_long(x, tolerance = tolerance)
 }
 
-as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
+as_acc_burst <- function(acc, axes, freq, timestamp) {
   colnms <- strsplit(as.character(axes), "")
   n_axis <- nchar(as.character(axes))
   mlist <- lapply(strsplit(acc, " "), as.integer)
@@ -100,10 +102,12 @@ as_acc_burst <- function(acc, axes, freq, start_timestamp = NULL) {
   
   mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
   
-  new_acc(mlist, frequency = freq)
+  new_acc(mlist, frequency = freq, start = timestamp)
 }
 
-as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
+# TODO: this should maybe be refactored to be analogous to `as_acc_burst` which doesn't
+# take input move2 `x`, just takes the data cols.
+as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, timestamp = move2::mt_time(x), ...) {
   acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
   
   assertthat::assert_that(is_valid_acc_colset(acc_cols))
@@ -138,11 +142,11 @@ as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, ...) {
   ))
   
   # Attach acc bursts to index of the first record that belongs to that burst
-  acc <- vec_rep(new_acc(list(NULL), units::set_units(NA, "Hz")), nrow(x))
-  s <- sapply(idx, function(x) x[1]) # first index of each ts group
+  acc <- vec_rep(new_acc(list(NULL), units::set_units(NA, "Hz"), start = as.POSIXct(NA, tz = "UTC")), nrow(x))
+  i <- sapply(idx, function(x) x[1]) # first index of each ts group
   
-  if (length(s) > 0) {
-    acc[s] <- new_acc(acc_lst, units::as_units(freq, "Hz"))
+  if (length(i) > 0) {
+    acc[i] <- new_acc(acc_lst, units::as_units(freq, "Hz"), start = timestamp[i])
   }
   
   acc
