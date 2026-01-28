@@ -52,3 +52,27 @@ test_that("properties are correctly calculated",{
   field(x2, "start")[1] <- as.POSIXct(1, tz = "UTC")
   expect_identical(is.na(x2), c(TRUE, FALSE, FALSE))
 })
+
+test_that("duration is correctly calculated", {
+  a <- acc(
+    c(
+      acc_burst_example(x = sin(1:30 / 10), y = cos(1:30 / 10), z = 1),
+      acc_burst_example(x = sin(1:20 / 10 + 2), y = cos(1:20 / 10 + 3))
+    ),
+    frequency = units::as_units(c(20, 30), "Hz"),
+    start = as.POSIXct(c(1, 2), tz = "UTC")
+  )
+  
+  b <- field(a, "bursts")
+  f <- field(a, "frequency")
+  
+  d <- burst_dur(a)
+  
+  expect_equal(d[[1]], units::set_units(nrow(b[[1]]) / f[[1]], "s"))
+  expect_equal(d[[1]], units::set_units(1.5, "s"))
+  expect_equal(d[[2]], units::set_units(nrow(b[[2]]) / f[[2]], "s"))
+  expect_equal(d[[2]], units::set_units(2 / 3, "s"))
+  
+  expect_equal(as.numeric(burst_dur(acc(acc_burst_example(1, 1), 20))), 0.05)
+  expect_true(is.na(burst_dur(acc(acc_burst_example(1, 1), NA))))
+})
