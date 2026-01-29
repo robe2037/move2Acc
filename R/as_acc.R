@@ -23,13 +23,15 @@ as_acc <- function(x, ...) {
   UseMethod("as_acc")
 }
 
+#' @rdname as_acc
 #' @export
 as_acc.default <- function(x, ...) {
   vctrs::vec_cast(x, new_acc())
 }
 
+#' @rdname as_acc
 #' @export
-as_acc.move2 <- function(x, tolerance = 0.5, ...) {
+as_acc.move2 <- function(x, tolerance = 0.5, merge_continuous = TRUE, ...) {
   acc_cols <- active_acc_cols(x)
   
   acc <- switch(
@@ -41,6 +43,10 @@ as_acc.move2 <- function(x, tolerance = 0.5, ...) {
     "tilt" = as_acc_move2_tilt(x, tolerance = tolerance, ...),
     abort_unsupported_cols()
   )
+  
+  if (merge_continuous) {
+    acc <- merge_continuous_acc(acc)
+  }
   
   acc
 }

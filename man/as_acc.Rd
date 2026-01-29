@@ -2,9 +2,15 @@
 % Please edit documentation in R/as_acc.R
 \name{as_acc}
 \alias{as_acc}
+\alias{as_acc.default}
+\alias{as_acc.move2}
 \title{Convert to acc}
 \usage{
 as_acc(x, ...)
+
+\method{as_acc}{default}(x, ...)
+
+\method{as_acc}{move2}(x, tolerance = 0.5, merge_continuous = TRUE, ...)
 }
 \arguments{
 \item{x}{A \code{move2} containing acceleration data as collected by EOBS,

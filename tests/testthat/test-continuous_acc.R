@@ -37,7 +37,7 @@ test_that("Can combine adjacent bursts into single burst", {
 # unit tests for these behaviors by building explicit test cases with 
 # acc_burst_example()
 test_that("Do not combine bursts with different n axes or frequencies", {
-  a <- as_acc(albatrosses_messy())
+  a <- as_acc(albatrosses_messy(), merge_continuous = FALSE)
   a2 <- merge_continuous_acc(a)
   
   # Hard-coding the split indices that we should expect from the 
