@@ -31,7 +31,7 @@ as_acc.default <- function(x, ...) {
 
 #' @rdname as_acc
 #' @export
-as_acc.move2 <- function(x, tolerance = 0.5, merge_continuous = TRUE, ...) {
+as_acc.move2 <- function(x, tolerance = 0.5, merge_continuous = TRUE, drop = TRUE, ...) {
   acc_cols <- active_acc_cols(x)
   
   acc <- switch(
@@ -46,6 +46,10 @@ as_acc.move2 <- function(x, tolerance = 0.5, merge_continuous = TRUE, ...) {
   
   if (merge_continuous) {
     acc <- merge_continuous_acc(acc)
+  }
+  
+  if (drop) {
+    acc <- acc[!is.na(acc)]
   }
   
   acc
