@@ -62,7 +62,8 @@ as_acc_move2_eobs <- function(x, ...) {
     x[["eobs_accelerations_raw"]],
     x[["eobs_acceleration_axes"]],
     x[["eobs_acceleration_sampling_frequency_per_axis"]],
-    timestamp = move2::mt_time(x)
+    timestamp = move2::mt_time(x),
+    ...
   )
 }
 
@@ -73,24 +74,25 @@ as_acc_move2_burst <- function(x, ...) {
     x[["accelerations_raw"]],
     x[["acceleration_axes"]],
     x[["acceleration_sampling_frequency_per_axis"]],
-    timestamp = move2::mt_time(x)
+    timestamp = move2::mt_time(x),
+    ...
   )
 }
 
 as_acc_move2_raw_xyz <- function(x, tolerance = 0.5, ...) {
   assertthat::assert_that(has_acc_raw_xyz_cols(x))
-  as_acc_long(x, tolerance = tolerance)
+  as_acc_long(x, tolerance = tolerance, ...)
 }
 
 as_acc_move2_xyz <- function(x, tolerance = 0.5, ...) {
   assertthat::assert_that(has_acc_xyz_cols(x))
-  as_acc_long(x, tolerance = tolerance)
+  as_acc_long(x, tolerance = tolerance, ...)
 }
 
 # TODO: decide whether tilt is supported? It seems to co-occur with raw xyz cols
 as_acc_move2_tilt <- function(x, tolerance = 0.5, ...) {
   assertthat::assert_that(has_acc_tilt_cols(x))
-  as_acc_long(x, tolerance = tolerance)
+  as_acc_long(x, tolerance = tolerance, ...)
 }
 
 as_acc_burst <- function(acc, axes, freq, timestamp) {
@@ -121,6 +123,7 @@ as_acc_long <- function(x,
                         tolerance = 1, 
                         acc_cols = NULL, 
                         timestamp = move2::mt_time(x), 
+                        frq_digits = 4,
                         ...) {
   acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
   
@@ -154,6 +157,8 @@ as_acc_long <- function(x,
       }
     )
   ))
+  
+  freq <- round(freq, digits = frq_digits)
   
   # Attach acc bursts to index of the first record that belongs to that burst
   acc <- vec_rep(
