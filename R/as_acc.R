@@ -112,12 +112,16 @@ as_acc_burst <- function(acc, axes, freq, timestamp) {
   
   mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
   
-  new_acc(mlist, frequency = freq, start = timestamp)
+  acc(mlist, frequency = freq, start = timestamp)
 }
 
 # TODO: this should maybe be refactored to be analogous to `as_acc_burst` which doesn't
 # take input move2 `x`, just takes the data cols.
-as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, timestamp = move2::mt_time(x), ...) {
+as_acc_long <- function(x, 
+                        tolerance = 1, 
+                        acc_cols = NULL, 
+                        timestamp = move2::mt_time(x), 
+                        ...) {
   acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
   
   assertthat::assert_that(is_valid_acc_colset(acc_cols))
@@ -152,11 +156,19 @@ as_acc_long <- function(x, tolerance = 1, acc_cols = NULL, timestamp = move2::mt
   ))
   
   # Attach acc bursts to index of the first record that belongs to that burst
-  acc <- vec_rep(new_acc(list(NULL), units::set_units(NA, "Hz"), start = as.POSIXct(NA, tz = "UTC")), nrow(x))
+  acc <- vec_rep(
+    acc(
+      list(NULL), 
+      units::set_units(NA, "Hz"), 
+      start = as.POSIXct(NA, tz = "UTC")
+    ), 
+    nrow(x)
+  )
+  
   i <- sapply(idx, function(x) x[1]) # first index of each ts group
   
   if (length(i) > 0) {
-    acc[i] <- new_acc(acc_lst, units::as_units(freq, "Hz"), start = timestamp[i])
+    acc[i] <- acc(acc_lst, units::as_units(freq, "Hz"), start = timestamp[i])
   }
   
   acc
