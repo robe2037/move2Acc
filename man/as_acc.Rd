@@ -10,7 +10,7 @@ as_acc(x, ...)
 
 \method{as_acc}{default}(x, ...)
 
-\method{as_acc}{move2}(x, tolerance = 0.5, merge_continuous = TRUE, ...)
+\method{as_acc}{move2}(x, tolerance = 0.5, merge_continuous = TRUE, drop = TRUE, ...)
 }
 \arguments{
 \item{x}{A \code{move2} containing acceleration data as collected by EOBS,
