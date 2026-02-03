@@ -34,16 +34,16 @@ peak_frequency<-function(x, resolution=NA){
   if(all(!s)){
     return(res)
   }
-  b<-field(x[s],"bursts")
-  b<-    purrr::map2(b,purrr::map(b, inherits,'units'), ~if(.y){units::drop_units(.x)}else{.x})
+  b <- bursts(x[s])
+  b <- purrr::map2(b,purrr::map(b, inherits,'units'), ~if(.y){units::drop_units(.x)}else{.x})
   b_centered<-purrr::map2(b,purrr::map(b, colMeans), ~ t((.x))-.y)
   if(!is.na(resolution)){
-    to_pad<-units::drop_units(field(x[s],"frequency")/resolution)-n_samples(x[s])
+    to_pad<-units::drop_units(freqs(x[s])/resolution)-n_samples(x[s])
     b_centered<-purrr::map2(b_centered, to_pad, ~cbind(.x,matrix(0, ncol=.y, nrow=nrow(.x))))
   }
   b_mod<-purrr::map(b_centered, ~ do.call(rbind,lapply(apply(.x,1, fft, simplify = F),  Mod))[,1:ceiling(ncol(.x)/2), drop=F])
   peak<- purrr::map(b_mod, ~ apply(.x,1, which.max ))
-  peak_freq<-purrr::pmap(list(peak,field(x[s],"frequency"),purrr::map(b_mod, ncol)), ~ (..1-1)*(..2/..3/2))
+  peak_freq<-purrr::pmap(list(peak,freqs(x[s]),purrr::map(b_mod, ncol)), ~ (..1-1)*(..2/..3/2))
   res[s]<-peak_freq
   res
 }

@@ -63,8 +63,8 @@ test_that("duration is correctly calculated", {
     start = as.POSIXct(c(1, 2), tz = "UTC")
   )
   
-  b <- field(a, "bursts")
-  f <- field(a, "frequency")
+  b <- bursts(a)
+  f <- freqs(a)
   
   d <- burst_dur(a)
   

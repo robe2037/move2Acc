@@ -18,7 +18,7 @@ format.acc <- function(x, ...) {
     }
     paste0("(", paste(m, collapse = " "), ")", e)
   }
-  vapply(field(x, "bursts"), format_one, character(1))
+  vapply(bursts(x), format_one, character(1))
 }
 
 #' @export
@@ -45,7 +45,7 @@ pillar_shaft.acc <- function(x, ...) {
 }
 #' @export
 obj_print_footer.acc <- function(x, ...) {
-  f <- field(x, "frequency")[!is.na(x)]
+  f <- freqs(x)[!is.na(x)]
   if (length(unique(f)) == 1) {
     r <- format(f[1])
   } else {

@@ -30,7 +30,7 @@ x <- split_continuous_acc(a, units::set_units(1, "s"))
 x
 
 # Start times handled automatically 
-field(x, "start")
+starts(x)
 
 # Records are not guaranteed to have same duration depending on interval
 # and burst size:

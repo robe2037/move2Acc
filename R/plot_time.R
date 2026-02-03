@@ -10,12 +10,12 @@ plot_time <- function(x, time, ylab = "Acceleration") {
   vec_check_size(time, vec_size(x))
   rlang::check_installed("dygraphs","dplyr")
   dt <- mapply(function(x, n) c(units::drop_units((c(0, seq_len(n))) / x)),
-               x = field(x, "frequency")[!is.na(x)],
+               x = freqs(x)[!is.na(x)],
                n = n_samples(x)[!is.na(x)], SIMPLIFY = F
   )
   df <- dplyr::bind_cols(
     time = do.call("c", mapply("+", time[!is.na(x)], dt, SIMPLIFY = F)),
-    dplyr::bind_rows(lapply(field(x, "bursts")[!is.na(x)], function(x) rbind(data.frame(x), NA)))
+    dplyr::bind_rows(lapply(bursts(x)[!is.na(x)], function(x) rbind(data.frame(x), NA)))
   )
   dygraphs::dygraph(df) |>
     dygraphs::dyRibbon() |>

@@ -30,16 +30,18 @@
 #' is_uniform(y)
 n_axis <- function(x) {
   r <- rep(NA_integer_, vec_size(x))
-  r[!is.na(x)] <- purrr::map_int(field(x[!is.na(x)], "bursts"), ncol)
+  r[!is.na(x)] <- purrr::map_int(bursts(x[!is.na(x)]), ncol)
   r
 }
+
 #' @export
 #' @rdname explore-functions
 n_samples <- function(x) {
   r <- rep(NA_integer_, vec_size(x))
-  r[!is.na(x)] <- purrr::map_int(field(x[!is.na(x)], "bursts"), nrow)
+  r[!is.na(x)] <- purrr::map_int(bursts(x[!is.na(x)]), nrow)
   r
 }
+
 #' @export
 #' @importFrom stats na.omit
 #' @rdname explore-functions
@@ -47,9 +49,9 @@ is_uniform<-function(x){
   # TODO check units are same?
   all(duplicated(na.omit(n_samples(x)))[-1])&&
   all(duplicated(na.omit(n_axis(x)))[-1]) &&
-  all(duplicated(na.omit(field(x,"frequency")))[-1]) &&
-  all(duplicated(  purrr::map(field(x[!is.na(x)], "bursts"), colnames))[-1]) &&
-  all(duplicated(purrr::map_lgl(field(x[!is.na(x)], "bursts"), inherits, "units"))[-1])
+  all(duplicated(na.omit(freqs(x)))[-1]) &&
+  all(duplicated(purrr::map(bursts(x[!is.na(x)]), colnames))[-1]) &&
+  all(duplicated(purrr::map_lgl(bursts(x[!is.na(x)]), inherits, "units"))[-1])
 }
 
 # TODO: I don't love this construction since it isn't entirely clear what
@@ -64,19 +66,34 @@ is_uniform<-function(x){
 #' @export
 is.na.acc <- function(x) {
   purrr::map_lgl(
-    field(x, "bursts"),
+    bursts(x),
     function(b) rlang::is_empty(b) | rlang::is_na(b)
   )
 }
 
-burst_dur <- function(x) {
-  UseMethod("burst_dur")
+#' @export
+#' @rdname explore-functions
+bursts <- function(x) {
+  field(x, "bursts")
 }
 
 #' @export
-burst_dur.acc <- function(x) {
-  bursts <- field(x, "bursts")
-  frq <- field(x, "frequency")
+#' @rdname explore-functions
+freqs <- function(x) {
+  field(x, "frequency")
+}
+
+#' @export
+#' @rdname explore-functions
+starts <- function(x) {
+  field(x, "start")
+}
+
+#' @export
+#' @rdname explore-functions
+burst_dur <- function(x) {
+  bursts <- bursts(x)
+  frq <- freqs(x)
   
   dur <- purrr::map2_dbl(
     bursts,
@@ -89,31 +106,24 @@ burst_dur.acc <- function(x) {
 
 #' @export
 #' @rdname explore-functions
+burst_n <- function(x) {
+  purrr::map_int(bursts(x), function(b) nrow(b) %||% NA_integer_)
+}
 
+#' @export
+#' @rdname explore-functions
 is_acc <- function(x) {
   inherits(x, "acc")
 }
+
 # TODO finish function and export?
 static_acc <- function(x) {
   # should this return a list or a dataframe
   # TODO fix NA
-  lapply(field(x, "bursts")[!is.na(x)], colMeans)
+  lapply(bursts(x)[!is.na(x)], colMeans)
 }
-
 
 #' @export
 vec_cast.acc.acc <- function(x, to, ...) {
   x
-}
-
-
-
-if (F) {
-  static_acc(x) |> bind_rows() -> df
-
-  optim(c(1000, 1000, 1000), \(x, df){
-    sum((1 - sqrt(rowSums(t(t(df) - x)^2)))^2)
-  }, df = df)
-  r <- sqrt(colSums((t(df) - c(2048, 2048, 2048))^2))
-  rgl::plot3d(df$X, df$Y, df$Z, col = leaflet::colorNumeric("RdYlBu", range(r))(r), size = 10)
 }

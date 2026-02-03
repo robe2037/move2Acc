@@ -23,7 +23,7 @@ merge_continuous_acc <- function(x) {
   
   # Collapsible bursts must end at the start time of the subsequent burst
   # TODO: add a tolerance parameter here to account for small deviations?
-  burst_starts <- field(x, "start")
+  burst_starts <- starts(x)
   timediff <- burst_starts + units::as_difftime(burst_dur(x))
   is_adjacent_burst <- burst_starts[-1] == timediff[-n]
   
@@ -33,14 +33,14 @@ merge_continuous_acc <- function(x) {
   }
   
   # Collapsible bursts must have the same frequency
-  fq <- field(x, "frequency")
+  fq <- freqs(x)
   is_same_frq <- fq[-1] == fq[-n]
   
   # Collapsible bursts must have axis structure
   # Check both axis names and length to disambiguate possible name duplication
   # after collapsing to single string
   axes <- purrr::map_chr(
-    field(x, "bursts"), 
+    bursts(x), 
     function(b) paste0(colnames(b), collapse = "_")
   )
   is_same_n_axis <- (axes[-1] == axes[-n]) & (n_axis(x)[-1] == n_axis(x)[-n])
@@ -55,7 +55,7 @@ merge_continuous_acc <- function(x) {
   bursts_comb <- purrr::map(
     idx,
     function(i) {
-      purrr::reduce(field(x, "bursts")[i], function(x, y) rbind(x, y))
+      purrr::reduce(bursts(x)[i], function(x, y) rbind(x, y))
     }
   )
   
@@ -92,7 +92,7 @@ merge_continuous_acc <- function(x) {
 #' x
 #' 
 #' # Start times handled automatically 
-#' field(x, "start")
+#' starts(x)
 #' 
 #' # Records are not guaranteed to have same duration depending on interval
 #' # and burst size:
@@ -105,9 +105,9 @@ split_continuous_acc <- function(x, interval) {
   x <- purrr::map(
     x,
     function(a) {
-      b <- field(a, "bursts")
-      frq <- field(a, "frequency")
-      st <- field(a, "start")
+      b <- bursts(a)
+      frq <- freqs(a)
+      st <- starts(a)
       
       # coerce user interval into units of (1 / frequency) which is what
       # is implied when we split burst records by index

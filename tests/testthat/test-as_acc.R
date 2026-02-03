@@ -10,24 +10,24 @@ test_that("Can get acc from burst-format acc data", {
   expect_true(is_uniform(acc))
   expect_identical(
     purrr::map_chr(
-      field(acc, "bursts"), 
+      bursts(acc), 
       function(x) paste0(colnames(x), collapse = "")
     ),
     as.character(alb_data[non_na, ]$eobs_acceleration_axes)
   )
   expect_identical(
     purrr::map_chr(
-      field(acc, "bursts"),
+      bursts(acc),
       function(x) paste(t(x), collapse = " ")
     ),
     alb_data[non_na, ]$eobs_accelerations_raw
   )
   expect_identical(
-    field(acc, "frequency"),
+    freqs(acc),
     alb_data[non_na, ]$eobs_acceleration_sampling_frequency_per_axis
   )
   expect_identical(
-    field(acc, "start"),
+    starts(acc),
     alb_data[non_na, ]$timestamp
   )
 })
@@ -50,27 +50,27 @@ test_that("Can get acc from long-format acc data", {
   expect_length(acc, length(gap_i))
   expect_true(is_uniform(acc))
   expect_identical(
-    unique(purrr::map(field(acc, "bursts"), colnames))[[1]],
+    unique(purrr::map(bursts(acc), colnames))[[1]],
     c("X", "Y", "Z")
   )
   expect_identical(
-    unlist(purrr::map(field(acc, "bursts"), ~ .x[, "X"])),
+    unlist(purrr::map(bursts(acc), ~ .x[, "X"])),
     gulls_data[non_na, ]$acceleration_raw_x
   )
   expect_identical(
-    unlist(purrr::map(field(acc, "bursts"), ~ .x[, "Y"])),
+    unlist(purrr::map(bursts(acc), ~ .x[, "Y"])),
     gulls_data[non_na, ]$acceleration_raw_y
   )
   expect_identical(
-    unlist(purrr::map(field(acc, "bursts"), ~ .x[, "Z"])),
+    unlist(purrr::map(bursts(acc), ~ .x[, "Z"])),
     gulls_data[non_na, ]$acceleration_raw_z
   )
   expect_identical(
-    unique(field(acc, "frequency")),
+    unique(freqs(acc)),
     units::set_units(20, "Hz")
   )
   expect_identical(
-    field(acc, "start"),
+    starts(acc),
     sort(gulls_data[non_na, ][gap_i, ]$timestamp)
   )
 })
@@ -102,8 +102,8 @@ test_that("Can split long-format data into bursts by inferred frequency", {
   a <- as_acc(m1, tolerance = 1)
   
   expect_length(a, 4)
-  expect_equal(purrr::map_int(field(a, "bursts"), nrow), c(5, 1, 11, 52))
-  expect_equal(as.numeric(field(a, "frequency")), c(2, NA, 2, 1.3333))
+  expect_equal(purrr::map_int(bursts(a), nrow), c(5, 1, 11, 52))
+  expect_equal(as.numeric(freqs(a)), c(2, NA, 2, 1.3333))
   expect_length(as_acc(m1, tolerance = 0.6), 55)
 })
 

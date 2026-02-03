@@ -11,11 +11,11 @@ test_that("Can combine adjacent bursts into single burst", {
   a <- as_acc(d)
   i <- min(which(!is.na(a)))
   
-  ts <- field(a, "start")
+  ts <- starts(a)
   timediff <- ts + units::as_difftime(burst_dur(a))
   
   expect_true(
-    all(timediff[-length(timediff)] == field(a, "start")[-1], na.rm = TRUE)
+    all(timediff[-length(timediff)] == starts(a)[-1], na.rm = TRUE)
   )
   
   a2 <- merge_continuous_acc(a)
@@ -23,11 +23,11 @@ test_that("Can combine adjacent bursts into single burst", {
   expect_true(is_acc(a2))
   expect_identical(which(is.na(a)), which(is.na(a2)))
   expect_length(a2[!is.na(a2)], 1)
-  expect_identical(field(a2[i], "start"), field(a[i], "start"))
-  expect_identical(field(a2[i], "frequency"), field(a[i], "frequency"))
+  expect_identical(starts(a2[i]), starts(a[i]))
+  expect_identical(freqs(a2[i]), freqs(a[i]))
   expect_identical(
-    field(a2[i], "bursts")[[1]],
-    do.call(rbind, field(a[!is.na(a)], "bursts"))
+    bursts(a2[i])[[1]],
+    do.call(rbind, bursts(a[!is.na(a)]))
   )
 })
 
@@ -47,46 +47,46 @@ test_that("Do not combine bursts with different n axes or frequencies", {
   expect_true(is_acc(a2))
   expect_length(a2, length(split_i))
   
-  expect_identical(field(a2, "start"), field(a, "start")[split_i])
-  expect_identical(field(a2, "frequency"), field(a, "frequency")[split_i])
+  expect_identical(starts(a2), starts(a)[split_i])
+  expect_identical(freqs(a2), freqs(a)[split_i])
   
   # Manually confirming all the groups we expect. Easiest way to be thorough
   # in this case.
   expect_identical(
-    field(a2, "bursts")[[1]],
-    do.call(rbind, field(a, "bursts")[1:3])
+    bursts(a2)[[1]],
+    do.call(rbind, bursts(a)[1:3])
   )
   expect_identical(
-    field(a2, "bursts")[[2]],
-    do.call(rbind, field(a, "bursts")[4:6])
+    bursts(a2)[[2]],
+    do.call(rbind, bursts(a)[4:6])
   )
   expect_identical(
-    field(a2, "bursts")[[3]],
-    do.call(rbind, field(a, "bursts")[7:10])
+    bursts(a2)[[3]],
+    do.call(rbind, bursts(a)[7:10])
   )
   expect_identical(
-    field(a2, "bursts")[[4]],
-    field(a, "bursts")[[11]]
+    bursts(a2)[[4]],
+    bursts(a)[[11]]
   )
   expect_identical(
-    field(a2, "bursts")[[5]],
-    field(a, "bursts")[[12]]
+    bursts(a2)[[5]],
+    bursts(a)[[12]]
   )
   expect_identical(
-    field(a2, "bursts")[[6]],
-    do.call(rbind, field(a, "bursts")[13:30])
+    bursts(a2)[[6]],
+    do.call(rbind, bursts(a)[13:30])
   )
   expect_identical(
-    field(a2, "bursts")[[7]],
-    do.call(rbind, field(a, "bursts")[31:32])
+    bursts(a2)[[7]],
+    do.call(rbind, bursts(a)[31:32])
   )
   expect_identical(
-    field(a2, "bursts")[[8]],
-    do.call(rbind, field(a, "bursts")[33:43])
+    bursts(a2)[[8]],
+    do.call(rbind, bursts(a)[33:43])
   )
   expect_identical(
-    field(a2, "bursts")[[9]],
-    do.call(rbind, field(a, "bursts")[44:45])
+    bursts(a2)[[9]],
+    do.call(rbind, bursts(a)[44:45])
   )
 })
 
@@ -118,28 +118,28 @@ test_that("Can split acc at a given interval", {
   expect_true(all(units::drop_units(burst_dur(split)) == interval))
   
   expect_equal(
-    purrr::map_int(field(split, "bursts"), nrow),
+    purrr::map_int(bursts(split), nrow),
     c(rep(10, 6), rep(20, 2))
   )
   expect_equal(
-    do.call(rbind, field(split, "bursts")[1:6]),
-    field(a, "bursts")[[1]]
+    do.call(rbind, bursts(split)[1:6]),
+    bursts(a)[[1]]
   )
   expect_equal(
-    do.call(rbind, field(split, "bursts")[7:8]),
-    field(a, "bursts")[[2]]
+    do.call(rbind, bursts(split)[7:8]),
+    bursts(a)[[2]]
   )
   expect_equal(
-    field(split, "frequency"),
+    freqs(split),
     units::set_units(c(rep(20, 6), rep(40, 2)), "Hz")
   )
   expect_identical(
-    field(a, "start")[1] + cumsum(c(0, rep(interval, 5))),
-    field(split, "start")[1:6]
+    starts(a)[1] + cumsum(c(0, rep(interval, 5))),
+    starts(split)[1:6]
   )
   expect_identical(
-    field(a, "start")[2] + cumsum(c(0, interval)),
-    field(split, "start")[7:8]
+    starts(a)[2] + cumsum(c(0, interval)),
+    starts(split)[7:8]
   )
 })
 

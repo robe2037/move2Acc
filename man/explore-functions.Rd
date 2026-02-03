@@ -5,6 +5,11 @@
 \alias{n_samples}
 \alias{is_uniform}
 \alias{is.na.acc}
+\alias{bursts}
+\alias{freqs}
+\alias{starts}
+\alias{burst_dur}
+\alias{burst_n}
 \alias{is_acc}
 \title{Functions to explore an \code{acc} vector}
 \usage{
@@ -15,6 +20,16 @@ n_samples(x)
 is_uniform(x)
 
 \method{is.na}{acc}(x)
+
+bursts(x)
+
+freqs(x)
+
+starts(x)
+
+burst_dur(x)
+
+burst_n(x)
 
 is_acc(x)
 }

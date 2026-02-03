@@ -1,7 +1,7 @@
 #' @export
 dynamic_acceleration<-function(x, method=c('odba','vedba')){
   method<-rlang::arg_match(method)
-  b<-field(x,"bursts")
+  b <- bursts(x)
   b_centered<-purrr::map(b, ~t(.x)-do.call('c',tapply(t(.x),1:3, mean, simplify=F)))
   switch(method,
       "odba"=purrr::map_vec(b_centered, ~mean(.keep_units_optional(colSums,abs(.x)))),
