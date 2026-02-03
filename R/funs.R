@@ -92,16 +92,7 @@ starts <- function(x) {
 #' @export
 #' @rdname explore-functions
 burst_dur <- function(x) {
-  bursts <- bursts(x)
-  frq <- freqs(x)
-  
-  dur <- purrr::map2_dbl(
-    bursts,
-    frq,
-    function(x, y) (nrow(x) %||% NA) / y
-  )
-  
-  units::set_units(dur, "s") # not sure if this is guaranteed...but units gives 1/Hz by default which is annoying.
+  units::set_units(as.numeric(burst_n(x) / freqs(x)), "s")
 }
 
 #' @export
