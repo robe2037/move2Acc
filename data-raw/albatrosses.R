@@ -15,4 +15,6 @@ albatrosses <- move2::movebank_download_study(
   timestamp_end = as.POSIXct(d1) + 3600
 )
 
+albatrosses <- albatrosses[order(move2::mt_track_id(albatrosses), move2::mt_time(albatrosses)), ]
+
 saveRDS(albatrosses, "inst/extdata/albatrosses.rds")

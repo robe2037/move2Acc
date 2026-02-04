@@ -1,6 +1,6 @@
 test_that("Can combine adjacent bursts into single burst", {
   d <- albatrosses()
-  
+
   # Simulate bursts that start at the end point of the previous burst
   move2::mt_time(d) <- seq(
     min(move2::mt_time(d)), 
@@ -8,26 +8,36 @@ test_that("Can combine adjacent bursts into single burst", {
     length.out = nrow(d)
   )
   
-  a <- as_acc(d)
-  i <- min(which(!is.na(a)))
-  
-  ts <- starts(a)
-  timediff <- ts + units::as_difftime(burst_dur(a))
-  
-  expect_true(
-    all(timediff[-length(timediff)] == starts(a)[-1], na.rm = TRUE)
-  )
-  
+  a <- as_acc(d, merge_continuous = FALSE)
   a2 <- merge_continuous_acc(a)
   
   expect_true(is_acc(a2))
-  expect_identical(which(is.na(a)), which(is.na(a2)))
-  expect_length(a2[!is.na(a2)], 1)
-  expect_identical(starts(a2[i]), starts(a[i]))
-  expect_identical(freqs(a2[i]), freqs(a[i]))
+  expect_length(a2, 9)
+  
+  # Split unmerged into acc groups based on whether the start timestamp plus
+  # the burst duration is equal to the next start timestamp (these are records
+  # that should have been merged in a2)
+  acc_grps <- split(
+    a, 
+    cumsum(c(TRUE, diff(starts(a)) != as.numeric(burst_dur(a)[-1])))
+  )
+  
+  expect_length(acc_grps, length(a2))
+  
+  # All start timestamps after merging should correspond to the start timestamp
+  # of the first entry in each grouped acc from above
   expect_identical(
-    bursts(a2[i])[[1]],
-    do.call(rbind, bursts(a[!is.na(a)]))
+    as.POSIXct(
+      unname(unlist(purrr::map(acc_grps, function(x) starts(x[1])))), 
+      "UTC"
+    ),
+    starts(a2)
+  )
+  # Merged bursts should match bursts formed by rbind-ing the grouped bursts
+  expect_identical(
+    bursts(a2), 
+    purrr::map(acc_grps, function(x) do.call(rbind, bursts(x))),
+    ignore_attr = TRUE
   )
 })
 

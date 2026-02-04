@@ -15,4 +15,6 @@ gulls <- move2::movebank_download_study(
   timestamp_end = as.POSIXct(d2 + 1)
 )
 
+gulls <- gulls[order(move2::mt_track_id(gulls), move2::mt_time(gulls)), ]
+
 saveRDS(gulls, "inst/extdata/gulls.rds")
