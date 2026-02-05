@@ -73,6 +73,12 @@ test_that("Can get acc from long-format acc data", {
     starts(acc),
     sort(gulls_data[non_na, ][gap_i, ]$timestamp)
   )
+  # If there are true gaps in the data, they should be detected even if
+  # the tolerance is high, as they still represent frequency changes.
+  expect_identical(
+    acc,
+    suppressWarnings(as_acc(gulls_data, tolerance = Inf))
+  )
 })
 
 test_that("Can split long-format data into bursts by inferred frequency", {

@@ -226,9 +226,8 @@ which_acc_vals <- function(x, acc_cols = NULL, non_na = "any") {
 #' 
 #' For acceleration records at the boundary of a frequency change, there is
 #' a fundamental ambiguity as to whether these records should be included in
-#' the burst prior to or the burst after the boundary timestamp. Our approach
-#' groups records at the boundary time with the burst prior to the boundary
-#' timestamp.
+#' the burst prior to or the burst after the boundary timestamp. See comments
+#' to `frq_changes` for details on our approach.
 #'
 #' @param x move2 object with long-format acceleration data
 #' @param tolerance Numeric value indicating the maximum allowable gap (in
@@ -255,28 +254,85 @@ parse_bursts <- function(x, tolerance = 0.5, freq_tol = 1e-6) {
       
       # Identify collection gaps
       above_tol <- c(TRUE, d > tolerance)
+      frq_boundaries <- frq_changes(as.numeric(d), freq_tol = freq_tol)
       
-      # Identify frequency changes with some error tolerance
-      frq_change <- !near(
-        as.numeric(d[-1]), 
-        as.numeric(d[-length(d)]), 
-        tol = freq_tol
-      )
-      
-      # The frequency at adjacent times must be different and both diffs 
-      # involved in this frequency change must be below the threshold
-      frq_change <- frq_change & d[-1] <= tolerance & d[-length(d)] <= tolerance
-        
-      # First two records cannot be resolved as a frequency change because
-      # of lack of temporal resolution, but this is consistent with our approach
-      # of including boundary records with the previous burst
-      frq_change <- c(FALSE, FALSE, frq_change)
-      
-      i[cumsum(frq_change | above_tol)]
+      i[cumsum(frq_boundaries | above_tol)]
     }
   )
   
   unname(unlist(grps))
+}
+
+# Identify transition points from one frequency to another within a sequential
+# time difference vector.
+#
+# Sequential acceleration data may change frequency. This can occur either from
+# legitimate burst gaps or from changes in collection frequency. In general,
+# when a change of frequency is detected, we create a new group of acceleration
+# values. See `new_frq_regime()` for more on the logic of how split points
+# are determined in ambiguous cases.
+frq_changes <- function(x, freq_tol = 1e-6) {
+  # Get runs of values within a given tolerance
+  freq_within_tol <- cumsum(c(TRUE, as.numeric(abs(diff(x))) > freq_tol))
+  r <- rle(freq_within_tol)
+  
+  # Adjust first run length to account for loss of initial value from `diff()`
+  r$lengths[1] <- r$lengths[1] + 1
+  
+  runs <- list()
+  runs[1] <- list(new_frq_regime(r$lengths[1]))
+  
+  # Length of subsequent run. Used when deciding which run to attach
+  # ambiguous split points to
+  n_next <- c(r$lengths[-1], 0)
+  
+  # Generate logical vector with TRUE values marking transition states to
+  # new frequency regimes
+  for (i in seq_len(length(r$lengths))[-1]) {
+    runs[i] <- list(
+      new_frq_regime(
+        r$lengths[i], 
+        n_next = n_next[i], 
+        prev_run = runs[[i - 1]]
+      )
+    )
+  }
+  
+  unlist(runs)
+}
+
+# Helper to build logical runs identifying sequences of frequency regimes
+#
+# In a sequence of time diffs, we identify the start of a new frequency
+# regime where there is a change in frequency from one index to the next.
+# The following time gap is established as the frequency of the next
+# regime. This function generates a logical vector for each run of 
+# consistent frequency values. TRUE values mark start indexes of new 
+# frequency regimes. FALSE values mark indexes that will be grouped with the
+# closest TRUE value that precedes them.
+#
+# Where multiple frequency changes happen in succession, there is ambiguity as
+# to how values should be grouped, as no frequency regime can definitively be
+# established for a series of length-1 sequences. That is, each of these single
+# values could just as reasonably be grouped with the value prior to them or
+# after them. In these cases, we group
+# the record immediately following the initial frequency change (t + 1) with that 
+# initial frequency change (t), unless the subsequent run starting with record 
+# (t + 2) is longer than 1. In these cases, we consider 
+# the (t + 1) record to belong to the (t + 2) sequence and the (t) record becomes
+# an isolated length-1 sequence.
+new_frq_regime <- function(n, n_next = 0, prev_run = FALSE) {
+  # If the previous run ends in FALSE, this run should start a new regime
+  start <- !prev_run[length(prev_run)]
+
+  # Force this record to join with next run if it is length-1 and that run is 
+  # longer than length-1. (This addresses cases where a length-1 value could
+  # either be joined to its previous run or its subsequent run)
+  if (n == 1 && n_next > 1) {
+    start <- TRUE
+  }
+  
+  c(start, rep(FALSE, n - 1))
 }
 
 assert_matched_acc_units <- function(x, cols) {
