@@ -48,10 +48,10 @@ n_samples <- function(x) {
 is_uniform<-function(x){
   # TODO check units are same?
   all(duplicated(na.omit(n_samples(x)))[-1])&&
-  all(duplicated(na.omit(n_axis(x)))[-1]) &&
-  all(duplicated(na.omit(freqs(x)))[-1]) &&
-  all(duplicated(purrr::map(bursts(x[!is.na(x)]), colnames))[-1]) &&
-  all(duplicated(purrr::map_lgl(bursts(x[!is.na(x)]), inherits, "units"))[-1])
+    all(duplicated(na.omit(n_axis(x)))[-1]) &&
+    all(duplicated(na.omit(freqs(x)))[-1]) &&
+    all(duplicated(purrr::map(bursts(x[!is.na(x)]), colnames))[-1]) &&
+    all(duplicated(purrr::map_lgl(bursts(x[!is.na(x)]), inherits, "units"))[-1])
 }
 
 # TODO: I don't love this construction since it isn't entirely clear what
@@ -99,6 +99,38 @@ burst_dur <- function(x) {
 #' @rdname explore-functions
 burst_n <- function(x) {
   purrr::map_int(bursts(x), function(b) nrow(b) %||% NA_integer_)
+}
+
+#' Filter an acc vector by burst frequency
+#'
+#' @param x An `acc` vector
+#' @param min_freq,max_freq Numeric or units values indicating the minimum
+#'   and/or maximum frequency thresholds to use when determining the records in
+#'   `x` to retain. Elements in `x` whose frequency falls within these limits
+#'   are kept in the output. If no units are provided, values are considered to
+#'   be in hertz.
+#' @param keep_na Logical indicating whether elements of `x` with a missing
+#'   frequency should be retained in the output. By default, these elements
+#'   are removed.
+#'
+#' @returns An `acc` vector
+#' @export
+#'
+#' @examples
+#' a <- acc_example()
+#' 
+#' freqs(a)
+#'
+#' filter_freq(a, 2.5)
+filter_freq <- function(x, min_freq = 0, max_freq = Inf, keep_na = FALSE) {
+  min_freq <- units::set_units(min_freq, units(freqs(x)), mode = "standard")
+  max_freq <- units::set_units(max_freq, units(freqs(x)), mode = "standard")
+  
+  if (!keep_na) {
+    x <- x[!is.na(freqs(x))]
+  }
+  
+  x[freqs(x) <= max_freq & freqs(x) >= min_freq | is.na(freqs(x))]
 }
 
 #' @export
