@@ -184,7 +184,7 @@ as_acc_long <- function(x,
     acc(
       list(NULL), 
       units::set_units(NA, "Hz"), 
-      start = as.POSIXct(NA, tz = "UTC")
+      start = as.POSIXct(NA, tz = attr(timestamp, "tzone") %||% "UTC")
     ), 
     nrow(x)
   )

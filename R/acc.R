@@ -14,8 +14,15 @@ acc <- function(bursts = list(),
   
   frequency <- vec_recycle(frequency, n)
   
-  start <- start %||% as.POSIXct(NA_real_, tz = "UTC")
-  start <- vec_recycle(start, n)
+  start <- start %||% NA_real_
+  
+  if (inherits(start, "POSIXt")) {
+    tz <- attr(start, "tzone")
+  } else {
+    tz <- "UTC"
+  }
+  
+  start <- vec_recycle(as.POSIXct(start, tz = tz), n)
   
   new_acc(bursts, frequency, start)
 }
@@ -23,8 +30,6 @@ acc <- function(bursts = list(),
 new_acc <- function(bursts = new_acc_list(list()), 
                     frequency = units::set_units(double(), "Hz"),
                     start = as.POSIXct(double(), tz = "UTC")) {
-  assertthat::assert_that(inherits(start, "POSIXct"))
-  
   new_rcrd(
     list(bursts = bursts, frequency = frequency, start = start),
     class = "acc"

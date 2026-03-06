@@ -165,6 +165,24 @@ test_that("Can drop missing acc values", {
   expect_identical(as_acc(albatrosses()), acc[!is.na(acc)])
 })
 
+test_that("Preserve time zone", {
+  g <- gulls()
+  a <- albatrosses()
+  
+  expect_equal(attr(starts(acc()), "tzone"), "UTC")
+  expect_equal(attr(starts(acc(acc_burst_example(), 1)), "tzone"), "UTC")
+  
+  expect_equal(attr(starts(as_acc(albatrosses())), "tzone"), "UTC")
+  
+  a$timestamp <- 1:nrow(a)
+  expect_equal(attr(starts(as_acc(a)), "tzone"), "UTC")
+  
+  a$timestamp <- as.POSIXct(a$timestamp, tz = "CET")
+  g$timestamp <- as.POSIXct(g$timestamp, tz = "CET")
+  expect_equal(attr(starts(as_acc(a)), "tzone"), "CET")
+  expect_equal(attr(starts(suppressWarnings(as_acc(g))), "tzone"), "CET")
+})
+
 test_that("Equivalent data in burst and long format produce same acc", {
   t1 <- data.frame(
     id = 1,
