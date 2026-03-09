@@ -47,6 +47,9 @@ as_acc.default <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.move2 <- function(x, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+  assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
+  assertthat::assert_that(move2::mt_is_time_ordered(x))
+  
   acc_cols <- active_acc_cols(x)
   
   acc <- switch(
@@ -338,7 +341,7 @@ frq_changes <- function(x, freq_tol = 1e-6) {
 new_frq_regime <- function(n, n_next = 0, prev_run = FALSE) {
   # If the previous run ends in FALSE, this run should start a new regime
   start <- !prev_run[length(prev_run)]
-
+  
   # Force this record to join with next run if it is length-1 and that run is 
   # longer than length-1. (This addresses cases where a length-1 value could
   # either be joined to its previous run or its subsequent run)
