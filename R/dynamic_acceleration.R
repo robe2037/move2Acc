@@ -1,12 +1,23 @@
 #' @export
-dynamic_acceleration<-function(x, method=c('odba','vedba')){
-  method<-rlang::arg_match(method)
-  b <- bursts(x)
-  b_centered<-purrr::map(b, ~t(.x)-do.call('c',tapply(t(.x),1:3, mean, simplify=F)))
-  switch(method,
-      "odba"=purrr::map_vec(b_centered, ~mean(.keep_units_optional(colSums,abs(.x)))),
-      "vedba"= purrr::map_vec(b_centered, ~mean(sqrt(.keep_units_optional(colSums,.x^2))))
-      )
+vedba <- function(x) {
+  map_acc(x, function(.br) vedba_(.br), simplify = TRUE)
+}
+
+#' @export
+odba <- function(x) {
+  map_acc(x, function(.br) odba_(.br), simplify = TRUE)
+}
+
+# TODO These fail without units. tapply behaves differently, perhaps because
+# values are treated as a list and not a vector?
+vedba_ <- function(b, ...) {
+  b <- t(b) - do.call("c", tapply(t(b), 1:3, mean, simplify = FALSE))
+  mean(sqrt(.keep_units_optional(colSums, b ^ 2)))
+}
+
+odba_ <- function(b, ...) {
+  b <- t(b) - do.call("c", tapply(t(b), 1:3, mean, simplify = FALSE))
+  mean(.keep_units_optional(colSums, abs(b)))
 }
 
 # internal function to make keep units only function if it was a unit

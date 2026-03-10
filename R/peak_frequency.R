@@ -24,26 +24,25 @@
 #'   a<-acc(list(cbind(z=cos(80+1:200/(80/(pi*2))),
 #'   x=sin((1:200)/(5/(pi*2))))), units::set_units(400,'Hz'))
 #'   peak_frequency(a, units::set_units(.005, "Hz"))
+peak_frequency <- function(x, resolution = NA) {
+  map_acc(x, function(.br, .fq) peak_frq_(.br, .fq, resolution = resolution))
+}
 
-
-
-peak_frequency<-function(x, resolution=NA){
-  assertthat::assert_that(inherits(x,'acc'))
-  s<-!is.na(x)
-  res<-rep(list(NULL),length(x))
-  if(all(!s)){
-    return(res)
+# Peak frequency for a single burst and frq
+peak_frq_ <- function(burst, frq, resolution = NA) {
+  if (inherits(burst, "units")) {
+    burst <- units::drop_units(burst)
   }
-  b <- bursts(x[s])
-  b <- purrr::map2(b,purrr::map(b, inherits,'units'), ~if(.y){units::drop_units(.x)}else{.x})
-  b_centered<-purrr::map2(b,purrr::map(b, colMeans), ~ t((.x))-.y)
+  
+  b_centered <- t(burst) - colMeans(burst)
+  
   if(!is.na(resolution)){
-    to_pad<-units::drop_units(freqs(x[s])/resolution)-n_samples(x[s])
-    b_centered<-purrr::map2(b_centered, to_pad, ~cbind(.x,matrix(0, ncol=.y, nrow=nrow(.x))))
+    to_pad <- units::drop_units(frq / resolution) - nrow(burst)
+    b_centered <- cbind(b_centered, matrix(0, ncol = to_pad, nrow = nrow(b_centered)))
   }
-  b_mod<-purrr::map(b_centered, ~ do.call(rbind,lapply(apply(.x,1, fft, simplify = F),  Mod))[,1:ceiling(ncol(.x)/2), drop=F])
-  peak<- purrr::map(b_mod, ~ apply(.x,1, which.max ))
-  peak_freq<-purrr::pmap(list(peak,freqs(x[s]),purrr::map(b_mod, ncol)), ~ (..1-1)*(..2/..3/2))
-  res[s]<-peak_freq
-  res
+  
+  b_mod <- do.call(rbind, lapply(apply(b_centered, 1, fft, simplify = F), Mod))[, 1:ceiling(ncol(b_centered)/2), drop = FALSE]
+  peak<- apply(b_mod, 1, which.max)
+  
+  (peak - 1) * (frq / ncol(b_mod) / 2)
 }

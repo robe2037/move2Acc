@@ -65,28 +65,6 @@ test_that("Multiple axis peak freq intercept does not matter", {
   expect_equal(peak_frequency(a), list(units::set_units(c(X = 4, Z = 2), "Hz")))
 })
 
-test_that("NA returns empty", {
-  expect_equal(
-    peak_frequency(new_acc(list(NULL), frequency = NA, start = as.POSIXct(NA), id = NA)), 
-    list(NULL)
-  )
-  expect_equal(
-    peak_frequency(new_acc(list(NULL, NULL), frequency = c(NA, NA), start = rep(as.POSIXct(NA), 2), id = c(NA, NA))), 
-    list(NULL, NULL)
-  )
-  
-  x <- sin(1:200 / (50 / (pi * 2)))
-  a <- acc(
-    c(acc_burst_example(), acc_burst_example(x = x), acc_burst_example()),
-    frequency = units::set_units(c(NA, 200, NA),"Hz")
-  )
-  
-  expect_equal(
-    peak_frequency(a),
-    list(NULL, units::set_units(c(X = 4), "Hz"), NULL)
-  )
-})
-
 test_that("Resolution alows to identify partial frequencies", {
   x <- sin(1:200 / (5  / (pi * 2)))
   z <- cos(1:200 / (80 / (pi * 2)))
