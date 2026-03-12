@@ -4,16 +4,13 @@
 \alias{active_acc_cols}
 \title{Get acceleration columns from a \code{move2} object}
 \usage{
-active_acc_cols(x, quiet = FALSE)
+active_acc_cols(x)
 }
 \arguments{
 \item{x}{A \code{move2} containing acceleration data as collected by EOBS,
 Ornitela, or similar tracking devices. Most of the time this will be
 either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded using
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
-
-\item{quiet}{Logical indicating whether to warn if multiple acceleration
-column sets are detected in \code{x}.}
 }
 \value{
 Character vector of acceleration column names

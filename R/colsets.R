@@ -11,12 +11,10 @@
 #' be used.
 #'
 #' @inheritParams as_acc
-#' @param quiet Logical indicating whether to warn if multiple acceleration
-#'   column sets are detected in `x`.
 #'
 #' @returns Character vector of acceleration column names
 #' @export
-active_acc_cols <- function(x, quiet = FALSE) {
+active_acc_cols <- function(x) {
   i <- which(
     c(
       has_acc_eobs_cols(x),
@@ -28,7 +26,7 @@ active_acc_cols <- function(x, quiet = FALSE) {
   )
   
   if (length(i) == 0) {
-    abort_unsupported_cols()
+    abort_missing_acc_cols()
   }
   
   colsets <- valid_acc_colsets()[i]
@@ -51,17 +49,15 @@ active_acc_cols <- function(x, quiet = FALSE) {
       # If multiple have values, use the first one that has values
       colsets <- colsets[which(has_vals)[1]]
       
-      if (!quiet) {
-        rlang::warn(
-          c(
-            "Detected multiple valid acceleration column sets.",
-            "i" = paste0(
-              "Using `", 
-              paste0(colsets[[1]], collapse = "`, `"), "`"
-            )
+      rlang::warn(
+        c(
+          "Detected multiple valid acceleration column sets.",
+          "i" = paste0(
+            "Using `", 
+            paste0(colsets[[1]], collapse = "`, `"), "`"
           )
         )
-      }
+      )
     } else {
       colsets <- colsets[has_vals]
     }
@@ -199,11 +195,12 @@ acc_types <- function() {
 }
 
 acc_cols_to_type <- function(acc_cols) {
+  assert_valid_acc_colset(acc_cols)
   i <- purrr::map_lgl(valid_acc_colsets(), function(x) all(acc_cols %in% x))
   acc_types()[i]
 }
 
-abort_unsupported_cols <- function(call = rlang::caller_env()) {
+abort_missing_acc_cols <- function(call = rlang::caller_env()) {
   rlang::abort(
     c(
       "Could not identify a full acceleration column set in the input data.",
@@ -211,4 +208,29 @@ abort_unsupported_cols <- function(call = rlang::caller_env()) {
     ),
     call = call
   )
+}
+
+assert_all_cols_present <- function(x, cols, call = rlang::caller_env()) {
+  if (!all(cols %in% colnames(x))) {
+    rlang::abort(
+      c(
+        "Missing columns provided.",
+        x = paste0("Could not find columns \"", paste(cols, collapse = "\", \""), "\"")
+      ),
+      call = call
+    )
+  }
+}
+
+assert_valid_acc_colset <- function(acc_cols, call = rlang::caller_env()) {
+  if (!is_valid_acc_colset(acc_cols)) {
+    rlang::abort(
+      c(
+        "Invalid acc columns provided.",
+        x = paste0("Unexpected columns: \"", paste0(acc_cols, collapse = "\", \""), "\"")
+      ),
+      call = call
+    )
+  }
+  TRUE
 }

@@ -7,6 +7,11 @@
 #'   Ornitela, or similar tracking devices. Most of the time this will be 
 #'   either loaded from disk using [move2::mt_read] or downloaded using 
 #'   [move2::movebank_download_study].
+#' @param acc_cols Character vector of column names identifying the columns in
+#'   `x` that contain the acceleration data to be used when constructing the
+#'   output `acc` vector. By default, uses the columns returned by
+#'   [active_acc_cols()]. See [valid_acc_colsets()] to identify supported
+#'   acceleration column names.
 #' @param min_frq Numeric value indicating the 
 #'   minimum allowable within-burst data collection frequency when identifying
 #'   bursts in long-format acceleration data. Any two adjacent timestamps 
@@ -46,21 +51,26 @@ as_acc.default <- function(x, ...) {
 
 #' @rdname as_acc
 #' @export
-as_acc.move2 <- function(x, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
   assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
   assertthat::assert_that(move2::mt_is_time_ordered(x))
   
-  acc_cols <- active_acc_cols(x)
+  acc_cols <- acc_cols %||% active_acc_cols(x)
   
-  acc <- switch(
-    acc_cols_to_type(acc_cols),
-    "eobs"    = as_acc_move2_eobs(x, ...),
-    "burst"   = as_acc_move2_burst(x, ...),
-    "xyz"     = as_acc_move2_xyz(x, min_frq = min_frq, ...),
-    "raw_xyz" = as_acc_move2_raw_xyz(x, min_frq = min_frq, ...),
-    "tilt"    = as_acc_move2_tilt(x, min_frq = min_frq, ...),
-    abort_unsupported_cols()
-  )
+  assert_valid_acc_colset(acc_cols)
+  assert_all_cols_present(x, acc_cols)
+  
+  acc_type <- acc_cols_to_type(acc_cols)
+  
+  if (acc_type %in% c("xyz", "raw_xyz", "tilt")) {
+    acc <- as_acc_move2_long(x, acc_cols = acc_cols, min_frq = min_frq, ...)
+  } else if (acc_type == "eobs") {
+    acc <- as_acc_move2_eobs(x, ...)
+  } else if (acc_type == "burst") {
+    acc <- as_acc_move2_burst(x, ...)
+  } else {
+    abort_missing_acc_cols()
+  }
   
   if (merge_continuous) {
     acc <- merge_continuous_acc(acc)
@@ -74,7 +84,7 @@ as_acc.move2 <- function(x, min_frq = 1, merge_continuous = TRUE, drop = TRUE, .
 }
 
 as_acc_move2_eobs <- function(x, ...) {
-  assertthat::assert_that(has_acc_eobs_cols(x))
+  assert_all_cols_present(x, acc_eobs_cols())
   
   as_acc_burst(
     x[["eobs_accelerations_raw"]],
@@ -87,7 +97,7 @@ as_acc_move2_eobs <- function(x, ...) {
 }
 
 as_acc_move2_burst <- function(x, ...) {
-  assertthat::assert_that(has_acc_burst_cols(x))
+  assert_all_cols_present(x, acc_burst_cols())
   
   as_acc_burst(
     x[["accelerations_raw"]],
@@ -97,22 +107,6 @@ as_acc_move2_burst <- function(x, ...) {
     id = move2::mt_track_id(x),
     ...
   )
-}
-
-as_acc_move2_raw_xyz <- function(x, min_frq = 1, ...) {
-  assertthat::assert_that(has_acc_raw_xyz_cols(x))
-  as_acc_long(x, min_frq = min_frq, ...)
-}
-
-as_acc_move2_xyz <- function(x, min_frq = 1, ...) {
-  assertthat::assert_that(has_acc_xyz_cols(x))
-  as_acc_long(x, min_frq = min_frq, ...)
-}
-
-# TODO: decide whether tilt is supported? It seems to co-occur with raw xyz cols
-as_acc_move2_tilt <- function(x, min_frq = 1, ...) {
-  assertthat::assert_that(has_acc_tilt_cols(x))
-  as_acc_long(x, min_frq = min_frq, ...)
 }
 
 as_acc_burst <- function(acc, axes, freq, timestamp, id) {
@@ -139,16 +133,18 @@ as_acc_burst <- function(acc, axes, freq, timestamp, id) {
 
 # TODO: this should maybe be refactored to be analogous to `as_acc_burst` which doesn't
 # take input move2 `x`, just takes the data cols.
-as_acc_long <- function(x,
-                        min_frq = 1,
-                        acc_cols = NULL, 
-                        timestamp = move2::mt_time(x),
-                        id = move2::mt_track_id(x),
-                        frq_digits = 4,
-                        ...) {
-  acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
+as_acc_move2_long <- function(x,
+                              acc_cols = NULL,
+                              min_frq = 1,
+                              timestamp = move2::mt_time(x),
+                              id = move2::mt_track_id(x),
+                              frq_digits = 4,
+                              ...) {
+  acc_cols <- acc_cols %||% active_acc_cols(x)
   
-  assertthat::assert_that(is_valid_acc_colset(acc_cols))
+  assert_all_cols_present(x, acc_cols)
+  assert_valid_acc_colset(acc_cols)
+  
   assert_matched_acc_units(x, acc_cols)
   
   m <- as.matrix(data.frame(x)[, acc_cols])
@@ -161,10 +157,12 @@ as_acc_long <- function(x,
   
   # Generate vector of ids for each distinct burst based on sequential
   # timestamps collected at a minimum frequency
-  ts_grps <- parse_bursts(x, min_frq = min_frq)
+  ts_grps <- parse_bursts(x, acc_cols = acc_cols, min_frq = min_frq)
+  
+  acc_i <- which_acc_vals(x, acc_cols = acc_cols)
   
   # Split all rows with acc data into burst groups based on timestamp groups
-  idx <- unname(split(which_acc_vals(x), ts_grps))
+  idx <- unname(split(acc_i, ts_grps))
   
   # Extract records for each burst into a separate matrix
   acc_lst <- lapply(idx, function(i) {
@@ -176,7 +174,7 @@ as_acc_long <- function(x,
   # Calculate mean frequency for each burst
   freq <- unname(unlist(
     lapply(
-      split(move2::mt_time(x[which_acc_vals(x), ]), ts_grps), 
+      split(move2::mt_time(x[acc_i, ]), ts_grps), 
       function(y) {
         ifelse(length(y) <= 1, NA, mean(1 / units::as_units(diff(y))))
       }
@@ -206,7 +204,7 @@ as_acc_long <- function(x,
 }
 
 which_acc_vals <- function(x, acc_cols = NULL, non_na = "any") {
-  acc_cols <- acc_cols %||% active_acc_cols(x, quiet = TRUE)
+  acc_cols <- acc_cols %||% active_acc_cols(x)
   
   x <- as.data.frame(x) # Drop sticky move2 columns
   non_na <- rlang::arg_match(non_na, values = c("any", "all"))
@@ -256,8 +254,10 @@ which_acc_vals <- function(x, acc_cols = NULL, non_na = "any") {
 #'
 #' @returns Integer vector of IDs identifying burst groups
 #' @noRd
-parse_bursts <- function(x, min_frq = 1, freq_tol = 1e-6) {
+parse_bursts <- function(x, acc_cols = NULL, min_frq = 1, freq_tol = 1e-6) {
   assertthat::assert_that(min_frq >= 0)
+  
+  acc_cols <- acc_cols %||% active_acc_cols(x)
   
   if (!inherits(min_frq, "units")) {
     min_frq <- units::set_units(min_frq, "Hz")
@@ -265,7 +265,7 @@ parse_bursts <- function(x, min_frq = 1, freq_tol = 1e-6) {
   
   burst_gap_thresh <- units::set_units(1 / min_frq, "s")
   
-  acc_i <- which_acc_vals(x)
+  acc_i <- which_acc_vals(x, acc_cols = acc_cols)
   idx <- split(acc_i, as.character(move2::mt_track_id(x[acc_i, ])))
   
   grps <- lapply(

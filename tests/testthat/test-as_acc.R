@@ -75,6 +75,54 @@ test_that("Can get acc from long-format acc data", {
   )
 })
 
+test_that("Can manually specify acc columns to use for parsing", {
+  cols <- acc_tilt_cols()
+  
+  a <- as_acc(gulls(), acc_cols = cols)
+  i <- which_acc_vals(gulls(), acc_cols = cols)
+  
+  expect_equal(
+    unlist(map_acc(a, ~ .br[, 1])),
+    units::drop_units(gulls()[[cols[[1]]]][i])
+  )
+  expect_equal(
+    unlist(map_acc(a, ~ .br[, 2])),
+    units::drop_units(gulls()[[cols[[2]]]][i])
+  )
+  expect_equal(
+    unlist(map_acc(a, ~ .br[, 3])),
+    units::drop_units(gulls()[[cols[[3]]]][i])
+  )
+})
+
+test_that("Can manually specify a subset of long-format cols", {
+  col <- "acceleration_raw_y"
+  
+  a <- as_acc(gulls(), acc_cols = col)
+  i <- which_acc_vals(gulls(), acc_cols = col)
+  
+  expect_equal(unlist(map_acc(a, ~ .br[, 1])), gulls()[[col]][i])
+})
+
+test_that("Can manually specify acc columns in mixed acc type data", {
+  d <- move2::mt_stack(albatrosses(), gulls())
+  
+  expect_warning(as_acc(d), "multiple valid acceleration column sets")
+  expect_identical(
+    as_acc(albatrosses()),
+    as_acc(d, acc_cols = acc_eobs_cols())
+  )
+  expect_identical(
+    suppressWarnings(as_acc(gulls())),
+    as_acc(d, acc_cols = acc_raw_xyz_cols())
+  )
+})
+
+test_that("Correctly error on bad acc_cols specifications", {
+  expect_error(as_acc(gulls(), acc_cols = acc_eobs_cols()), "Missing columns")
+  expect_error(as_acc(gulls(), acc_cols = "foobar"), "Invalid acc columns")
+})
+
 test_that("Can split long-format data into bursts by inferred frequency", {
   t1 <- data.frame(
     id = 1,
@@ -154,12 +202,18 @@ test_that("Can use `min_frq` to avoid building bursts below frq thresh", {
 test_that("Can drop missing acc values", {
   gulls_data <- gulls()
   
-  acc <- suppressWarnings(as_acc(gulls_data, drop = FALSE))
+  # Provide cols explicitly below to avoid irrelevant multi-col warnings
+  cols <- acc_raw_xyz_cols()
+  
+  acc <- as_acc(gulls_data, acc_cols = cols, drop = FALSE)
   acc_i <- which(gulls_data$sensor_type_id == 2365683)
   
-  expect_identical(suppressWarnings(as_acc(gulls_data)), acc[!is.na(acc)])
+  expect_identical(as_acc(gulls_data, acc_cols = cols), acc[!is.na(acc)])
   expect_length(acc, nrow(gulls_data))
-  expect_equal(is.na(acc[acc_i]), duplicated(parse_bursts(gulls_data)))
+  expect_equal(
+    is.na(acc[acc_i]), 
+    duplicated(parse_bursts(gulls_data, acc_cols = cols))
+  )
   
   acc <- as_acc(albatrosses(), drop = FALSE)
   expect_identical(as_acc(albatrosses()), acc[!is.na(acc)])

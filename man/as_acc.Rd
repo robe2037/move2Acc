@@ -10,7 +10,14 @@ as_acc(x, ...)
 
 \method{as_acc}{default}(x, ...)
 
-\method{as_acc}{move2}(x, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...)
+\method{as_acc}{move2}(
+  x,
+  acc_cols = NULL,
+  min_frq = 1,
+  merge_continuous = TRUE,
+  drop = TRUE,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{move2} containing acceleration data as collected by EOBS,
@@ -19,6 +26,12 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
 
 \item{...}{currently not used}
+
+\item{acc_cols}{Character vector of column names identifying the columns in
+\code{x} that contain the acceleration data to be used when constructing the
+output \code{acc} vector. By default, uses the columns returned by
+\code{\link[=active_acc_cols]{active_acc_cols()}}. See \code{\link[=valid_acc_colsets]{valid_acc_colsets()}} to identify supported
+acceleration column names.}
 
 \item{min_frq}{Numeric value indicating the
 minimum allowable within-burst data collection frequency when identifying
