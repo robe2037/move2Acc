@@ -9,9 +9,9 @@
 #'   [move2::movebank_download_study].
 #' @param acc_cols Character vector of column names identifying the columns in
 #'   `x` that contain the acceleration data to be used when constructing the
-#'   output `acc` vector. By default, uses the columns returned by
-#'   [active_acc_cols()]. See [valid_acc_colsets()] to identify supported
-#'   acceleration column names.
+#'   output `acc` vector. By default, constructs bursts for all column sets that
+#'   are detected in `x` that also contain data. See [valid_acc_colsets()] to 
+#'   identify supported acceleration column names.
 #' @param min_frq Numeric value indicating the 
 #'   minimum allowable within-burst data collection frequency when identifying
 #'   bursts in long-format acceleration data. Any two adjacent timestamps 
@@ -52,6 +52,47 @@ as_acc.default <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+  colsets <- acc_cols %||% acc_colsets(x)
+  
+  # Standardize case where user supplied a single colset as a vector
+  if (!rlang::is_list(colsets)) {
+    colsets <- list(colsets)
+  }
+  
+  dup <- duplicated_acc_rows(x, colsets = colsets)
+  
+  if (length(dup) > 0) {
+    rlang::abort(c(
+      paste0("`x` contains ", length(dup), " timestamps with multiple sources of acceleration data."),
+      i = "Use `duplicated_acc_rows()` to identify duplications."
+    ))
+  }
+  
+  acc <- purrr::map(
+    colsets, 
+    function(cols) {
+      as_acc_move2_(
+        x, 
+        acc_cols = cols,
+        min_frq = min_frq,
+        merge_continuous = merge_continuous, 
+        drop = drop, 
+        ...
+      )
+    }
+  )
+  
+  if (!drop) {
+    acc <- purrr::reduce(acc, function(.x, .y) dplyr::coalesce(.x, .y)) 
+  } else {
+    acc <- purrr::reduce(acc, function(.x, .y) c(.x, .y))
+    # acc <- acc[order(starts(acc))] # Without dups this shouldn't be necessary?
+  }
+  
+  acc
+}
+
+as_acc_move2_ <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
   assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
   assertthat::assert_that(move2::mt_is_time_ordered(x))
   

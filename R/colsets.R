@@ -62,19 +62,7 @@
 #'   active_acc_cols(alb)
 #' }
 active_acc_cols <- function(x) {
-  colsets <- acc_colsets(x)
-  
-  if (length(colsets) > 1) {
-    rlang::warn(
-      c(
-        "Detected multiple valid acceleration column sets.",
-        "i" = paste0("Using `", paste0(colsets[[1]], collapse = "`, `"), "`"),
-        "i" = "Use `acc_colsets()` to see available column sets in this data source."
-      )
-    )
-  }
-  
-  colsets[[1]]
+  acc_colsets(x)
 }
 
 #' @export
@@ -121,6 +109,21 @@ acc_colsets <- function(x) {
   }
   
   colsets
+}
+
+duplicated_acc_rows <- function(x, colsets = NULL) {
+  colsets <- colsets %||% acc_colsets(x)
+  
+  acc_rows <- unlist(
+    purrr::map(
+      colsets, 
+      function(cols) which_acc_vals(x, acc_cols = cols)
+    )
+  )
+  
+  # Would be nice to return duplicated groups too so user knows what the issue is...
+  
+  sort(unique(acc_rows[duplicated(acc_rows) | duplicated(acc_rows, fromLast = TRUE)]))
 }
 
 #' Valid acceleration data column sets
