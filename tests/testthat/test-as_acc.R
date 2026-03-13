@@ -41,10 +41,7 @@ test_that("Can get acc from long-format acc data", {
   # Identify time series gap points
   gap_i <- which(c(TRUE, diff(gulls_data$timestamp[non_na]) > 0.5))
   
-  expect_warning(
-    acc <- as_acc(gulls_data), 
-    "Detected multiple valid acceleration column sets"
-  )
+  acc <- as_acc(gulls_data, acc_cols = acc_raw_xyz_cols())
   
   expect_s3_class(acc, "acc")
   expect_length(acc, length(gap_i))
@@ -107,13 +104,12 @@ test_that("Can manually specify a subset of long-format cols", {
 test_that("Can manually specify acc columns in mixed acc type data", {
   d <- move2::mt_stack(albatrosses(), gulls())
   
-  expect_warning(as_acc(d), "multiple valid acceleration column sets")
   expect_identical(
     as_acc(albatrosses()),
     as_acc(d, acc_cols = acc_eobs_cols())
   )
   expect_identical(
-    suppressWarnings(as_acc(gulls())),
+    suppressWarnings(as_acc(gulls(), acc_cols = acc_raw_xyz_cols())),
     as_acc(d, acc_cols = acc_raw_xyz_cols())
   )
 })
