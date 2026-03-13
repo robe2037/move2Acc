@@ -203,13 +203,13 @@ as_acc_move2_long <- function(x,
   acc
 }
 
-which_acc_vals <- function(x, acc_cols = NULL, non_na = "any") {
+which_acc_vals <- function(x, acc_cols = NULL) {
   acc_cols <- acc_cols %||% active_acc_cols(x)
   
   x <- as.data.frame(x) # Drop sticky move2 columns
-  non_na <- rlang::arg_match(non_na, values = c("any", "all"))
   
-  if (non_na == "any") {
+  # Long-format columns only need at least one column to have data
+  if (acc_cols_to_type(acc_cols) %in% c("xyz", "raw_xyz", "tilt")) {
     has_vals <- which(rowSums(!is.na(x[acc_cols])) > 0)
   } else {
     has_vals <- which(rowSums(!is.na(x[acc_cols])) == length(acc_cols))

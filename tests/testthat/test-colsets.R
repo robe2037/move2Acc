@@ -57,22 +57,35 @@ test_that("Use data values to determine active colset if multiple present", {
   gulls_na[["acceleration_raw_x"]] <- NA
   gulls_na[["acceleration_raw_y"]] <- NA
   
-  expect_identical(
-    suppressWarnings(active_acc_cols(gulls_na)), 
-    acc_raw_xyz_cols()
-  )
+  expect_warning(acc_cols <- active_acc_cols(gulls_na), "Detected multiple")
+  expect_identical(acc_cols, "acceleration_raw_z")
   
   # If all cols in a set are missing, then the next colset will be used
   gulls_na[["acceleration_raw_z"]] <- NA
   
-  expect_identical(suppressWarnings(active_acc_cols(gulls_na)), acc_tilt_cols())
+  expect_identical(active_acc_cols(gulls_na), acc_tilt_cols())
   
   # Unless neither have data, in which case first is used
   gulls_na[["tilt_x"]] <- NA
   gulls_na[["tilt_y"]] <- NA
   gulls_na[["tilt_z"]] <- NA
   
-  expect_identical(active_acc_cols(gulls_na), acc_raw_xyz_cols())
+  expect_error(active_acc_cols(gulls_na), "Could not identify a full")
+})
+
+test_that("Correctly identify that a non-full burst colset is invalid", {
+  alb <- albatrosses()
+  alb$eobs_acceleration_axes <- NA
+  expect_error(active_acc_cols(alb))
+  
+  alb$eobs_acceleration_axes <- rep(list(NULL), nrow(alb))
+  expect_error(active_acc_cols(alb))
+  
+  alb$eobs_acceleration_axes <- NULL
+  expect_error(active_acc_cols(alb))
+  
+  expect_warning(a <- active_acc_cols(move2::mt_stack(alb, gulls())))
+  expect_equal(a, acc_raw_xyz_cols())
 })
 
 test_that("Currently supported colsets", {

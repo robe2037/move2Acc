@@ -2,23 +2,42 @@
 % Please edit documentation in R/colsets.R
 \name{valid_acc_colsets}
 \alias{valid_acc_colsets}
-\title{List valid acceleration data column sets}
+\alias{acc_eobs_cols}
+\alias{acc_burst_cols}
+\alias{acc_xyz_cols}
+\alias{acc_raw_xyz_cols}
+\alias{acc_tilt_cols}
+\title{Valid acceleration data column sets}
 \usage{
 valid_acc_colsets()
+
+acc_eobs_cols()
+
+acc_burst_cols()
+
+acc_xyz_cols()
+
+acc_raw_xyz_cols()
+
+acc_tilt_cols()
 }
 \value{
-List of vectors of valid column sets
+For \code{valid_acc_colsets()}, a list of vectors of valid column sets.
+Otherwise, a character vector containing the names of the
 }
 \description{
-These columns are used by \code{as_acc()} when parsing acceleration bursts
-contained in a \code{move2} object. A \code{move2} object must contain one
+These sets of columns can be used by \code{\link[=as_acc]{as_acc()}} when parsing acceleration
+bursts contained in a \code{move2} object. A \code{move2} object must contain one
 of these column sets to be processed by \code{as_acc()}.
+\itemize{
+\item \code{acc_eobs_cols()} and \code{acc_burst_cols()} must be present in their entirety
+within a data source to be used when parsing acceleration data.
+\item For \code{acc_xyz_cols()}, \code{acc_raw_xyz_cols()}, and \code{acc_tilt_cols()}, any
+subset of the set's columns can be used to parse acceleration
+data.
+}
 
-If the \code{move2} object contains one of the first two sets, it must contain
-all three of the listed columns in that set. If it contains one of the
-final three sets, any subset of the set's listed columns are sufficient.
-
-To determine which columns will be used by \code{as_acc()} for a given
+To determine the default columns that will be used by \code{as_acc()} for a given
 \code{move2} object, see \code{\link[=active_acc_cols]{active_acc_cols()}}.
 }
 \examples{
