@@ -219,6 +219,15 @@ test_that("Can drop missing acc values", {
   expect_identical(as_acc(albatrosses()), acc[!is.na(acc)])
 })
 
+test_that("Retain burst dimensions when missing data in some axes", {
+  g <- gulls()
+  
+  g[["acceleration_raw_x"]][1:100] <- NA
+  
+  a <- as_acc(g, acc_cols = acc_raw_xyz_cols())
+  expect_true(all(purrr::map(bursts(a), ncol) == 3))
+})
+
 test_that("Preserve time zone", {
   g <- gulls()
   a <- albatrosses()
