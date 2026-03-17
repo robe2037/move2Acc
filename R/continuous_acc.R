@@ -106,47 +106,36 @@ merge_continuous_acc <- function(x) {
 #' burst_dur(x)
 split_continuous_acc <- function(x, interval) {
   assertthat::assert_that(as.numeric(interval) > 0)
-
-  x <- purrr::map(
+  
+  x <- map_acc(
     x,
-    function(a) {
-      b <- bursts(a)
-      frq <- freqs(a)
-      st <- starts(a)
-      
-      if (is.na(a) || nrow(b[[1]]) <= 1) {
-        return(a)
+    function(.br, .fq, .st) {
+      if (rlang::is_empty(.br) || nrow(.br) <= 1) {
+        return(.br)
       }
       
       # coerce user interval into units of (1 / frequency) which is what
       # is implied when we split burst records by index
-      frq_units <- units::as_units(units(frq[[1]]), mode = "standard")
+      frq_units <- units::as_units(units(.fq), mode = "standard")
       period_units <- 1 / frq_units
-
+      
       interval <- units::set_units(
         interval, 
         units(period_units), 
         mode = "standard"
       )
-
+      
       # number of rows per chunk
-      i <- units::drop_units((interval / period_units) * frq[[1]])
+      i <- units::drop_units((interval / period_units) * .fq)
       
-      a_split <- purrr::map(
-        b,
-        function(m) {
-          idx <- unname(split(seq_len(nrow(m)), ceiling(seq_len(nrow(m)) / i)))
-          b_split <- lapply(idx, function(j) m[j, , drop = FALSE])
-          
-          acc(
-            b_split, 
-            frq[[1]], 
-            st + cumsum(c(0, rep(interval, length(b_split) - 1)))
-          )
-        }
+      idx <- unname(split(seq_len(nrow(.br)), ceiling(seq_len(nrow(.br)) / i)))
+      b_split <- lapply(idx, function(j) .br[j, , drop = FALSE])
+      
+      a <- acc(
+        b_split, 
+        .fq, 
+        .st + cumsum(c(0, rep(interval, length(b_split) - 1)))
       )
-      
-      a_split[[1]]
     }
   )
   
