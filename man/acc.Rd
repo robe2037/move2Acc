@@ -8,7 +8,8 @@ acc(
   bursts = list(),
   frequency = units::set_units(double(), "Hz"),
   start = NULL,
-  id = NULL
+  id = NULL,
+  tag_id = NULL
 )
 }
 \arguments{

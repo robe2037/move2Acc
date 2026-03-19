@@ -16,16 +16,18 @@ Imports:
     rlang,
     units,
     vctrs
-Suggests: 
+Suggests:
     curl,
     dplyr,
     dygraphs,
+    ggplot2,
     keyring,
     knitr,
     leaflet,
     leafpop,
     move2,
     rmarkdown,
+    scales,
     testthat (>= 3.0.0),
     tibble,
     withr

@@ -2,7 +2,8 @@ acc_example <- function() {
   acc(
     c(acc_burst_example(1:4, 5:8, 9:12), acc_burst_example(1:4, 5:8)), 
     frequency = units::set_units(2:3, "Hz"),
-    start = as.POSIXct(c(1, 10), tz = "UTC")
+    start = as.POSIXct(c(1, 10), tz = "UTC"),
+    tag_id = "4501"
   )
 }
 
