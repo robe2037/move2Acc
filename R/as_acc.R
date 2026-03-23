@@ -86,17 +86,15 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
     acc <- purrr::reduce(acc, function(.x, .y) dplyr::coalesce(.x, .y)) 
   } else {
     acc <- purrr::reduce(acc, function(.x, .y) c(.x, .y))
-    # acc <- acc[order(starts(acc))] # Without dups this shouldn't be necessary?
+    # acc <- acc[order(starts(acc))] # TODO: may need to do this because otherwise will be ordered based on the input order of the acc_cols...
   }
   
   acc
 }
 
-as_acc_move2_ <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
   assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
   assertthat::assert_that(move2::mt_is_time_ordered(x))
-  
-  acc_cols <- acc_cols %||% active_acc_cols(x)
   
   assert_valid_acc_colset(acc_cols)
   assert_all_cols_present(x, acc_cols)
@@ -193,13 +191,11 @@ as_acc_burst <- function(acc, axes, freq, timestamp, force_int = FALSE) {
 # TODO: this should maybe be refactored to be analogous to `as_acc_burst` which doesn't
 # take input move2 `x`, just takes the data cols.
 as_acc_move2_long <- function(x,
-                              acc_cols = NULL,
+                              acc_cols,
                               min_frq = 1,
                               timestamp = move2::mt_time(x),
                               frq_digits = 4,
                               ...) {
-  acc_cols <- acc_cols %||% active_acc_cols(x)
-  
   assert_all_cols_present(x, acc_cols)
   assert_valid_acc_colset(acc_cols)
   assert_acc_cols_numeric(x, acc_cols)
@@ -260,9 +256,7 @@ as_acc_move2_long <- function(x,
   acc
 }
 
-which_acc_vals <- function(x, acc_cols = NULL) {
-  acc_cols <- acc_cols %||% active_acc_cols(x)
-  
+which_acc_vals <- function(x, acc_cols) {
   assert_valid_acc_colset(acc_cols)
   assert_all_cols_present(x, acc_cols)
   
@@ -314,10 +308,8 @@ which_acc_vals <- function(x, acc_cols = NULL) {
 #'
 #' @returns Integer vector of IDs identifying burst groups
 #' @noRd
-parse_bursts <- function(x, acc_cols = NULL, min_frq = 1, freq_tol = 1e-6) {
+parse_bursts <- function(x, acc_cols, min_frq = 1, freq_tol = 1e-6) {
   assertthat::assert_that(min_frq >= 0)
-  
-  acc_cols <- acc_cols %||% active_acc_cols(x)
   
   if (!inherits(min_frq, "units")) {
     min_frq <- units::set_units(min_frq, "Hz")

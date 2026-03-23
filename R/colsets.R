@@ -4,13 +4,9 @@
 #' These functions identify the available columns of acceleration data that can
 #' be used when constructing an `acc` vector with `as_acc()`.
 #' 
-#' `active_acc_cols()` determines the columns that will be used by default to 
+#' `acc_colsets()` determines the columns that will be used by default to 
 #' construct acceleration bursts with `as_acc()`. For information about how
 #' default columns are selected, see the details below.
-#' 
-#' `acc_colsets()` shows the full list of available acceleration column sets
-#' that are present in the input data. Any of these sets can be passed to
-#' `as_acc()` to construct bursts from non-default columns.
 #' 
 #' @details
 #' By default, if only one full set of acceleration columns is detected, it is
@@ -31,48 +27,33 @@
 #'
 #' @inheritParams as_acc
 #'
-#' @returns For `active_acc_cols()`, a character vector of acceleration column
-#'   names. For `acc_colsets()`, a list of such character vectors.
+#' @returns A list of character vectors containing names of acceleration column
+#'   sets
 #' @export
 #' @rdname acc-cols
 #'
 #' @examples
-#' active_acc_cols(albatrosses())
+#' acc_colsets(albatrosses())
 #' 
 #' # Multiple colsets may be available
-#' acc_colsets(gulls())
-#' 
-#' # But only one set is considered active
-#' active_acc_cols(gulls())
+#' acc_colsets(move2::mt_stack(albatrosses(), gulls()))
 #' 
 #' # Missing columns are not included in the set
 #' g <- gulls()
 #' g$acceleration_raw_x <- NULL
-#' active_acc_cols(g)
+#' acc_colsets(g)
 #' 
 #' # Columns with no data are also removed
 #' g$acceleration_raw_y <- NA
-#' active_acc_cols(g)
+#' acc_colsets(g)
 #' 
 #' # Some column sets must be present in their entirety
 #' alb <- albatrosses()
 #' alb$eobs_acceleration_axes <- NULL
 #' 
 #' \dontrun{
-#'   active_acc_cols(alb)
+#'   acc_colsets(alb)
 #' }
-active_acc_cols <- function(x) {
-  colsets <- acc_colsets(x)
-  
-  if (length(colsets) > 1) {
-    rlang::warn("Detected multiple valid acceleration column sets.")
-  }
-  
-  colsets
-}
-
-#' @export
-#' @rdname acc-cols
 acc_colsets <- function(x) {
   i <- which(
     purrr::map_lgl(acc_colset_config(), function(colset) colset$is_in_(x))
@@ -106,6 +87,8 @@ acc_colsets <- function(x) {
   
   if (length(colsets) == 0) {
     abort_missing_acc_cols()
+  } else if (length(colsets) > 1) {
+    rlang::warn("Detected multiple valid acceleration column sets.")
   }
   
   colsets
@@ -140,7 +123,7 @@ duplicated_acc_rows <- function(x, colsets = NULL) {
 #' data.
 #' 
 #' To determine the default columns that will be used by `as_acc()` for a given
-#' `move2` object, see [active_acc_cols()].
+#' `move2` object, see [acc_colsets()].
 #'
 #' @returns For `valid_acc_colsets()`, a list of vectors of valid column sets.
 #'   Otherwise, a character vector containing the names of the 
@@ -193,9 +176,7 @@ acc_raw_xyz_cols <- function() {
   )
 }
 
-# This defines all colsets but also the order in which colsets are selected
-# as default colsets by active_acc_cols(). Can also be expanded to accommodate
-# more metadata if needed
+# Config to define each colset group and logical checks for that colset
 #
 # is_ functions designed to check whether an input colset `x` is a valid
 # representation of the colset in the config
