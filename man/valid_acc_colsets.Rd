@@ -35,7 +35,7 @@ data.
 }
 
 To determine the default columns that will be used by \code{as_acc()} for a given
-\code{move2} object, see \code{\link[=active_acc_cols]{active_acc_cols()}}.
+\code{move2} object, see \code{\link[=acc_colsets]{acc_colsets()}}.
 }
 \examples{
 valid_acc_colsets()

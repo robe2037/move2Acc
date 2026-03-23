@@ -109,9 +109,27 @@ test_that("Can manually specify acc columns in mixed acc type data", {
     as_acc(d, acc_cols = acc_eobs_cols())
   )
   expect_identical(
-    suppressWarnings(as_acc(gulls(), acc_cols = acc_raw_xyz_cols())),
+    as_acc(gulls(), acc_cols = acc_raw_xyz_cols()),
     as_acc(d, acc_cols = acc_raw_xyz_cols())
   )
+  expect_identical(
+    suppressWarnings(as_acc(d)),
+    as_acc(d, acc_cols = list(acc_eobs_cols(), acc_raw_xyz_cols()))
+  )
+  expect_identical(
+    suppressWarnings(as_acc(d)),
+    as_acc(d, acc_cols = list(acc_raw_xyz_cols(), acc_eobs_cols()))
+  )
+})
+
+test_that("Automatically get all available colsets", {
+  m <- move2::mt_stack(gulls(), albatrosses())
+
+  expect_warning(a <- as_acc(m), "Detected multiple")
+  a2 <- c(as_acc(gulls()), as_acc(albatrosses()))
+  
+  # Ensure same ordering on comparison
+  expect_identical(a2[order(starts(a2))], a[order(starts(a))])
 })
 
 test_that("Correctly error on bad acc_cols specifications", {
@@ -190,7 +208,7 @@ test_that("Can use `min_frq` to avoid building bursts below frq thresh", {
   # If `drop = FALSE`, partitioned bursts should fill indices that were
   # previously empty, and overall vector length should stay the same.
   expect_length(
-    suppressWarnings(as_acc(gulls(), min_frq = 40, drop = FALSE)),
+    as_acc(gulls(), min_frq = 40, drop = FALSE),
     nrow(gulls())
   )
 })
@@ -239,7 +257,7 @@ test_that("Preserve time zone", {
   a$timestamp <- as.POSIXct(a$timestamp, tz = "CET")
   g$timestamp <- as.POSIXct(g$timestamp, tz = "CET")
   expect_equal(attr(starts(as_acc(a)), "tzone"), "CET")
-  expect_equal(attr(starts(suppressWarnings(as_acc(g))), "tzone"), "CET")
+  expect_equal(attr(starts(as_acc(g)), "tzone"), "CET")
 })
 
 test_that("Equivalent data in burst and long format produce same acc", {
