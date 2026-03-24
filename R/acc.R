@@ -23,7 +23,7 @@ acc <- function(bursts = list(),
     tz <- "UTC"
   }
   
-  start <- as.POSIXct(start, tz = tz)
+  start <- as.POSIXct(as.double(start), tz = tz)
   
   new_acc(
     bursts = bursts, 
