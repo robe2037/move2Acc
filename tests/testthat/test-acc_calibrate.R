@@ -34,7 +34,7 @@ test_that("acc_calibration() applies offset and slope correctly (gravity)", {
   expect_identical(result, manual)
 })
 
-test_that("acc_calibration() applies different transformations when vectorized", {
+test_that("acc_calibration() applies different calibrations when vectorized", {
   tf <- acc_calibration(offset = c(2048, 0), slope = c(0.001, 1))
   r1 <- tf[[1]](b)
   r2 <- tf[[2]](b)
@@ -89,10 +89,10 @@ test_that("acc_calibration() output has units class attached", {
   expect_true(inherits(result, "units"))
 })
 
-test_that("acc_calibration() warns on already-transformed data", {
+test_that("acc_calibration() warns on already-calibrated data", {
   tf <- acc_calibration(offset = 2048, slope = 0.001)
-  transformed <- tf[[1]](b)
-  expect_warning(tf[[1]](transformed), "already contain units")
+  calibrated <- tf[[1]](b)
+  expect_warning(tf[[1]](calibrated), "already contain units")
 })
 
 test_that("acc_calibration() handles NULL/empty burst", {
@@ -213,7 +213,7 @@ test_that("axes suppresses NA warnings for excluded axes", {
 
 test_that("axes warns on missing params for included axes", {
   tf <- acc_calibration(offset_x = 2048, slope = 0.001, axes = "XY")
-  expect_warning(tf[[1]](b), "Missing transformation parameters")
+  expect_warning(tf[[1]](b), "Missing calibration parameters")
 })
 
 test_that("axes accepts lowercase and whitespace", {
@@ -365,7 +365,7 @@ test_that("acc_calibrate() returns an acc object", {
   expect_true(inherits(bursts(a), "acc_list"))
 })
 
-test_that("acc_calibrate() applies correct transformation per burst", {
+test_that("acc_calibrate() applies correct calibration per burst", {
   a <- acc_example()
   tf <- acc_calibration(manufacturer = "eobs", tag_id = c(1000, 4000))
   result <- acc_calibrate(a, tf)
@@ -425,18 +425,18 @@ test_that("acc_calibrate() preserves NA bursts", {
   tf <- acc_calibration(offset = 2048, slope = 0.001)
   result <- acc_calibrate(a_with_na, tf)
   expect_length(result, 3)
-  # First two transformed, third stays NA
+  # First two calibrated, third stays NA
   expect_true(inherits(bursts(result)[[1]], "units"))
   expect_true(inherits(bursts(result)[[2]], "units"))
   expect_true(is.na(result[3]))
 })
 
-test_that("acc_calibrate() warns on already-transformed data", {
+test_that("acc_calibrate() warns on already-calibrated data", {
   a <- acc_example()
   tf <- acc_calibration(offset = 2048, slope = 0.001)
-  transformed <- acc_calibrate(a, tf)
+  calibrated <- acc_calibrate(a, tf)
   # Warns once per burst; capture all warnings
-  expect_warning(acc_calibrate(transformed[1], tf), "already contain units")
+  expect_warning(acc_calibrate(calibrated[1], tf), "already contain units")
 })
 
 test_that("acc_calibrate() units argument passes through", {

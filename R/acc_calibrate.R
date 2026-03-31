@@ -1,18 +1,20 @@
-#' Transform raw acceleration values to physical units in an `acc` vector
+#' Convert raw acceleration values to physical units in an `acc` vector
 #'
 #' @description
-#' Applies a burst-level transformation to every burst in an `acc` vector.
-#' Specify a transformation with [acc_calibration()].
+#' Applies calibration function(s) to bursts of raw acceleration ADC values
+#' in an `acc` vector. Specify a set of calibration functions 
+#' with [acc_calibration()].
 #'
 #' @param acc An `acc` vector.
-#' @param calibration Transformation function to apply to each burst in `acc`. See
-#'   [acc_calibration()] to specify per-element transformation functions.
+#' @param calibration An `acc_calibration` object containing the calibration 
+#'   function(s) to apply to each burst in `acc`. See [acc_calibration()] to 
+#'   specify calibration functions.
 #'
-#' @return An `acc` vector of the same length as the input with transformed
+#' @return An `acc` vector of the same length as the input with calibrated
 #'   burst matrices.
 #'
-#' @seealso [acc_calibration()] and [as_acc_calibration()] to 
-#'   construct transformation functions for use with `acc_calibrate()`.
+#' @seealso [acc_calibration()] and [as_acc_calibration()] to
+#'   construct calibrations for use with `acc_calibrate()`.
 #'
 #' @export
 #'
@@ -25,7 +27,12 @@
 #' 
 #' acc_calibrate(a, acc_calibration(offset = 2048, slope = 0.001))
 #' 
-#' acc_calibrate(a, acc_calibration(offset = c(2048, 2046), slope = 0.001))
+#' # Specify different calibration parameters for each burst.
+#' # Calibrations will be mapped to the input `acc` by index.
+#' acc_calibrate(
+#'   a, 
+#'   acc_calibration(offset = c(2048, 2046), slope = c(0.001, 0.002))
+#' )
 acc_calibrate <- function(acc, calibration) {
   if (!inherits(calibration, "acc_calibration")) {
     rlang::abort(c(
@@ -47,36 +54,36 @@ acc_calibrate <- function(acc, calibration) {
   acc
 }
 
-#' Create a list of transformation functions for raw acceleration values
-#' 
+#' Create calibration functions for raw acceleration values
+#'
 #' @description
-#' Generate a list of functions with various transformation parameters to be
-#' used in [acc_calibrate()].
-#' 
-#' Use `acc_calibration()` to specify transformation parameters manually.
+#' Generate an `acc_calibration` object containing a list of functions 
+#' with various calibration parameters to be used in [acc_calibrate()].
+#'
+#' Use `acc_calibration()` to specify calibration parameters manually.
 #' Arguments are vectorized and matched by index.
-#' 
-#' Use `as_acc_calibration()` to convert a data.frame containing rowwise
-#' burst transformation parameters to a list of transformation functions.
-#' 
-#' This allows you to specify burst-specific transformation functions to
+#'
+#' Use `as_acc_calibration()` to convert a data.frame containing row-wise
+#' burst calibration parameters to an `acc_calibration` object.
+#'
+#' This allows you to specify burst-specific calibration functions to
 #' flexibly convert raw acceleration values to physical units in `acc` vectors
 #' that contain data from heterogeneous sources.
 #'
 #' @param manufacturer Manufacturer of the tag. Currently, `"eobs"` and
 #'   `"ornitela"` are supported. For other manufacturers, leave `NULL` and
-#'   manually specify the transformation parameters below.
+#'   manually specify the calibration parameters below.
 #' @param tag_id If `manufacturer = "eobs"`, the e-obs tag ID for the tag.
 #' @param sensitivity If `manufacturer = "eobs"`, the sensitivity of the tag.
 #'   Defaults to `"low"` if none provided. Note that only e-obs generation 1 
 #'   tags have a sensitivity setting.
-#' @param offset,offset_x,offset_y,offset_z Custom offset to use in the
-#'   transformation. To specify axis-specific offsets, use `offset_x`, 
+#' @param offset,offset_x,offset_y,offset_z Custom offset to use when
+#'   calibrating. To specify axis-specific offsets, use `offset_x`,
 #'   `offset_y`, and/or `offset_z`.
 #'   
 #'   Required if no `manufacturer` is specified.
-#' @param slope,slope_x,slope_y,slope_z Custom slope to use in the
-#'   transformation. To specify axis-specific slope, use `slope_x`, 
+#' @param slope,slope_x,slope_y,slope_z Custom slope to use when
+#'   calibrating. To specify axis-specific slope, use `slope_x`,
 #'   `slope_y`, and/or `slope_z`.
 #'   
 #'   Required if no `manufacturer` is specified.
@@ -88,34 +95,35 @@ acc_calibrate <- function(acc, calibration) {
 #'   This is useful to standardize orientations across tags of different
 #'   manufacturers or generations.
 #' @param units Output units. Either `"m/s^2"` (default) or `"standard_free_fall"`.
-#' @param axes Character string specifying which axes to transform, e.g.,
+#' @param axes Character string specifying which axes to calibrate, e.g.,
 #'   `"XYZ"` (default), `"XY"`, or `"Z"`. Only these axes will appear in the
-#'   transformed output.
-#' @returns A list of transformation functions.
+#'   calibrated output.
+#'
+#' @returns An `acc_calibration` object.
 #' @export
 #' 
-#' @seealso [acc_calibrate()] to apply transformation functions to the entries
+#' @seealso [acc_calibrate()] to apply calibration functions to the entries
 #'   in an `acc` vector.
 #'
 #' @examples
-#' # Transformation function for ornitela tags:
+#' # Calibration for ornitela tags:
 #' acc_calibration(manufacturer = "ornitela")
 #' 
 #' # E-obs tag defaults vary by tag_id and sensitivity (default `"low"`)
 #' acc_calibration(manufacturer = "eobs", tag_id = 1000, sensitivity = "high")
 #' acc_calibration(manufacturer = "eobs", tag_id = 4000)
 #' 
-#' # Provide vector arguments to generate elementwise transformation functions:
+#' # Provide vector arguments to generate element-wise calibrations:
 #' acc_calibration(
 #'   manufacturer = c("eobs", "ornitela"),
 #'   tag_id = c(1000, NA)
 #' )
 #'
-#' # Transformation with explicit offset and slope
+#' # Calibration with explicit offset and slope
 #' acc_calibration(offset = 2048, slope = 1 / 512)
 #' 
-#' # Transform specific axes with axis-specific args:
-#' tfrm <- acc_calibration(
+#' # Calibrate specific axes with axis-specific args:
+#' cal <- acc_calibration(
 #'   offset_x = 2048, 
 #'   offset_y = 2046,
 #'   offset_z = 2048,
@@ -123,8 +131,8 @@ acc_calibrate <- function(acc, calibration) {
 #'   orientation_y = -1 # Flip y axis orientation
 #' )
 #' 
-#' # Apply transformations with acc_calibrate()
-#' acc_calibrate(acc_example(), tfrm)
+#' # Apply calibration with acc_calibrate()
+#' acc_calibrate(acc_example(), cal)
 acc_calibration <- function(manufacturer = NULL,
                             tag_id = NULL,
                             sensitivity = NULL,
@@ -178,7 +186,7 @@ acc_calibration <- function(manufacturer = NULL,
 #'   arguments in `acc_calibration()`
 #' @rdname acc_calibration
 as_acc_calibration <- function(df) {
-  df <- validate_transformer_df(df)
+  df <- validate_calibration_df(df)
   
   args <- list(
     tag_id = df[["tag_id"]],
@@ -272,7 +280,7 @@ acc_calibration_ <- function(manufacturer = NULL,
   
   scale <- slope * orientation
   
-  # transformation function of burst matrix `x` with resolved parameters
+  # calibration function for burst matrix `x` with resolved parameters
   function(x) {
     if (rlang::is_empty(x) || rlang::is_na(x)) {
       return(x)
@@ -280,7 +288,7 @@ acc_calibration_ <- function(manufacturer = NULL,
     
     if (inherits(x, "units")) {
       rlang::warn(
-        "Cannot transform values that already contain units. Returning input."
+        "Cannot calibrate values that already contain units. Returning input."
       )
       return(x)
     }
@@ -291,18 +299,18 @@ acc_calibration_ <- function(manufacturer = NULL,
     offset <- offset[active_axes]
     scale <- scale[active_axes]
     
-    # Warn if any active axes have no transformation parameters
+    # Warn if any active axes have no calibration parameters
     na_axes <- active_axes[is.na(offset) | is.na(scale)]
     
     if (length(na_axes) > 0) {
       rlang::warn(paste0(
-        "Missing transformation parameters for axis: ",
+        "Missing calibration parameters for axis: ",
         paste0(na_axes, collapse = ", "),
         ". These axes will produce NA values."
       ))
     }
     
-    # Apply transformation
+    # Apply calibration
     xt <- sweep(x[, active_axes, drop = FALSE], 2, offset, `-`)
     xt <- sweep(xt, 2, scale, `*`)
     
@@ -320,14 +328,14 @@ acc_calibration_ <- function(manufacturer = NULL,
 #' Default e-obs tag configuration table
 #'
 #' Returns a data.frame of known e-obs tag generations with their tag ID
-#' ranges and default transformation parameters.
+#' ranges and default calibration parameters.
 #'
 #' @return A data.frame with columns `tag_gen`, `min_tag_id`, `max_tag_id`,
 #'   `sensitivity`, `orientation_x`, `orientation_y`, `orientation_z`,
 #'   `offset`, and `slope`.
 #'
-#' @seealso [acc_calibration()] to set up tag-specific transformation specifications
-#'   and [acc_calibrate()] to transform eobs acceleration values.
+#' @seealso [acc_calibration()] to set up tag-specific calibration specifications
+#'   and [acc_calibrate()] to calibrate eobs acceleration values.
 #'
 #' @export
 eobs_default_specs <- function() {
@@ -344,7 +352,7 @@ eobs_default_specs <- function() {
   )
 }
 
-#' Look up e-obs tag transformation specifications
+#' Look up e-obs tag calibration specifications
 #'
 #' Returns the offset, slope, and per-axis orientation parameters for one or
 #' more e-obs tags based on their tag IDs and sensitivity settings. Tag
@@ -401,7 +409,7 @@ eobs_specs <- function(tag_id, sensitivity = "low") {
   )
 }
 
-#' Look up Ornitela tag transformation specifications
+#' Look up Ornitela tag calibration specifications
 #'
 #' Returns the default offset, slope, and per-axis orientation parameters for
 #' Ornitela tags.
@@ -435,7 +443,7 @@ resolve_axis_col <- function(df, col, axis) {
   }
 }
 
-validate_transformer_df <- function(df, call = rlang::caller_env()) {
+validate_calibration_df <- function(df, call = rlang::caller_env()) {
   assertthat::assert_that(is.data.frame(df))
   
   expected_cols <- c(
@@ -518,7 +526,7 @@ validate_transformer_df <- function(df, call = rlang::caller_env()) {
   
   # Validate custom rows have at least one offset and one slope value.
   # Not all axes need to be specified — bursts may not have all axes, and
-  # missing per-axis values are handled at transform time.
+  # missing per-axis values are handled at calibration time.
   col_na <- function(col) is.na(df[[col]] %||% NA)
   has_no_offset <- col_na("offset") & col_na("offset_x") & col_na("offset_y") & col_na("offset_z")
   has_no_slope <- col_na("slope") & col_na("slope_x") & col_na("slope_y") & col_na("slope_z")
