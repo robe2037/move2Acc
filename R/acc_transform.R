@@ -27,10 +27,10 @@
 #' 
 #' acc_calibrate(a, acc_calibration(offset = c(2048, 2046), slope = 0.001))
 acc_calibrate <- function(acc, calibration) {
-  if (!is.list(calibration) || !all(purrr::map_lgl(calibration, is.function))) {
+  if (!inherits(calibration, "acc_calibration")) {
     rlang::abort(c(
-      "`calibration` must be a list of functions.",
-      i = "Use `acc_calibration()` to define a set of transformation functions."
+      "`calibration` must be an `acc_calibration` object.",
+      i = "Use `acc_calibration()` or `as_acc_calibration()` to create one."
     ))
   }
   
@@ -171,7 +171,7 @@ acc_calibration <- function(manufacturer = NULL,
     }
   )
   
-  purrr::pmap(args, acc_calibration_)
+  new_acc_calibration(purrr::pmap(args, acc_calibration_))
 }
 
 #' @param df data.frame containing columns corresponding to the available
@@ -531,6 +531,16 @@ validate_transformer_df <- function(df, call = rlang::caller_env()) {
   }
   
   df
+}
+
+new_acc_calibration <- function(x) {
+  structure(x, class = c("acc_calibration", class(x)))
+}
+
+#' @export
+print.acc_calibration <- function(x, ...) {
+  cat(paste0("<acc_calibration[", length(x), "]>\n"))
+  invisible(x)
 }
 
 GRAV_CONST <- 9.80665

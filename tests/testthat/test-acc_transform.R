@@ -2,10 +2,17 @@ b <- bursts(acc_example())[[1]]
 
 # --- acc_calibration() ---------------------------------------------------
 
-test_that("acc_calibration() returns a list of functions", {
+test_that("acc_calibration() returns an acc_calibration object", {
   tf <- acc_calibration(offset = 2048, slope = 0.001)
+  expect_s3_class(tf, "acc_calibration")
   expect_true(is.list(tf))
   expect_true(all(purrr::map_lgl(tf, is.function)))
+})
+
+test_that("as_acc_calibration() returns an acc_calibration object", {
+  df <- data.frame(manufacturer = "ornitela")
+  tf <- as_acc_calibration(df)
+  expect_s3_class(tf, "acc_calibration")
 })
 
 test_that("acc_calibration() vectorizes arguments", {
@@ -399,14 +406,10 @@ test_that("acc_calibrate() recycles length-1 .f", {
   expect_true(inherits(bursts(result)[[2]], "units"))
 })
 
-test_that("acc_calibrate() errors on non-list .f", {
+test_that("acc_calibrate() errors on non-acc_calibration input", {
   a <- acc_example()
-  expect_error(acc_calibrate(a, "not a list"), "list of functions")
-})
-
-test_that("acc_calibrate() errors on non-function list elements", {
-  a <- acc_example()
-  expect_error(acc_calibrate(a, list(1, 2)), "list of functions")
+  expect_error(acc_calibrate(a, "not a calibration"), "acc_calibration")
+  expect_error(acc_calibrate(a, list(1, 2)), "acc_calibration")
 })
 
 test_that("acc_calibrate() errors on incompatible .f length", {
