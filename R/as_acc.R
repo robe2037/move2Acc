@@ -59,7 +59,7 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
     colsets <- list(colsets)
   }
   
-  dup <- duplicated_acc_rows(x, colsets = colsets)
+  dup <- duplicated_acc_rows(x, acc_cols = colsets)
   
   if (length(dup) > 0) {
     rlang::abort(c(

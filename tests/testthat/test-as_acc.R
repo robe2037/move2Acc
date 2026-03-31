@@ -122,6 +122,21 @@ test_that("Can manually specify acc columns in mixed acc type data", {
   )
 })
 
+test_that("Error on duplicate acc rows across colsets", {
+  m <- move2::mt_stack(gulls(), albatrosses())
+
+  # Add raw xyz values to rows that already have eobs data
+  eobs_rows <- which(!is.na(m$eobs_accelerations_raw))
+  m$acceleration_raw_x[eobs_rows[1:3]] <- 1
+  m$acceleration_raw_y[eobs_rows[1:3]] <- 1
+  m$acceleration_raw_z[eobs_rows[1:3]] <- 1
+
+  expect_error(
+    suppressWarnings(as_acc(m)),
+    "multiple sources of acceleration data"
+  )
+})
+
 test_that("Automatically get all available colsets", {
   m <- move2::mt_stack(gulls(), albatrosses())
 

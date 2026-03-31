@@ -94,8 +94,35 @@ acc_colsets <- function(x) {
   colsets
 }
 
-duplicated_acc_rows <- function(x, colsets = NULL) {
-  colsets <- colsets %||% acc_colsets(x)
+
+#' Identify rows with acceleration data from multiple column sets
+#'
+#' This function returns the row indices of a `move2` object 
+#' where more than one acceleration column set contains data. `as_acc()` 
+#' refuses to build `acc` objects for rows where multiple input sources exist. 
+#' These rows can be modified to remove data from additional column sets. 
+#' Alternatively, specific columns can be passed to the `acc_cols` argument 
+#' of `as_acc()` to avoid processing duplicated records.
+#'
+#' @inheritParams as_acc
+#' @param acc_cols Vector or list of column sets to check for overlap. Defaults
+#'   to the column sets detected by [acc_colsets()].
+#'
+#' @returns An integer vector of row indices with duplicated acceleration data
+#'   across column sets.
+#'
+#' @seealso 
+#'   - [acc_colsets()] to identify available column sets in a `move2` object.
+#'   - [as_acc()] to generate an `acc` vector from a `move2` object.
+#'
+#' @export
+duplicated_acc_rows <- function(x, acc_cols = NULL) {
+  colsets <- acc_cols %||% acc_colsets(x)
+  
+  # Standardize case where user supplied a single colset as a vector
+  if (!rlang::is_list(colsets)) {
+    colsets <- list(colsets)
+  }
   
   acc_rows <- unlist(
     purrr::map(
@@ -105,7 +132,6 @@ duplicated_acc_rows <- function(x, colsets = NULL) {
   )
   
   # Would be nice to return duplicated groups too so user knows what the issue is...
-  
   sort(unique(acc_rows[duplicated(acc_rows) | duplicated(acc_rows, fromLast = TRUE)]))
 }
 

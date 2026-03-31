@@ -12,7 +12,7 @@ as_acc(x, ...)
 
 \method{as_acc}{move2}(
   x,
-  acc_colsets = NULL,
+  acc_cols = NULL,
   min_frq = 1,
   merge_continuous = TRUE,
   drop = TRUE,
@@ -26,6 +26,12 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
 
 \item{...}{currently not used}
+
+\item{acc_cols}{Character vector of column names identifying the columns in
+\code{x} that contain the acceleration data to be used when constructing the
+output \code{acc} vector. By default, constructs bursts for all column sets that
+are detected in \code{x} that also contain data. See \code{\link[=valid_acc_colsets]{valid_acc_colsets()}} to
+identify supported acceleration column names.}
 
 \item{min_frq}{Numeric value indicating the
 minimum allowable within-burst data collection frequency when identifying
@@ -48,12 +54,6 @@ be dropped from the output. If \code{drop = FALSE}, then the length of the
 output will match the number of rows in the input data \code{x} and acceleration
 bursts will be stored at the index location corresponding to the start time
 of the burst.}
-
-\item{acc_cols}{Character vector of column names identifying the columns in
-\code{x} that contain the acceleration data to be used when constructing the
-output \code{acc} vector. By default, constructs bursts for all column sets that
-are detected in \code{x} that also contain data. See \code{\link[=valid_acc_colsets]{valid_acc_colsets()}} to
-identify supported acceleration column names.}
 }
 \description{
 In many cases the \code{as_acc} function will directly create an acceleration
