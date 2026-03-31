@@ -31,7 +31,7 @@ An \code{acc_colset} object for use with the \code{acc_cols} argument of
 \description{
 Define which columns in a \code{move2} object contain acceleration data.
 Use this to specify custom column names when the default column detection
-in \code{\link[=acc_colsets]{acc_colsets()}} does not apply.
+in \code{\link[=active_acc_colsets]{active_acc_colsets()}} does not apply.
 
 For long-format data (one measurement per row), specify axis columns
 directly. For burst-format data (encoded burst strings), specify the
@@ -52,6 +52,6 @@ acc_colset(
 )
 }
 \seealso{
-\code{\link[=acc_colsets]{acc_colsets()}} for automatic column detection, \code{\link[=as_acc]{as_acc()}} to
+\code{\link[=active_acc_colsets]{active_acc_colsets()}} for automatic column detection, \code{\link[=as_acc]{as_acc()}} to
 construct an \code{acc} vector.
 }
