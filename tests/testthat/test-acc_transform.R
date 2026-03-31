@@ -1,42 +1,42 @@
 b <- bursts(acc_example())[[1]]
 
-# --- acc_transformer() ---------------------------------------------------
+# --- acc_calibration() ---------------------------------------------------
 
-test_that("acc_transformer() returns a list of functions", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
+test_that("acc_calibration() returns a list of functions", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
   expect_true(is.list(tf))
   expect_true(all(purrr::map_lgl(tf, is.function)))
 })
 
-test_that("acc_transformer() vectorizes arguments", {
-  tf <- acc_transformer(offset = c(2048, 2000), slope = 0.001)
+test_that("acc_calibration() vectorizes arguments", {
+  tf <- acc_calibration(offset = c(2048, 2000), slope = 0.001)
   expect_length(tf, 2)
 })
 
-test_that("acc_transformer() applies offset and slope correctly (m/s^2)", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
+test_that("acc_calibration() applies offset and slope correctly (m/s^2)", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
   result <- tf[[1]](b)
   manual <- units::set_units(((b - 2048) * 0.001) * GRAV_CONST, "m/s^2")
   expect_identical(result, manual)
 })
 
-test_that("acc_transformer() applies offset and slope correctly (gravity)", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001, units = "standard_free_fall")
+test_that("acc_calibration() applies offset and slope correctly (gravity)", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001, units = "standard_free_fall")
   result <- tf[[1]](b)
   manual <- units::set_units(((b - 2048) * 0.001), "standard_free_fall")
   expect_identical(result, manual)
 })
 
-test_that("acc_transformer() applies different transformations when vectorized", {
-  tf <- acc_transformer(offset = c(2048, 0), slope = c(0.001, 1))
+test_that("acc_calibration() applies different transformations when vectorized", {
+  tf <- acc_calibration(offset = c(2048, 0), slope = c(0.001, 1))
   r1 <- tf[[1]](b)
   r2 <- tf[[2]](b)
   expect_identical(r1, units::set_units(((b - 2048) * 0.001) * GRAV_CONST, "m/s^2"))
   expect_identical(r2, units::set_units(((b - 0) * 1) * GRAV_CONST, "m/s^2"))
 })
 
-test_that("acc_transformer() applies scalar orientation correctly", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001, orientation = -1)
+test_that("acc_calibration() applies scalar orientation correctly", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001, orientation = -1)
   result <- tf[[1]](b)
   manual <- units::set_units(((b - 2048) * 0.001) * GRAV_CONST, "m/s^2")
 
@@ -45,8 +45,8 @@ test_that("acc_transformer() applies scalar orientation correctly", {
   expect_identical(result[, 3], manual[, 3] * -1)
 })
 
-test_that("acc_transformer() applies per-axis orientation", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001, orientation_y = -1)
+test_that("acc_calibration() applies per-axis orientation", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001, orientation_y = -1)
   result <- tf[[1]](b)
   manual <- units::set_units(((b - 2048) * 0.001) * GRAV_CONST, "m/s^2")
 
@@ -55,8 +55,8 @@ test_that("acc_transformer() applies per-axis orientation", {
   expect_identical(result[, "Z"], manual[, "Z"])
 })
 
-test_that("acc_transformer() applies per-axis offset and slope", {
-  tf <- acc_transformer(
+test_that("acc_calibration() applies per-axis offset and slope", {
+  tf <- acc_calibration(
     offset_x = 0, offset_y = 2048, offset_z = 2000,
     slope_x = 1, slope_y = 0.001, slope_z = 0.001
   )
@@ -76,66 +76,66 @@ test_that("acc_transformer() applies per-axis offset and slope", {
   )
 })
 
-test_that("acc_transformer() output has units class attached", {
-  tf <- acc_transformer(offset = 0, slope = 1)
+test_that("acc_calibration() output has units class attached", {
+  tf <- acc_calibration(offset = 0, slope = 1)
   result <- tf[[1]](b)
   expect_true(inherits(result, "units"))
 })
 
-test_that("acc_transformer() warns on already-transformed data", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
+test_that("acc_calibration() warns on already-transformed data", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
   transformed <- tf[[1]](b)
   expect_warning(tf[[1]](transformed), "already contain units")
 })
 
-test_that("acc_transformer() handles NULL/empty burst", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
+test_that("acc_calibration() handles NULL/empty burst", {
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
   expect_null(tf[[1]](NULL))
 })
 
-test_that("acc_transformer() errors on invalid units", {
+test_that("acc_calibration() errors on invalid units", {
   expect_error(
-    acc_transformer(offset = 0, slope = 1, units = "feet"),
+    acc_calibration(offset = 0, slope = 1, units = "feet"),
     "units"
   )
 })
 
-test_that("acc_transformer() errors when no manufacturer and no offset", {
+test_that("acc_calibration() errors when no manufacturer and no offset", {
   expect_error(
-    acc_transformer(slope = 0.001),
+    acc_calibration(slope = 0.001),
     "offset.*required"
   )
 })
 
-test_that("acc_transformer() errors when no manufacturer and no slope", {
+test_that("acc_calibration() errors when no manufacturer and no slope", {
   expect_error(
-    acc_transformer(offset = 2048),
+    acc_calibration(offset = 2048),
     "slope.*required"
   )
 })
 
-test_that("acc_transformer() errors on invalid orientation value", {
-  expect_error(acc_transformer(offset = 2048, slope = 0.001, orientation = 0))
+test_that("acc_calibration() errors on invalid orientation value", {
+  expect_error(acc_calibration(offset = 2048, slope = 0.001, orientation = 0))
 })
 
-test_that("acc_transformer() errors on unrecognized manufacturer", {
+test_that("acc_calibration() errors on unrecognized manufacturer", {
   expect_error(
-    acc_transformer(manufacturer = "foobar", offset = 1, slope = 1),
+    acc_calibration(manufacturer = "foobar", offset = 1, slope = 1),
     "Unrecognized manufacturer"
   )
 })
 
-test_that("acc_transformer() eobs requires tag_id", {
-  expect_error(acc_transformer(manufacturer = "eobs"), "tag_id")
+test_that("acc_calibration() eobs requires tag_id", {
+  expect_error(acc_calibration(manufacturer = "eobs"), "tag_id")
 })
 
 # --- Manufacturer defaults ---------------------------------------------------
 
-test_that("acc_transformer() with eobs uses correct defaults per generation", {
+test_that("acc_calibration() with eobs uses correct defaults per generation", {
   sp1 <- eobs_specs(1000)
   sp3 <- eobs_specs(5000)
 
-  tf <- acc_transformer(manufacturer = "eobs", tag_id = c(1000, 5000))
+  tf <- acc_calibration(manufacturer = "eobs", tag_id = c(1000, 5000))
 
   # Gen 1 (1000) has orientation_y = 1, gen 3 (5000) has orientation_y = -1
   # Y axis should have opposite signs
@@ -144,8 +144,8 @@ test_that("acc_transformer() with eobs uses correct defaults per generation", {
   expect_true(sign(y1) != sign(y3))
 })
 
-test_that("acc_transformer() with ornitela uses correct defaults", {
-  tf <- acc_transformer(manufacturer = "ornitela")
+test_that("acc_calibration() with ornitela uses correct defaults", {
+  tf <- acc_calibration(manufacturer = "ornitela")
   sp <- ornitela_specs()
   result <- tf[[1]](b)
   manual <- units::set_units(((b - sp$offset) * sp$slope) * GRAV_CONST, "m/s^2")
@@ -155,7 +155,7 @@ test_that("acc_transformer() with ornitela uses correct defaults", {
 # --- User override of manufacturer defaults -----------------------------------
 
 test_that("user-provided offset overrides manufacturer default", {
-  tf <- acc_transformer(manufacturer = "eobs", tag_id = 1000, offset_x = 9999)
+  tf <- acc_calibration(manufacturer = "eobs", tag_id = 1000, offset_x = 9999)
   sp <- eobs_specs(1000)
   r <- tf[[1]](b)
   # X should use custom offset 9999, Y/Z should use eobs default
@@ -171,7 +171,7 @@ test_that("user-provided offset overrides manufacturer default", {
 
 test_that("user-provided orientation overrides manufacturer default", {
   # eobs gen 2 default orientation_y = -1; override to 1
-  tf <- acc_transformer(manufacturer = "eobs", tag_id = 3000, orientation_y = 1)
+  tf <- acc_calibration(manufacturer = "eobs", tag_id = 3000, orientation_y = 1)
   sp <- eobs_specs(3000)
   r <- tf[[1]](b)
   # Y should use orientation 1 (not the gen 2 default of -1)
@@ -180,43 +180,43 @@ test_that("user-provided orientation overrides manufacturer default", {
     units::set_units((b[, "Y"] - sp$offset) * sp$slope * 1 * GRAV_CONST, "m/s^2")
   )
   # Confirm this differs from the default (orientation_y = -1)
-  r_default <- acc_transformer(manufacturer = "eobs", tag_id = 3000)[[1]](b)
+  r_default <- acc_calibration(manufacturer = "eobs", tag_id = 3000)[[1]](b)
   expect_identical(r[, "Y"], r_default[, "Y"] * -1)
 })
 
 test_that("NA values fall through to manufacturer default", {
-  tf <- acc_transformer(manufacturer = "eobs", tag_id = 3000, orientation_y = NA)
-  tf_default <- acc_transformer(manufacturer = "eobs", tag_id = 3000)
+  tf <- acc_calibration(manufacturer = "eobs", tag_id = 3000, orientation_y = NA)
+  tf_default <- acc_calibration(manufacturer = "eobs", tag_id = 3000)
   expect_identical(tf[[1]](b), tf_default[[1]](b))
 })
 
 # --- axes parameter -----------------------------------------------------------
 
 test_that("axes restricts output to specified axes", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001, axes = "XY")
+  tf <- acc_calibration(offset = 2048, slope = 0.001, axes = "XY")
   result <- tf[[1]](b)
   expect_equal(colnames(result), c("X", "Y"))
   expect_equal(ncol(result), 2)
 })
 
 test_that("axes suppresses NA warnings for excluded axes", {
-  tf <- acc_transformer(offset_x = 2048, slope = 0.001, axes = "X")
+  tf <- acc_calibration(offset_x = 2048, slope = 0.001, axes = "X")
   expect_no_warning(tf[[1]](b))
 })
 
 test_that("axes warns on missing params for included axes", {
-  tf <- acc_transformer(offset_x = 2048, slope = 0.001, axes = "XY")
+  tf <- acc_calibration(offset_x = 2048, slope = 0.001, axes = "XY")
   expect_warning(tf[[1]](b), "Missing transformation parameters")
 })
 
 test_that("axes accepts lowercase and whitespace", {
-  tf <- acc_transformer(offset = 2048, slope = 0.001, axes = "x y")
+  tf <- acc_calibration(offset = 2048, slope = 0.001, axes = "x y")
   result <- tf[[1]](b)
   expect_equal(colnames(result), c("X", "Y"))
 })
 
 test_that("axes vectorizes across elements", {
-  tf <- acc_transformer(
+  tf <- acc_calibration(
     offset = c(2048, 2048),
     slope = 0.001,
     axes = c("XYZ", "XY")
@@ -225,25 +225,25 @@ test_that("axes vectorizes across elements", {
   expect_equal(ncol(tf[[2]](b)), 2)
 })
 
-# --- as_acc_transformer() ------------------------------------------------
+# --- as_acc_calibration() ------------------------------------------------
 
-test_that("as_acc_transformer() creates functions from data.frame", {
+test_that("as_acc_calibration() creates functions from data.frame", {
   df <- data.frame(tag_id = c(1000, NA), manufacturer = c("eobs", "ornitela"))
-  tf <- as_acc_transformer(df)
+  tf <- as_acc_calibration(df)
   expect_length(tf, 2)
   expect_true(all(purrr::map_lgl(tf, is.function)))
 })
 
-test_that("as_acc_transformer() scalar col fills missing axis cols", {
+test_that("as_acc_calibration() scalar col fills missing axis cols", {
   df <- data.frame(tag_id = 1, offset = 2048, offset_x = NA_real_, slope = 0.001)
-  tf <- as_acc_transformer(df)
-  tf_ref <- acc_transformer(offset = 2048, slope = 0.001)
+  tf <- as_acc_calibration(df)
+  tf_ref <- acc_calibration(offset = 2048, slope = 0.001)
   expect_identical(tf[[1]](b), tf_ref[[1]](b))
 })
 
-test_that("as_acc_transformer() axis-specific col overrides scalar", {
+test_that("as_acc_calibration() axis-specific col overrides scalar", {
   df <- data.frame(tag_id = 1, offset = 2048, offset_x = 9999, slope = 0.001)
-  tf <- as_acc_transformer(df)
+  tf <- as_acc_calibration(df)
   r <- tf[[1]](b)
   # X should use axis-specific 9999, Y/Z should use scalar 2048
   expect_identical(
@@ -256,33 +256,33 @@ test_that("as_acc_transformer() axis-specific col overrides scalar", {
   )
 })
 
-test_that("as_acc_transformer() NA orientation falls back to manufacturer default", {
+test_that("as_acc_calibration() NA orientation falls back to manufacturer default", {
   df <- data.frame(tag_id = 3000, manufacturer = "eobs", orientation_y = NA_real_)
-  tf <- as_acc_transformer(df)
-  tf_default <- acc_transformer(manufacturer = "eobs", tag_id = 3000)
+  tf <- as_acc_calibration(df)
+  tf_default <- acc_calibration(manufacturer = "eobs", tag_id = 3000)
   expect_identical(tf[[1]](b), tf_default[[1]](b))
 })
 
-test_that("as_acc_transformer() warns on unrecognized columns", {
+test_that("as_acc_calibration() warns on unrecognized columns", {
   df <- data.frame(tag_id = 1, offset = 2048, slope = 0.001, notes = "test")
-  expect_warning(as_acc_transformer(df), "notes")
+  expect_warning(as_acc_calibration(df), "notes")
 })
 
-test_that("as_acc_transformer() errors on unrecognized manufacturer", {
+test_that("as_acc_calibration() errors on unrecognized manufacturer", {
   expect_error(
-    as_acc_transformer(data.frame(tag_id = 1, manufacturer = "foobar", offset = 1, slope = 1)),
+    as_acc_calibration(data.frame(tag_id = 1, manufacturer = "foobar", offset = 1, slope = 1)),
     "Unrecognized manufacturer"
   )
 })
 
-test_that("as_acc_transformer() errors when custom rows lack offset/slope", {
+test_that("as_acc_calibration() errors when custom rows lack offset/slope", {
   expect_error(
-    as_acc_transformer(data.frame(tag_id = 1)),
+    as_acc_calibration(data.frame(tag_id = 1)),
     "offset.*slope|slope.*offset"
   )
 })
 
-test_that("as_acc_transformer() handles mixed manufacturer and custom rows", {
+test_that("as_acc_calibration() handles mixed manufacturer and custom rows", {
   df <- data.frame(
     tag_id = c(1000, 3000, NA, 1),
     manufacturer = c("eobs", "eobs", "ornitela", NA),
@@ -290,7 +290,7 @@ test_that("as_acc_transformer() handles mixed manufacturer and custom rows", {
     slope = c(NA, NA, NA, 0.5),
     orientation_y = c(NA, 1, NA, -1)
   )
-  tf <- as_acc_transformer(df)
+  tf <- as_acc_calibration(df)
   expect_length(tf, 4)
 
   r <- lapply(tf, function(f) f(b))
@@ -311,9 +311,9 @@ test_that("as_acc_transformer() handles mixed manufacturer and custom rows", {
   expect_identical(r[[4]][, "Y"], units::set_units((b[, "Y"] - 100) * 0.5 * -1 * GRAV_CONST, "m/s^2"))
 })
 
-test_that("as_acc_transformer() works with no manufacturer column", {
+test_that("as_acc_calibration() works with no manufacturer column", {
   df <- data.frame(tag_id = c(1, 2), offset = c(2048, 100), slope = c(0.001, 0.5))
-  tf <- as_acc_transformer(df)
+  tf <- as_acc_calibration(df)
   expect_length(tf, 2)
 
   r1 <- tf[[1]](b)
@@ -322,51 +322,51 @@ test_that("as_acc_transformer() works with no manufacturer column", {
   expect_identical(r2, units::set_units(((b - 100) * 0.5) * GRAV_CONST, "m/s^2"))
 })
 
-test_that("as_acc_transformer() allows duplicate tag_ids across manufacturers", {
+test_that("as_acc_calibration() allows duplicate tag_ids across manufacturers", {
   df <- data.frame(tag_id = c(1000, 1000), manufacturer = c("eobs", "ornitela"))
-  tf <- as_acc_transformer(df)
+  tf <- as_acc_calibration(df)
   expect_length(tf, 2)
 })
 
-test_that("as_acc_transformer() errors on duplicate tag_ids within manufacturer", {
+test_that("as_acc_calibration() errors on duplicate tag_ids within manufacturer", {
   expect_error(
-    as_acc_transformer(
+    as_acc_calibration(
       data.frame(tag_id = c(1000, 1000), manufacturer = "eobs")
     ),
     "Duplicate"
   )  
   expect_silent(
-    as_acc_transformer(
+    as_acc_calibration(
       data.frame(tag_id = c(1000, 1000), manufacturer = c("eobs", "ornitela"))
     )
   )
 })
 
-test_that("as_acc_transformer() NA tag_ids not flagged as duplicates", {
+test_that("as_acc_calibration() NA tag_ids not flagged as duplicates", {
   df <- data.frame(tag_id = c(NA, NA), manufacturer = "ornitela")
-  tf <- as_acc_transformer(df)
+  tf <- as_acc_calibration(df)
   expect_length(tf, 2)
 })
 
-# --- acc_transform() ----------------------------------------------------------
+# --- acc_calibrate() ----------------------------------------------------------
 
-test_that("acc_transform() returns an acc object", {
+test_that("acc_calibrate() returns an acc object", {
   a <- acc_example()
-  result <- acc_transform(a, acc_transformer(offset = 2048, slope = 0.001))
+  result <- acc_calibrate(a, acc_calibration(offset = 2048, slope = 0.001))
   expect_true(is_acc(result))
   expect_length(result, length(a))
   expect_true(inherits(bursts(a), "acc_list"))
 })
 
-test_that("acc_transform() applies correct transformation per burst", {
+test_that("acc_calibrate() applies correct transformation per burst", {
   a <- acc_example()
-  tf <- acc_transformer(manufacturer = "eobs", tag_id = c(1000, 4000))
-  result <- acc_transform(a, tf)
+  tf <- acc_calibration(manufacturer = "eobs", tag_id = c(1000, 4000))
+  result <- acc_calibrate(a, tf)
 
   sp1 <- eobs_specs(1000)
   sp2 <- eobs_specs(4000)
   
-  manual_1 <- acc_transformer(
+  manual_1 <- acc_calibration(
     offset = sp1$offset, 
     slope = sp1$slope,
     orientation_x = sp1$orientation_x, 
@@ -374,7 +374,7 @@ test_that("acc_transform() applies correct transformation per burst", {
     orientation_z = sp1$orientation_z
   )[[1]]
   
-  manual_2 <- acc_transformer(
+  manual_2 <- acc_calibration(
     offset = sp2$offset, 
     slope = sp2$slope,
     orientation_x = sp2$orientation_x, 
@@ -389,38 +389,38 @@ test_that("acc_transform() applies correct transformation per burst", {
   expect_identical(bursts(result)[[2]], manual_2)
 })
 
-test_that("acc_transform() recycles length-1 .f", {
+test_that("acc_calibrate() recycles length-1 .f", {
   a <- acc_example()
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
   expect_length(tf, 1)
-  result <- acc_transform(a, tf)
+  result <- acc_calibrate(a, tf)
   expect_true(is_acc(result))
   expect_true(inherits(bursts(result)[[1]], "units"))
   expect_true(inherits(bursts(result)[[2]], "units"))
 })
 
-test_that("acc_transform() errors on non-list .f", {
+test_that("acc_calibrate() errors on non-list .f", {
   a <- acc_example()
-  expect_error(acc_transform(a, "not a list"), "list of functions")
+  expect_error(acc_calibrate(a, "not a list"), "list of functions")
 })
 
-test_that("acc_transform() errors on non-function list elements", {
+test_that("acc_calibrate() errors on non-function list elements", {
   a <- acc_example()
-  expect_error(acc_transform(a, list(1, 2)), "list of functions")
+  expect_error(acc_calibrate(a, list(1, 2)), "list of functions")
 })
 
-test_that("acc_transform() errors on incompatible .f length", {
+test_that("acc_calibrate() errors on incompatible .f length", {
   a <- acc_example()
-  tf <- acc_transformer(offset = c(1, 2, 3), slope = 0.001)
-  expect_error(acc_transform(a, tf))
+  tf <- acc_calibration(offset = c(1, 2, 3), slope = 0.001)
+  expect_error(acc_calibrate(a, tf))
 })
 
-test_that("acc_transform() preserves NA bursts", {
+test_that("acc_calibrate() preserves NA bursts", {
   a <- acc_example()
   # Insert an NA by subsetting with drop = FALSE style (vec_rep NA pattern)
   a_with_na <- c(a, acc(list(NULL), units::set_units(NA, "Hz")))
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
-  result <- acc_transform(a_with_na, tf)
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
+  result <- acc_calibrate(a_with_na, tf)
   expect_length(result, 3)
   # First two transformed, third stays NA
   expect_true(inherits(bursts(result)[[1]], "units"))
@@ -428,18 +428,18 @@ test_that("acc_transform() preserves NA bursts", {
   expect_true(is.na(result[3]))
 })
 
-test_that("acc_transform() warns on already-transformed data", {
+test_that("acc_calibrate() warns on already-transformed data", {
   a <- acc_example()
-  tf <- acc_transformer(offset = 2048, slope = 0.001)
-  transformed <- acc_transform(a, tf)
+  tf <- acc_calibration(offset = 2048, slope = 0.001)
+  transformed <- acc_calibrate(a, tf)
   # Warns once per burst; capture all warnings
-  expect_warning(acc_transform(transformed[1], tf), "already contain units")
+  expect_warning(acc_calibrate(transformed[1], tf), "already contain units")
 })
 
-test_that("acc_transform() units argument passes through", {
+test_that("acc_calibrate() units argument passes through", {
   a <- acc_example()
-  result_g <- acc_transform(a, acc_transformer(offset = 100, slope = 0.5, units = "standard_free_fall"))
-  result_ms2 <- acc_transform(a, acc_transformer(offset = 100, slope = 0.5, units = "m/s^2"))
+  result_g <- acc_calibrate(a, acc_calibration(offset = 100, slope = 0.5, units = "standard_free_fall"))
+  result_ms2 <- acc_calibrate(a, acc_calibration(offset = 100, slope = 0.5, units = "m/s^2"))
 
   expect_equal(
     as.numeric(bursts(result_ms2)[[1]]),

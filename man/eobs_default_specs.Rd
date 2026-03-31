@@ -16,6 +16,6 @@ Returns a data.frame of known e-obs tag generations with their tag ID
 ranges and default transformation parameters.
 }
 \seealso{
-\code{\link[=acc_transformer]{acc_transformer()}} to set up tag-specific transformation specifications
-and \code{\link[=acc_transform]{acc_transform()}} to transform eobs acceleration values.
+\code{\link[=acc_calibration]{acc_calibration()}} to set up tag-specific transformation specifications
+and \code{\link[=acc_calibrate]{acc_calibrate()}} to transform eobs acceleration values.
 }

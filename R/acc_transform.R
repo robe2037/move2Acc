@@ -2,45 +2,45 @@
 #'
 #' @description
 #' Applies a burst-level transformation to every burst in an `acc` vector.
-#' Specify a transformation with [acc_transformer()].
+#' Specify a transformation with [acc_calibration()].
 #'
 #' @param acc An `acc` vector.
-#' @param .f Transformation function to apply to each burst in `acc`. See
-#'   [acc_transformer()] to specify per-element transformation functions.
+#' @param calibration Transformation function to apply to each burst in `acc`. See
+#'   [acc_calibration()] to specify per-element transformation functions.
 #'
 #' @return An `acc` vector of the same length as the input with transformed
 #'   burst matrices.
 #'
-#' @seealso [acc_transformer()] and [as_acc_transformer()] to 
-#'   construct transformation functions for use with `acc_transform()`.
+#' @seealso [acc_calibration()] and [as_acc_calibration()] to 
+#'   construct transformation functions for use with `acc_calibrate()`.
 #'
 #' @export
 #'
 #' @examples
 #' a <- acc_example()
 #' 
-#' acc_transform(a, acc_transformer("ornitela"))
+#' acc_calibrate(a, acc_calibration("ornitela"))
 #' 
-#' acc_transform(a, acc_transformer("eobs", tag_id = 1000))
+#' acc_calibrate(a, acc_calibration("eobs", tag_id = 1000))
 #' 
-#' acc_transform(a, acc_transformer(offset = 2048, slope = 0.001))
+#' acc_calibrate(a, acc_calibration(offset = 2048, slope = 0.001))
 #' 
-#' acc_transform(a, acc_transformer(offset = c(2048, 2046), slope = 0.001))
-acc_transform <- function(acc, .f) {
-  if (!is.list(.f) || !all(purrr::map_lgl(.f, is.function))) {
+#' acc_calibrate(a, acc_calibration(offset = c(2048, 2046), slope = 0.001))
+acc_calibrate <- function(acc, calibration) {
+  if (!is.list(calibration) || !all(purrr::map_lgl(calibration, is.function))) {
     rlang::abort(c(
-      ".f must be a list of functions.",
-      i = "Use `acc_transformer()` to define a set of transformation functions."
+      "`calibration` must be a list of functions.",
+      i = "Use `acc_calibration()` to define a set of transformation functions."
     ))
   }
   
-  .f <- vctrs::vec_recycle(.f, length(acc))
+  calibration <- vctrs::vec_recycle(calibration, length(acc))
   
   field(acc, "bursts") <- new_acc_list(purrr::map2(
     bursts(acc),
-    .f,
-    function(.br, .transform) {
-      .transform(.br)
+    calibration,
+    function(.br, .calibrate) {
+      .calibrate(.br)
     }
   ))
   
@@ -51,12 +51,12 @@ acc_transform <- function(acc, .f) {
 #' 
 #' @description
 #' Generate a list of functions with various transformation parameters to be
-#' used in [acc_transform()].
+#' used in [acc_calibrate()].
 #' 
-#' Use `acc_transformer()` to specify transformation parameters manually.
+#' Use `acc_calibration()` to specify transformation parameters manually.
 #' Arguments are vectorized and matched by index.
 #' 
-#' Use `as_acc_transformer()` to convert a data.frame containing rowwise
+#' Use `as_acc_calibration()` to convert a data.frame containing rowwise
 #' burst transformation parameters to a list of transformation functions.
 #' 
 #' This allows you to specify burst-specific transformation functions to
@@ -94,28 +94,28 @@ acc_transform <- function(acc, .f) {
 #' @returns A list of transformation functions.
 #' @export
 #' 
-#' @seealso [acc_transform()] to apply transformation functions to the entries
+#' @seealso [acc_calibrate()] to apply transformation functions to the entries
 #'   in an `acc` vector.
 #'
 #' @examples
 #' # Transformation function for ornitela tags:
-#' acc_transformer(manufacturer = "ornitela")
+#' acc_calibration(manufacturer = "ornitela")
 #' 
 #' # E-obs tag defaults vary by tag_id and sensitivity (default `"low"`)
-#' acc_transformer(manufacturer = "eobs", tag_id = 1000, sensitivity = "high")
-#' acc_transformer(manufacturer = "eobs", tag_id = 4000)
+#' acc_calibration(manufacturer = "eobs", tag_id = 1000, sensitivity = "high")
+#' acc_calibration(manufacturer = "eobs", tag_id = 4000)
 #' 
 #' # Provide vector arguments to generate elementwise transformation functions:
-#' acc_transformer(
+#' acc_calibration(
 #'   manufacturer = c("eobs", "ornitela"),
 #'   tag_id = c(1000, NA)
 #' )
 #'
 #' # Transformation with explicit offset and slope
-#' acc_transformer(offset = 2048, slope = 1 / 512)
+#' acc_calibration(offset = 2048, slope = 1 / 512)
 #' 
 #' # Transform specific axes with axis-specific args:
-#' tfrm <- acc_transformer(
+#' tfrm <- acc_calibration(
 #'   offset_x = 2048, 
 #'   offset_y = 2046,
 #'   offset_z = 2048,
@@ -123,9 +123,9 @@ acc_transform <- function(acc, .f) {
 #'   orientation_y = -1 # Flip y axis orientation
 #' )
 #' 
-#' # Apply transformations with acc_transform()
-#' acc_transform(acc_example(), tfrm)
-acc_transformer <- function(manufacturer = NULL,
+#' # Apply transformations with acc_calibrate()
+#' acc_calibrate(acc_example(), tfrm)
+acc_calibration <- function(manufacturer = NULL,
                             tag_id = NULL,
                             sensitivity = NULL,
                             offset = NULL,
@@ -171,13 +171,13 @@ acc_transformer <- function(manufacturer = NULL,
     }
   )
   
-  purrr::pmap(args, acc_transformer_)
+  purrr::pmap(args, acc_calibration_)
 }
 
 #' @param df data.frame containing columns corresponding to the available
-#'   arguments in `acc_transformer()`
-#' @rdname acc_transformer
-as_acc_transformer <- function(df) {
+#'   arguments in `acc_calibration()`
+#' @rdname acc_calibration
+as_acc_calibration <- function(df) {
   df <- validate_transformer_df(df)
   
   args <- list(
@@ -197,10 +197,10 @@ as_acc_transformer <- function(df) {
     axes = df[["axes"]] %||% "XYZ"
   )
   
-  do.call(acc_transformer, args)
+  do.call(acc_calibration, args)
 }
 
-acc_transformer_ <- function(manufacturer = NULL,
+acc_calibration_ <- function(manufacturer = NULL,
                              tag_id = NULL,
                              sensitivity = NULL,
                              offset_x = NULL,
@@ -326,8 +326,8 @@ acc_transformer_ <- function(manufacturer = NULL,
 #'   `sensitivity`, `orientation_x`, `orientation_y`, `orientation_z`,
 #'   `offset`, and `slope`.
 #'
-#' @seealso [acc_transformer()] to set up tag-specific transformation specifications
-#'   and [acc_transform()] to transform eobs acceleration values.
+#' @seealso [acc_calibration()] to set up tag-specific transformation specifications
+#'   and [acc_calibrate()] to transform eobs acceleration values.
 #'
 #' @export
 eobs_default_specs <- function() {
