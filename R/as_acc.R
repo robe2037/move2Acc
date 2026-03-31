@@ -76,17 +76,16 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
         acc_cols = cols,
         min_frq = min_frq,
         merge_continuous = merge_continuous, 
-        drop = drop, 
+        drop = FALSE, 
         ...
       )
     }
   )
   
-  if (!drop) {
-    acc <- purrr::reduce(acc, function(.x, .y) dplyr::coalesce(.x, .y)) 
-  } else {
-    acc <- purrr::reduce(acc, function(.x, .y) c(.x, .y))
-    # acc <- acc[order(starts(acc))] # TODO: may need to do this because otherwise will be ordered based on the input order of the acc_cols...
+  acc <- purrr::reduce(acc, function(.x, .y) dplyr::coalesce(.x, .y))
+  
+  if (drop) {
+    acc <- acc[!is.na(acc)]
   }
   
   acc

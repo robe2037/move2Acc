@@ -127,9 +127,46 @@ test_that("Automatically get all available colsets", {
 
   expect_warning(a <- as_acc(m), "Detected multiple")
   a2 <- c(as_acc(gulls()), as_acc(albatrosses()))
-  
+
   # Ensure same ordering on comparison
   expect_identical(a2[order(starts(a2))], a[order(starts(a))])
+})
+
+test_that("Multi-colset coalesce preserves index alignment with drop = FALSE", {
+  m <- move2::mt_stack(gulls(), albatrosses())
+  suppressWarnings(a <- as_acc(m, drop = FALSE))
+
+  expect_length(a, nrow(m))
+})
+
+test_that("Multi-colset coalesce places values at correct indices", {
+  m <- move2::mt_stack(gulls(), albatrosses())
+
+  a_eobs <- as_acc(m, acc_cols = acc_eobs_cols(), drop = FALSE)
+  a_raw <- as_acc(m, acc_cols = acc_raw_xyz_cols(), drop = FALSE)
+  suppressWarnings(a_all <- as_acc(m, drop = FALSE))
+
+  eobs_idx <- which(!is.na(a_eobs))
+  raw_idx <- which(!is.na(a_raw))
+
+  # No overlap between colsets
+  expect_length(intersect(eobs_idx, raw_idx), 0)
+
+  # Combined non-NA count matches sum of individual colsets
+  expect_equal(sum(!is.na(a_all)), length(eobs_idx) + length(raw_idx))
+
+  # Values at each colset's indices match
+  expect_identical(a_all[eobs_idx], a_eobs[eobs_idx])
+  expect_identical(a_all[raw_idx], a_raw[raw_idx])
+})
+
+test_that("Multi-colset drop = TRUE is subset of drop = FALSE", {
+  m <- move2::mt_stack(gulls(), albatrosses())
+
+  suppressWarnings(a_drop <- as_acc(m, drop = TRUE))
+  suppressWarnings(a_no_drop <- as_acc(m, drop = FALSE))
+
+  expect_identical(a_drop, a_no_drop[!is.na(a_no_drop)])
 })
 
 test_that("Correctly error on bad acc_cols specifications", {
