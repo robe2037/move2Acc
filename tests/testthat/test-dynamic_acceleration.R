@@ -60,3 +60,65 @@ test_that("Return NULL dba on empty acc", {
   expect_null(vedba(acc()))
   expect_null(odba(acc()))
 })
+
+test_that("vedba and odba return NA for NA elements (unitless)", {
+  a <- acc_example()
+  a_na <- c(a[1], acc(list(NULL), units::set_units(NA, "Hz")), a[2])
+
+  v <- vedba(a_na)
+  o <- odba(a_na)
+
+  expect_length(v, 3)
+  expect_length(o, 3)
+  expect_true(is.na(v[2]))
+  expect_true(is.na(o[2]))
+  expect_false(is.na(v[1]))
+  expect_false(is.na(o[1]))
+})
+
+test_that("vedba and odba return units NA for NA elements (with units)", {
+  a <- acc_set_units(acc_example(), "m/s^2")
+  a_na <- c(acc(list(NULL), units::set_units(NA, "Hz")), a)
+
+  v <- vedba(a_na)
+  o <- odba(a_na)
+
+  expect_length(v, 3)
+  expect_true(is.na(v[1]))
+  expect_true(is.na(o[1]))
+  expect_s3_class(v, "units")
+  expect_s3_class(o, "units")
+})
+
+test_that("dba uses first available units for output", {
+  a1 <- acc_set_units(acc_example()[1], "m/s^2")
+  a2 <- acc_set_units(acc_example()[2], "standard_free_fall")
+
+  v1 <- vedba(c(a1, a2))
+  o1 <- odba(c(a1, a2))
+  
+  expect_s3_class(v1, "units")
+  expect_s3_class(o1, "units")
+  expect_equal(units(v1)$numerator, "m")
+  expect_equal(units(v1)$denominator, c("s", "s"))
+  expect_equal(units(o1)$numerator, "m")
+  expect_equal(units(o1)$denominator, c("s", "s"))
+  
+  v2 <- vedba(c(a2, a1))
+  o2 <- odba(c(a2, a1))
+  
+  expect_true(inherits(v2, "units"))
+  expect_true(inherits(o2, "units"))
+  expect_equal(units(v2)$numerator, "standard_free_fall")
+  expect_equal(units(o2)$numerator, "standard_free_fall")
+  
+  expect_equal(as.numeric(rev(v2) * 9.80665), as.numeric(v1))
+  expect_equal(as.numeric(rev(o2) * 9.80665), as.numeric(o1))
+})
+
+test_that("vedba and odba error on mixed unitless and units bursts", {
+  a <- c(acc_example()[1], acc_set_units(acc_example()[2], "m/s^2"))
+
+  expect_error(vedba(a), "Can't combine")
+  expect_error(odba(a), "Can't combine")
+})

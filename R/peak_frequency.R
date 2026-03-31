@@ -30,6 +30,10 @@ peak_frequency <- function(x, resolution = NA) {
 
 # Peak frequency for a single burst and frq
 peak_frq_ <- function(burst, frq, resolution = NA) {
+  if (rlang::is_empty(burst) || rlang::is_na(burst)) {
+    return(NA_real_)
+  }
+  
   if (inherits(burst, "units")) {
     burst <- units::drop_units(burst)
   }

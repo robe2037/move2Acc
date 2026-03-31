@@ -117,6 +117,17 @@ test_that("Resolution alows to identify partial frequencies", {
   expect_equal((((p / .025) + .5) %% 1) - .5, rep(0, 10))
 })
 
+test_that("peak_frequency returns NA for NA elements", {
+  a <- acc_example()
+  a_na <- c(a[1], acc(list(NULL), units::set_units(NA, "Hz")), a[2])
+
+  result <- peak_frequency(a_na)
+
+  expect_length(result, 3)
+  expect_identical(result[[2]], NA_real_)
+  expect_false(is.na(result[[1]][[1]]))
+})
+
 test_that("works with and without units", {
   acc_l <- acc_burst_example(c(1:5, 5:1, 1:5), rep(c(4, 3, 4), 5))
   
