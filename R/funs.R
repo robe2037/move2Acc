@@ -91,6 +91,18 @@ burst_n <- function(x) {
   purrr::map_int(bursts(x), function(b) nrow(b) %||% NA_integer_)
 }
 
+#' @export
+#' @rdname explore-functions
+burst_units <- function(x) {
+  map_acc(
+    x, 
+    function(.br) {
+      tryCatch(as.character(units(.br)), error = function(cnd) NA_character_)
+    },
+    simplify = TRUE
+  )
+}
+
 #' Filter an acc vector by burst frequency
 #'
 #' @param x An `acc` vector

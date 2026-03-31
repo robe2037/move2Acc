@@ -11,6 +11,7 @@
 \alias{starts}
 \alias{burst_dur}
 \alias{burst_n}
+\alias{burst_units}
 \alias{is_acc}
 \title{Functions to explore an \code{acc} vector}
 \usage{
@@ -31,6 +32,8 @@ starts(x)
 burst_dur(x)
 
 burst_n(x)
+
+burst_units(x)
 
 is_acc(x)
 }

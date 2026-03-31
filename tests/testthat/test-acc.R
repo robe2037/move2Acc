@@ -84,3 +84,25 @@ test_that("duration is correctly calculated", {
   expect_equal(as.numeric(burst_dur(acc(acc_burst_example(1, 1), 20))), 0.05)
   expect_true(is.na(burst_dur(acc(acc_burst_example(1, 1), NA))))
 })
+
+test_that("burst_units are safely extracted", {
+  a <- acc_example()
+
+  # Unitless bursts return NA
+  expect_identical(burst_units(a), c(NA_character_, NA_character_))
+
+  # Units bursts return unit string
+  a_u <- acc_set_units(a, "m/s^2")
+  expect_identical(burst_units(a_u), c("m/s^2", "m/s^2"))
+
+  # NA acc elements return NA
+  a_na <- c(a_u[1], acc(list(NULL), units::set_units(NA, "Hz")), a_u[2])
+  expect_identical(burst_units(a_na), c("m/s^2", NA_character_, "m/s^2"))
+
+  # Mixed units are reported per element
+  a_mixed <- c(
+    acc_set_units(a[1], "m/s^2"),
+    acc_set_units(a[2], "standard_free_fall")
+  )
+  expect_identical(burst_units(a_mixed), c("m/s^2", "standard_free_fall"))
+})
