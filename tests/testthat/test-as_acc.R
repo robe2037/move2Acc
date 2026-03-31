@@ -93,12 +93,12 @@ test_that("Can manually specify acc columns to use for parsing", {
 })
 
 test_that("Can manually specify a subset of long-format cols", {
-  col <- "acceleration_raw_y"
+  col <- acc_cols(acc_y = "acceleration_raw_y")
   
   a <- as_acc(gulls(), acc_cols = col)
   i <- which_acc_vals(gulls(), acc_cols = col)
   
-  expect_equal(unlist(map_acc(a, ~ .br[, 1])), gulls()[[col]][i])
+  expect_equal(unlist(map_acc(a, ~ .br[, 1])), gulls()[[as.character(col)]][i])
 })
 
 test_that("Can manually specify acc columns in mixed acc type data", {
@@ -186,7 +186,7 @@ test_that("Multi-colset drop = TRUE is subset of drop = FALSE", {
 
 test_that("Correctly error on bad acc_cols specifications", {
   expect_error(as_acc(gulls(), acc_cols = acc_eobs_cols()), "Missing columns")
-  expect_error(as_acc(gulls(), acc_cols = "foobar"), "Invalid acc columns")
+  expect_error(as_acc(gulls(), acc_cols = "foobar"), "must be an `acc_colset`")
 })
 
 test_that("Can split long-format data into bursts by inferred frequency", {
@@ -411,5 +411,5 @@ test_that("as_acc() checks long-format coltypes", {
     as_acc(g, acc_cols = acc_raw_xyz_cols()),
     "Detected non-numeric columns"
   )
-  expect_silent(as_acc(g, acc_cols = "acceleration_raw_y"))
+  expect_silent(as_acc(g, acc_cols = acc_cols(acc_y = "acceleration_raw_y")))
 })

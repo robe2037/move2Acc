@@ -52,7 +52,14 @@ as_acc.default <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
-  colsets <- acc_cols %||% acc_colsets(x)
+  if (!rlang::is_null(acc_cols)) {
+    if (!is_acc_colset(acc_cols)) {
+      rlang::abort("`acc_cols` must be an `acc_colset` object.", i = "Use `acc_cols()`")
+    }
+    colsets <- acc_cols
+  } else {
+    colsets <- acc_colsets(x)
+  }
   
   # Standardize case where user supplied a single colset as a vector
   if (!rlang::is_list(colsets)) {
@@ -94,18 +101,24 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
 as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
   assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
   assertthat::assert_that(move2::mt_is_time_ordered(x))
-  
-  assert_valid_acc_colset(acc_cols)
+
   assert_all_cols_present(x, acc_cols)
-  
-  acc_type <- acc_cols_to_type(acc_cols)
-  
-  if (acc_type %in% c("xyz", "raw_xyz")) {
+
+  acc_type <- attr(acc_cols, "type")
+
+  if (acc_type == "long") {
     acc <- as_acc_move2_long(x, acc_cols = acc_cols, min_frq = min_frq, ...)
-  } else if (acc_type == "eobs") {
-    acc <- as_acc_move2_eobs(x, ...)
   } else if (acc_type == "burst") {
-    acc <- as_acc_move2_burst(x, ...)
+    force_int <- acc_type == "eobs" # TODO: this is where the manufacturer specific behavior starts...
+    
+    acc <- as_acc_burst(
+      x[[acc_cols[["bursts"]]]],
+      x[[acc_cols[["axes"]]]],
+      x[[acc_cols[["frequency"]]]],
+      timestamp = move2::mt_time(x),
+      force_int = force_int,
+      ...
+    )
   } else {
     abort_missing_acc_cols()
   }
@@ -196,12 +209,13 @@ as_acc_move2_long <- function(x,
                               frq_digits = 4,
                               ...) {
   assert_all_cols_present(x, acc_cols)
-  assert_valid_acc_colset(acc_cols)
   assert_acc_cols_numeric(x, acc_cols)
   assert_matched_acc_units(x, acc_cols)
-  
-  m <- as.matrix(data.frame(x)[, acc_cols])
-  colnames(m) <- toupper(regmatches(acc_cols, regexpr("(.)$", acc_cols)))
+
+  col_names <- as.character(acc_cols)
+  m <- as.matrix(data.frame(x)[, col_names])
+
+  colnames(m) <- names(acc_cols)
   
   # TODO: may want a safer way to handle units. Some acc will have units, others not
   if (inherits(x[[acc_cols[[1]]]], "units")) {
@@ -256,13 +270,14 @@ as_acc_move2_long <- function(x,
 }
 
 which_acc_vals <- function(x, acc_cols) {
-  assert_valid_acc_colset(acc_cols)
   assert_all_cols_present(x, acc_cols)
   
   x <- as.data.frame(x) # Drop sticky move2 columns
   
+  type <- attr(acc_cols, "type")
+  
   # Long-format columns only need at least one column to have data
-  if (acc_cols_to_type(acc_cols) %in% c("xyz", "raw_xyz")) {
+  if (type == "long") {
     has_vals <- which(rowSums(!is.na(x[acc_cols])) > 0)
   } else {
     has_vals <- which(rowSums(!is.na(x[acc_cols])) == length(acc_cols))

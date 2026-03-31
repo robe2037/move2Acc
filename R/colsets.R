@@ -1,3 +1,118 @@
+#' Specify acceleration data columns
+#'
+#' @description
+#' Define which columns in a `move2` object contain acceleration data.
+#' Use this to specify custom column names when the default column detection
+#' in [acc_colsets()] does not apply.
+#'
+#' For long-format data (one measurement per row), specify axis columns
+#' directly. For burst-format data (encoded burst strings), specify the
+#' columns containing the raw data, axes, and sampling frequency.
+#'
+#' @param acc_x,acc_y,acc_z Column names for the X, Y, and Z acceleration
+#'   axes in long-format data. At least one must be provided for long-format.
+#' @param bursts Column name containing raw burst strings (burst format only).
+#' @param axes Column name containing the axis labels (burst format only).
+#' @param frequency Column name containing sampling frequency (burst format
+#'   only).
+#'
+#' @returns An `acc_colset` object for use with the `acc_cols` argument of
+#'   [as_acc()].
+#'
+#' @seealso [acc_colsets()] for automatic column detection, [as_acc()] to
+#'   construct an `acc` vector.
+#'
+#' @export
+#'
+#' @examples
+#' # Long-format custom columns
+#' acc_cols(acc_x = "my_acc_x", acc_y = "my_acc_y", acc_z = "my_acc_z")
+#'
+#' # Subset of axes
+#' acc_cols(acc_x = "my_acc_x", acc_y = "my_acc_y")
+#'
+#' # Burst-format custom columns
+#' acc_cols(
+#'   bursts = "my_raw_acc",
+#'   axes = "my_axes",
+#'   frequency = "my_freq"
+#' )
+acc_cols <- function(acc_x = NULL, 
+                     acc_y = NULL, 
+                     acc_z = NULL,
+                     bursts = NULL, 
+                     axes = NULL, 
+                     frequency = NULL) {
+  long_args <- list(X = acc_x, Y = acc_y, Z = acc_z)
+  long_args <- purrr::compact(long_args)
+  
+  burst_args <- list(bursts, axes, frequency)
+  burst_args <- purrr::compact(burst_args)
+  
+  has_long <- length(long_args) > 0
+  has_burst <- length(burst_args) > 0
+  
+  if (has_long && has_burst) {
+    rlang::abort(paste0(
+      "Specify either axis columns (`acc_x`, `acc_y`, and/or `acc_z`) ",
+      "or burst columns (`bursts`, `axes`, `frequency`), not both."
+    ))
+  }
+  
+  if (!has_long && !has_burst) {
+    rlang::abort("No acc columns specified.")
+  }
+  
+  if (has_burst) {
+    if (length(burst_args) != 3) {
+      rlang::abort(
+        "Burst format requires `bursts`, `axes`, and `frequency` columns."
+      )
+    }
+    
+    new_acc_colset(
+      cols = c(bursts = bursts, axes = axes, frequency = frequency),
+      type = "burst"
+    )
+  } else {
+    new_acc_colset(
+      cols = unlist(long_args),
+      type = "long"
+    )
+  }
+}
+
+new_acc_colset <- function(cols, type, axis_names = NULL, col_map = NULL) {
+  structure(
+    cols,
+    type = type,
+    class = c("acc_colset", class(cols))
+  )
+}
+
+is_acc_colset <- function(x) {
+  inherits(x, "acc_colset")
+}
+
+#' @export
+print.acc_colset <- function(x, ...) {
+  type <- attr(x, "type")
+  if (type == "long") {
+    cat(paste0(
+      "<acc_colset> long-format [",
+      paste0(names(x), "=", unclass(x), collapse = ", "),
+      "]\n"
+    ))
+  } else {
+    cat(paste0(
+      "<acc_colset> burst-format [",
+      paste0(names(x), "=", unclass(x), collapse = ", "),
+      "]\n"
+    ))
+  }
+  invisible(x)
+}
+
 #' Identify acceleration columns present in a `move2` object
 #' 
 #' @description
@@ -67,20 +182,27 @@ acc_colsets <- function(x) {
   
   colsets <- purrr::compact(
     purrr::map(
-      poss_colsets, 
+      poss_colsets,
       function(colset) {
-        # Remove columns that don't exist in `x` or don't contain data
-        colset <- intersect(colset, colnames(x))
-        colset_present <- colset[!cols_empty(x, colset)]
+        cols_in_x <- intersect(colset, colnames(x))
+        cols_present <- cols_in_x[!cols_empty(x, cols_in_x)]
         
-        if (!identical(colset_present, colset)) {
-          if (acc_cols_to_type(colset) %in% c("eobs", "burst")) {
+        if (!identical(cols_present, as.character(colset))) {
+          if (attr(colset, "type") == "burst") {
             # Remove entire colset for types that require all cols present
             return(NULL)
           }
+          
+          # Rebuild long-format colset with only present columns
+          return(
+            new_acc_colset(
+              cols = cols_present,
+              type = attr(colset, "type")
+            )
+          )
         }
         
-        colset_present
+        colset
       }
     )
   )
@@ -165,40 +287,36 @@ valid_acc_colsets <- function() {
 #' @export
 #' @rdname valid_acc_colsets
 acc_eobs_cols <- function() {
-  c(
-    "eobs_acceleration_axes", 
-    "eobs_acceleration_sampling_frequency_per_axis", 
-    "eobs_accelerations_raw"
+  new_acc_colset(
+    cols = c(axes = "eobs_acceleration_axes", frequency = "eobs_acceleration_sampling_frequency_per_axis", bursts = "eobs_accelerations_raw"),
+    type = "burst"
   )
 }
 
 #' @export
 #' @rdname valid_acc_colsets
 acc_burst_cols <- function() {
-  c(
-    "acceleration_axes",
-    "acceleration_sampling_frequency_per_axis",
-    "accelerations_raw"
+  new_acc_colset(
+    cols = c(axes = "acceleration_axes", frequency = "acceleration_sampling_frequency_per_axis", bursts = "accelerations_raw"),
+    type = "burst"
   )
 }
 
 #' @export
 #' @rdname valid_acc_colsets
 acc_xyz_cols <- function() {
-  c(
-    "acceleration_x", 
-    "acceleration_y", 
-    "acceleration_z"
+  new_acc_colset(
+    cols = c(X = "acceleration_x", Y = "acceleration_y", Z = "acceleration_z"),
+    type = "long"
   )
 }
 
 #' @export
 #' @rdname valid_acc_colsets
 acc_raw_xyz_cols <- function() {
-  c(
-    "acceleration_raw_x", 
-    "acceleration_raw_y", 
-    "acceleration_raw_z"
+  new_acc_colset(
+    cols = c(X = "acceleration_raw_x", Y = "acceleration_raw_y", Z = "acceleration_raw_z"),
+    type = "long"
   )
 }
 
@@ -272,12 +390,6 @@ acc_types <- function() {
   purrr::map_chr(acc_colset_config(), function(colset) colset$type)
 }
 
-acc_cols_to_type <- function(acc_cols) {
-  assert_valid_acc_colset(acc_cols)
-  i <- purrr::map_lgl(valid_acc_colsets(), function(x) all(acc_cols %in% x))
-  unname(acc_types()[i])
-}
-
 abort_missing_acc_cols <- function(call = rlang::caller_env()) {
   rlang::abort(
     c(
@@ -300,17 +412,4 @@ assert_all_cols_present <- function(x, cols, call = rlang::caller_env()) {
       call = call
     )
   }
-}
-
-assert_valid_acc_colset <- function(acc_cols, call = rlang::caller_env()) {
-  if (!is_valid_acc_colset(acc_cols)) {
-    rlang::abort(
-      c(
-        "Invalid acc columns provided.",
-        x = paste0("Unexpected columns: \"", paste0(acc_cols, collapse = "\", \""), "\"")
-      ),
-      call = call
-    )
-  }
-  TRUE
 }

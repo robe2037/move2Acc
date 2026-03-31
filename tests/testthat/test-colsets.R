@@ -27,7 +27,10 @@ test_that("Correctly subset active colsets for long-format acc cols", {
   gulls_sub <- gulls_data[, setdiff(colnames(gulls_data), "acceleration_raw_y")]
   expect_identical(
     acc_colsets(gulls_sub),
-    list(raw_xyz = c("acceleration_raw_x", "acceleration_raw_z"))
+    list(raw_xyz = new_acc_colset(
+      c("acceleration_raw_x", "acceleration_raw_z"),
+      type = "long"
+    ))
   )
 })
 
@@ -59,7 +62,10 @@ test_that("Use data values to determine active colset if multiple present", {
   m[["acceleration_raw_y"]] <- NA
   
   expect_warning(acc_cols <- acc_colsets(m))
-  expect_identical(acc_cols$raw_xyz, "acceleration_raw_z")
+  expect_identical(
+    acc_cols$raw_xyz,
+    new_acc_colset("acceleration_raw_z", type = "long")
+  )
   
   # If all cols in a set are missing, then the next colset will be used
   m[["acceleration_raw_z"]] <- NA
@@ -99,9 +105,8 @@ test_that("Currently supported colsets", {
 })
 
 test_that("Can get colset type from colset", {
-  expect_equal(acc_cols_to_type(acc_eobs_cols()), "eobs")
-  expect_equal(acc_cols_to_type(acc_burst_cols()), "burst")
-  expect_equal(acc_cols_to_type(acc_xyz_cols()), "xyz")
-  expect_equal(acc_cols_to_type(acc_raw_xyz_cols()), "raw_xyz")
-  expect_error(acc_cols_to_type("foo"), "Invalid acc columns")
+  expect_equal(attr(acc_eobs_cols(), "type"), "burst")
+  expect_equal(attr(acc_burst_cols(), "type"), "burst")
+  expect_equal(attr(acc_xyz_cols(), "type"), "long")
+  expect_equal(attr(acc_raw_xyz_cols(), "type"), "long")
 })
