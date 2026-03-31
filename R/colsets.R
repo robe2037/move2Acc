@@ -26,18 +26,18 @@
 #'
 #' @examples
 #' # Long-format custom columns
-#' acc_cols(acc_x = "my_acc_x", acc_y = "my_acc_y", acc_z = "my_acc_z")
+#' acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y", acc_z = "my_acc_z")
 #'
 #' # Subset of axes
-#' acc_cols(acc_x = "my_acc_x", acc_y = "my_acc_y")
+#' acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y")
 #'
 #' # Burst-format custom columns
-#' acc_cols(
+#' acc_colset(
 #'   bursts = "my_raw_acc",
 #'   axes = "my_axes",
 #'   frequency = "my_freq"
 #' )
-acc_cols <- function(acc_x = NULL, 
+acc_colset <- function(acc_x = NULL, 
                      acc_y = NULL, 
                      acc_z = NULL,
                      bursts = NULL, 
@@ -175,7 +175,7 @@ acc_colsets <- function(x) {
   )
   
   if (length(i) == 0) {
-    abort_missing_acc_cols()
+    abort_missing_acc_colset()
   }
   
   poss_colsets <- valid_acc_colsets()[i]
@@ -208,7 +208,7 @@ acc_colsets <- function(x) {
   )
   
   if (length(colsets) == 0) {
-    abort_missing_acc_cols()
+    abort_missing_acc_colset()
   } else if (length(colsets) > 1) {
     rlang::warn("Detected multiple valid acceleration column sets.")
   }
@@ -390,7 +390,7 @@ acc_types <- function() {
   purrr::map_chr(acc_colset_config(), function(colset) colset$type)
 }
 
-abort_missing_acc_cols <- function(call = rlang::caller_env()) {
+abort_missing_acc_colset <- function(call = rlang::caller_env()) {
   rlang::abort(
     c(
       "Could not identify a full acceleration column set in the input data.",

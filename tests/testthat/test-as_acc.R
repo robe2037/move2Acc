@@ -93,7 +93,7 @@ test_that("Can manually specify acc columns to use for parsing", {
 })
 
 test_that("Can manually specify a subset of long-format cols", {
-  col <- acc_cols(acc_y = "acceleration_raw_y")
+  col <- acc_colset(acc_y = "acceleration_raw_y")
   
   a <- as_acc(gulls(), acc_cols = col)
   i <- which_acc_vals(gulls(), acc_cols = col)
@@ -411,5 +411,5 @@ test_that("as_acc() checks long-format coltypes", {
     as_acc(g, acc_cols = acc_raw_xyz_cols()),
     "Detected non-numeric columns"
   )
-  expect_silent(as_acc(g, acc_cols = acc_cols(acc_y = "acceleration_raw_y")))
+  expect_silent(as_acc(g, acc_cols = acc_colset(acc_y = "acceleration_raw_y")))
 })

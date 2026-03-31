@@ -65,7 +65,7 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
       rlang::abort(
         c(
           "`acc_cols` must be an `acc_colset` object or a list of such objects.", 
-          i = "Use `acc_cols()` to create an `acc_colset` object.")
+          i = "Use `acc_colset()` to create an `acc_colset` object.")
       )
     }
   } else {
@@ -133,7 +133,7 @@ as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, dro
       ...
     )
   } else {
-    abort_missing_acc_cols()
+    abort_missing_acc_colset()
   }
   
   if (merge_continuous) {
