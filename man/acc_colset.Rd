@@ -14,37 +14,42 @@ acc_colset(
 )
 }
 \arguments{
-\item{acc_x, acc_y, acc_z}{Column names for the X, Y, and Z acceleration
-axes in long-format data. At least one must be provided for long-format.}
+\item{acc_x, acc_y, acc_z}{In long-format data, the column name(s) for the
+X, Y, and/or Z acceleration axes.}
 
-\item{bursts}{Column name containing raw burst strings (burst format only).}
+\item{bursts}{For burst-format data, the column name containing the raw burst
+strings.}
 
-\item{axes}{Column name containing the axis labels (burst format only).}
+\item{axes}{For burst-format data, the column name containing the axis
+labels.}
 
-\item{frequency}{Column name containing sampling frequency (burst format
-only).}
+\item{frequency}{For burst-format data, the column name containing the
+sampling frequency.}
 }
 \value{
-An \code{acc_colset} object for use with the \code{acc_cols} argument of
-\code{\link[=as_acc]{as_acc()}}.
+An \code{acc_colset} object.
 }
 \description{
 Define which columns in a \code{move2} object contain acceleration data.
-Use this to specify custom column names when the default column detection
-in \code{\link[=active_acc_colsets]{active_acc_colsets()}} does not apply.
+Use this function to manually specify the columns that should be used when
+constructing an \code{acc} vector with \code{as_acc()}.
 
 For long-format data (one measurement per row), specify axis columns
-directly. For burst-format data (encoded burst strings), specify the
-columns containing the raw data, axes, and sampling frequency.
+with \code{acc_x}, \code{acc_y}, and/or \code{acc_z}.
+
+For burst-format data (where each row contains burst data in a single string),
+specify the columns containing the raw burst data, axes, and sampling
+frequency.
 }
 \examples{
-# Long-format custom columns
+# Specify the column names for long-format data for each axis
 acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y", acc_z = "my_acc_z")
 
-# Subset of axes
+# Long format data may consist of a subset of axes
 acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y")
 
-# Burst-format custom columns
+# Specify the column names for the bursts, axes, and frequency for
+# burst-format data
 acc_colset(
   bursts = "my_raw_acc",
   axes = "my_axes",
@@ -52,6 +57,6 @@ acc_colset(
 )
 }
 \seealso{
-\code{\link[=active_acc_colsets]{active_acc_colsets()}} for automatic column detection, \code{\link[=as_acc]{as_acc()}} to
-construct an \code{acc} vector.
+\code{\link[=active_acc_colsets]{active_acc_colsets()}} for automatic colset detection, \code{\link[=as_acc]{as_acc()}} to
+construct an \code{acc} vector using a colset specification.
 }

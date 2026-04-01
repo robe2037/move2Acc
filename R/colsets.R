@@ -2,36 +2,41 @@
 #'
 #' @description
 #' Define which columns in a `move2` object contain acceleration data.
-#' Use this to specify custom column names when the default column detection
-#' in [active_acc_colsets()] does not apply.
+#' Use this function to manually specify the columns that should be used when
+#' constructing an `acc` vector with `as_acc()`.
 #'
 #' For long-format data (one measurement per row), specify axis columns
-#' directly. For burst-format data (encoded burst strings), specify the
-#' columns containing the raw data, axes, and sampling frequency.
+#' with `acc_x`, `acc_y`, and/or `acc_z`.
+#' 
+#' For burst-format data (where each row contains burst data in a single string), 
+#' specify the columns containing the raw burst data, axes, and sampling 
+#' frequency.
 #'
-#' @param acc_x,acc_y,acc_z Column names for the X, Y, and Z acceleration
-#'   axes in long-format data. At least one must be provided for long-format.
-#' @param bursts Column name containing raw burst strings (burst format only).
-#' @param axes Column name containing the axis labels (burst format only).
-#' @param frequency Column name containing sampling frequency (burst format
-#'   only).
+#' @param acc_x,acc_y,acc_z In long-format data, the column name(s) for the 
+#'   X, Y, and/or Z acceleration axes.
+#' @param bursts For burst-format data, the column name containing the raw burst 
+#'   strings.
+#' @param axes For burst-format data, the column name containing the axis 
+#'   labels.
+#' @param frequency For burst-format data, the column name containing the 
+#'   sampling frequency.
 #'
-#' @returns An `acc_colset` object for use with the `acc_cols` argument of
-#'   [as_acc()].
+#' @returns An `acc_colset` object.
 #'
-#' @seealso [active_acc_colsets()] for automatic column detection, [as_acc()] to
-#'   construct an `acc` vector.
+#' @seealso [active_acc_colsets()] for automatic colset detection, [as_acc()] to
+#'   construct an `acc` vector using a colset specification.
 #'
 #' @export
 #'
 #' @examples
-#' # Long-format custom columns
+#' # Specify the column names for long-format data for each axis
 #' acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y", acc_z = "my_acc_z")
 #'
-#' # Subset of axes
+#' # Long format data may consist of a subset of axes
 #' acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y")
 #'
-#' # Burst-format custom columns
+#' # Specify the column names for the bursts, axes, and frequency for
+#' # burst-format data
 #' acc_colset(
 #'   bursts = "my_raw_acc",
 #'   axes = "my_axes",
@@ -116,36 +121,46 @@ print.acc_colset <- function(x, ...) {
 #' Identify acceleration columns present in a `move2` object
 #' 
 #' @description
-#' These functions identify the available columns of acceleration data that can
-#' be used when constructing an `acc` vector with `as_acc()`.
-#' 
-#' `active_acc_colsets()` determines the columns that will be used by default to 
-#' construct acceleration bursts with `as_acc()`. For information about how
-#' default columns are selected, see the details below.
+#' `active_acc_colsets()` determines the sets of columns that will be used 
+#' by default to construct acceleration bursts with `as_acc()`. Column sets
+#' are processed independently, but a given `move2` may contain multiple
+#' column sets with acceleration data.
 #' 
 #' @details
-#' By default, if only one full set of acceleration columns is detected, it is
-#' considered the default. Note that some column sets 
-#' ([acc_eobs_cols()], [acc_burst_cols()]) must be present in their entirety,
-#' while all others can include subsets of the full set.
+#' `move2` objects store acceleration data in two ways: long-format
+#' acceleration columns and burst-format acceleration columns.
 #' 
-#' If multiple column sets are detected, the set that contains data values is
-#' used as the default.
+#' Long-format columns store one acceleration measurement (possibly for multiple
+#' axes) in a single row. Note that
+#' not all axes need to be present for a long-format column set to be considered
+#' active in a `move2` object.
 #' 
-#' If multiple column sets are present and contain data values, sets will be
-#' selected in the order returned by [valid_acc_colsets()].
+#' Burst-format columns store a burst of acceleration data as a space-delimited
+#' string. This string must be segmented into axis-specific measurements using
+#' an associated column that indicates the axes present for the bursted data.
+#' A further column provides the sampling frequency of the burst.
+#' All three of these columns must be present for a burst-format column set
+#' to be considered active in a `move2` object.
 #' 
-#' It is not possible to reset the default column sets for a given `move2`
-#' without modifying its columns. However, you can manually provide a column
-#' set to the `acc_cols` argument of [as_acc()] to construct bursts from
-#' non-default columns.
+#' Standard long-format column sets for data from
+#' Movebank include [acc_raw_xyz_cols()] and [acc_xyz_cols()]. Standard
+#' burst-format column sets for data from Movebank include [acc_eobs_cols()]
+#' and [acc_burst_cols()].
+#' 
+#' If your input data use different column names for these columns, use this
+#' function to specify the column names that correspond to each of the
+#' axes (for long-format data) or burst data and associated metadata (for
+#' burst-format data).
 #'
 #' @inheritParams as_acc
 #'
-#' @returns A list of character vectors containing names of acceleration column
-#'   sets
+#' @returns A list of `acc_colset` objects.
+#' 
 #' @export
 #' @rdname acc-cols
+#' 
+#' @seealso [valid_acc_colsets()] for currently supported default colsets,
+#'   [as_acc()] to build an `acc` vector from a `move2` object.
 #'
 #' @examples
 #' active_acc_colsets(albatrosses())
@@ -153,7 +168,7 @@ print.acc_colset <- function(x, ...) {
 #' # Multiple colsets may be available
 #' active_acc_colsets(move2::mt_stack(albatrosses(), gulls()))
 #' 
-#' # Missing columns are not included in the set
+#' # Missing long-format axes are not included in the set
 #' g <- gulls()
 #' g$acceleration_raw_x <- NULL
 #' active_acc_colsets(g)

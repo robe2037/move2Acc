@@ -7,11 +7,13 @@
 #'   Ornitela, or similar tracking devices. Most of the time this will be 
 #'   either loaded from disk using [move2::mt_read] or downloaded using 
 #'   [move2::movebank_download_study].
-#' @param acc_cols Character vector of column names identifying the columns in
-#'   `x` that contain the acceleration data to be used when constructing the
-#'   output `acc` vector. By default, constructs bursts for all column sets that
-#'   are detected in `x` that also contain data. See [valid_acc_colsets()] to 
-#'   identify supported acceleration column names.
+#' @param acc_cols Vector or list of column sets specifying the columns of `x` 
+#'   that contain acceleration data. By default, constructs bursts for all 
+#'   column sets that are detected in `x` that also contain data 
+#'   (see [active_acc_colsets()]). 
+#'   
+#'   Use [acc_colset()] to specify a custom set
+#'   of columns to use when identifying acceleration data in `x`.
 #' @param min_frq Numeric value indicating the 
 #'   minimum allowable within-burst data collection frequency when identifying
 #'   bursts in long-format acceleration data. Any two adjacent timestamps 

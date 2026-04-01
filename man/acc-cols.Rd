@@ -13,33 +13,39 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
 }
 \value{
-A list of character vectors containing names of acceleration column
-sets
+A list of \code{acc_colset} objects.
 }
 \description{
-These functions identify the available columns of acceleration data that can
-be used when constructing an \code{acc} vector with \code{as_acc()}.
-
-\code{active_acc_colsets()} determines the columns that will be used by default to
-construct acceleration bursts with \code{as_acc()}. For information about how
-default columns are selected, see the details below.
+\code{active_acc_colsets()} determines the sets of columns that will be used
+by default to construct acceleration bursts with \code{as_acc()}. Column sets
+are processed independently, but a given \code{move2} may contain multiple
+column sets with acceleration data.
 }
 \details{
-By default, if only one full set of acceleration columns is detected, it is
-considered the default. Note that some column sets
-(\code{\link[=acc_eobs_cols]{acc_eobs_cols()}}, \code{\link[=acc_burst_cols]{acc_burst_cols()}}) must be present in their entirety,
-while all others can include subsets of the full set.
+\code{move2} objects store acceleration data in two ways: long-format
+acceleration columns and burst-format acceleration columns.
 
-If multiple column sets are detected, the set that contains data values is
-used as the default.
+Long-format columns store one acceleration measurement (possibly for multiple
+axes) in a single row. Note that
+not all axes need to be present for a long-format column set to be considered
+active in a \code{move2} object.
 
-If multiple column sets are present and contain data values, sets will be
-selected in the order returned by \code{\link[=valid_acc_colsets]{valid_acc_colsets()}}.
+Burst-format columns store a burst of acceleration data as a space-delimited
+string. This string must be segmented into axis-specific measurements using
+an associated column that indicates the axes present for the bursted data.
+A further column provides the sampling frequency of the burst.
+All three of these columns must be present for a burst-format column set
+to be considered active in a \code{move2} object.
 
-It is not possible to reset the default column sets for a given \code{move2}
-without modifying its columns. However, you can manually provide a column
-set to the \code{acc_cols} argument of \code{\link[=as_acc]{as_acc()}} to construct bursts from
-non-default columns.
+Standard long-format column sets for data from
+Movebank include \code{\link[=acc_raw_xyz_cols]{acc_raw_xyz_cols()}} and \code{\link[=acc_xyz_cols]{acc_xyz_cols()}}. Standard
+burst-format column sets for data from Movebank include \code{\link[=acc_eobs_cols]{acc_eobs_cols()}}
+and \code{\link[=acc_burst_cols]{acc_burst_cols()}}.
+
+If your input data use different column names for these columns, use this
+function to specify the column names that correspond to each of the
+axes (for long-format data) or burst data and associated metadata (for
+burst-format data).
 }
 \examples{
 active_acc_colsets(albatrosses())
@@ -47,7 +53,7 @@ active_acc_colsets(albatrosses())
 # Multiple colsets may be available
 active_acc_colsets(move2::mt_stack(albatrosses(), gulls()))
 
-# Missing columns are not included in the set
+# Missing long-format axes are not included in the set
 g <- gulls()
 g$acceleration_raw_x <- NULL
 active_acc_colsets(g)
@@ -63,4 +69,8 @@ alb$eobs_acceleration_axes <- NULL
 \dontrun{
   active_acc_colsets(alb)
 }
+}
+\seealso{
+\code{\link[=valid_acc_colsets]{valid_acc_colsets()}} for currently supported default colsets,
+\code{\link[=as_acc]{as_acc()}} to build an \code{acc} vector from a \code{move2} object.
 }
