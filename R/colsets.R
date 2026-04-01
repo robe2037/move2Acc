@@ -38,11 +38,11 @@
 #'   frequency = "my_freq"
 #' )
 acc_colset <- function(acc_x = NULL, 
-                     acc_y = NULL, 
-                     acc_z = NULL,
-                     bursts = NULL, 
-                     axes = NULL, 
-                     frequency = NULL) {
+                       acc_y = NULL, 
+                       acc_z = NULL,
+                       bursts = NULL, 
+                       axes = NULL, 
+                       frequency = NULL) {
   long_args <- list(X = acc_x, Y = acc_y, Z = acc_z)
   long_args <- purrr::compact(long_args)
   
@@ -286,7 +286,11 @@ valid_acc_colsets <- function() {
 #' @rdname valid_acc_colsets
 acc_eobs_cols <- function() {
   new_acc_colset(
-    cols = c(axes = "eobs_acceleration_axes", frequency = "eobs_acceleration_sampling_frequency_per_axis", bursts = "eobs_accelerations_raw"),
+    cols = c(
+      axes = "eobs_acceleration_axes", 
+      frequency = "eobs_acceleration_sampling_frequency_per_axis", 
+      bursts = "eobs_accelerations_raw"
+    ),
     type = "burst"
   )
 }
@@ -295,7 +299,11 @@ acc_eobs_cols <- function() {
 #' @rdname valid_acc_colsets
 acc_burst_cols <- function() {
   new_acc_colset(
-    cols = c(axes = "acceleration_axes", frequency = "acceleration_sampling_frequency_per_axis", bursts = "accelerations_raw"),
+    cols = c(
+      axes = "acceleration_axes", 
+      frequency = "acceleration_sampling_frequency_per_axis", 
+      bursts = "accelerations_raw"
+    ),
     type = "burst"
   )
 }
@@ -304,7 +312,11 @@ acc_burst_cols <- function() {
 #' @rdname valid_acc_colsets
 acc_xyz_cols <- function() {
   new_acc_colset(
-    cols = c(X = "acceleration_x", Y = "acceleration_y", Z = "acceleration_z"),
+    cols = c(
+      X = "acceleration_x", 
+      Y = "acceleration_y", 
+      Z = "acceleration_z"
+    ),
     type = "long"
   )
 }
@@ -313,7 +325,11 @@ acc_xyz_cols <- function() {
 #' @rdname valid_acc_colsets
 acc_raw_xyz_cols <- function() {
   new_acc_colset(
-    cols = c(X = "acceleration_raw_x", Y = "acceleration_raw_y", Z = "acceleration_raw_z"),
+    cols = c(
+      X = "acceleration_raw_x", 
+      Y = "acceleration_raw_y", 
+      Z = "acceleration_raw_z"
+    ),
     type = "long"
   )
 }
@@ -328,25 +344,21 @@ acc_raw_xyz_cols <- function() {
 acc_colset_config <- function() {
   list(
     eobs = list(
-      type = "eobs", 
       cols = acc_eobs_cols(), 
       is_ = function(x) is_acc_eobs_cols(x),
       is_in_ = function(x) all(acc_eobs_cols() %in% colnames(x))
     ),
     burst = list(
-      type = "burst", 
       cols = acc_burst_cols(), 
       is_ = function(x) is_acc_burst_cols(x),
       is_in_ = function(x) all(acc_burst_cols() %in% colnames(x))
     ),
     xyz = list(
-      type = "xyz", 
       cols = acc_xyz_cols(), 
       is_ = function(x) is_acc_xyz_cols(x),
       is_in_ = function(x) any(acc_xyz_cols() %in% colnames(x))
     ),
     raw_xyz = list(
-      type = "raw_xyz", 
       cols = acc_raw_xyz_cols(), 
       is_ = function(x) is_acc_raw_xyz_cols(x),
       is_in_ = function(x) any(acc_raw_xyz_cols() %in% colnames(x))
@@ -369,11 +381,18 @@ is_acc_burst_cols <- function(x) {
 }
 
 is_acc_raw_xyz_cols <- function(x) {
-  all(x %in% acc_raw_xyz_cols()) && !anyDuplicated(x)
+  is_unique_named_subset(x, acc_raw_xyz_cols())
 }
 
 is_acc_xyz_cols <- function(x) {
-  all(x %in% acc_xyz_cols()) && !anyDuplicated(x)
+  is_unique_named_subset(x, acc_xyz_cols())
+}
+
+# Check that `x` is a non-empty, non-duplicated, name-value subset of `target`
+is_unique_named_subset <- function(x, y) {
+  length(x) > 0 &&
+    anyDuplicated(names(x)) == 0 &&
+    identical(x[names(x)], y[names(x)])
 }
 
 cols_empty <- function(x, cols) {
@@ -382,10 +401,6 @@ cols_empty <- function(x, cols) {
     cols,
     function(col) all(is.na(unlist(x[[col]]))) || all(rlang::is_empty(unlist(x[[col]])))
   )
-}
-
-acc_types <- function() {
-  purrr::map_chr(acc_colset_config(), function(colset) colset$type)
 }
 
 abort_missing_acc_colset <- function(call = rlang::caller_env()) {

@@ -104,6 +104,39 @@ test_that("Currently supported colsets", {
   )
 })
 
+test_that("is_unique_named_subset correctly identifies subsets", {
+  tgt <- acc_raw_xyz_cols()
+
+  # Exact match
+  expect_true(is_unique_named_subset(tgt, tgt))
+
+  # Valid subset
+  expect_true(is_unique_named_subset(tgt[c("X", "Z")], tgt))
+  expect_true(is_unique_named_subset(tgt["Y"], tgt))
+
+  # Superset (concatenated colsets)
+  expect_false(is_unique_named_subset(c(acc_raw_xyz_cols(), acc_xyz_cols()), tgt))
+
+  # Wrong name-value mapping (Y mapped to X's column)
+  expect_false(is_unique_named_subset(
+    acc_colset(acc_y = "acceleration_raw_x"),
+    tgt
+  ))
+
+  # Duplicate names
+  expect_false(is_unique_named_subset(c(tgt["X"], tgt["X"]), tgt))
+
+  # Custom columns not in target
+  expect_false(is_unique_named_subset(acc_colset(acc_x = "my_col"), tgt))
+
+  # Empty input
+  expect_false(is_unique_named_subset(character(0), tgt))
+  
+  # Names are not required if not present in both
+  expect_true(is_unique_named_subset(c("A", "B"), c("A", "B", "C")))
+  expect_false(is_unique_named_subset(c("A", "B"), c(A = "A", B = "B", C = "C")))
+})
+
 test_that("Can get colset type from colset", {
   expect_equal(attr(acc_eobs_cols(), "type"), "burst")
   expect_equal(attr(acc_burst_cols(), "type"), "burst")
