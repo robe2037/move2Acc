@@ -52,6 +52,9 @@ as_acc.default <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+  assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
+  assertthat::assert_that(move2::mt_is_time_ordered(x))
+  
   if (!rlang::is_null(acc_cols)) {
     if (is_acc_colset(acc_cols)) {
       colsets <- acc_cols
@@ -110,16 +113,11 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
 }
 
 as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
-  assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
-  assertthat::assert_that(move2::mt_is_time_ordered(x))
-
-  assert_all_cols_present(x, acc_cols)
-
+  check_acc_cols(x, acc_cols)
+  
   acc_type <- attr(acc_cols, "type")
-
+  
   if (acc_type == "long") {
-    # We pass move2 alongside cols in long-format because burst parsing
-    # requires move2 metadata (track IDs, timestamps)
     acc <- as_acc_move2_long(x, acc_cols = acc_cols, min_frq = min_frq, ...)
   } else if (acc_type == "burst") {
     acc <- as_acc_burst(
@@ -148,7 +146,7 @@ as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, dro
 as_acc_burst <- function(acc, axes, freq, timestamp, force_int = FALSE) {
   colnms <- strsplit(as.character(axes), "")
   n_axis <- nchar(as.character(axes))
-  acc_split <- strsplit(acc, " ")
+  acc_split <- strsplit(as.character(acc), " ")
   
   if (force_int) {
     all_acc <- unlist(acc_split)
@@ -193,13 +191,9 @@ as_acc_move2_long <- function(x,
                               timestamp = move2::mt_time(x),
                               frq_digits = 4,
                               ...) {
-  assert_all_cols_present(x, acc_cols)
-  assert_acc_cols_numeric(x, acc_cols)
-  assert_matched_acc_units(x, acc_cols)
-
   col_names <- as.character(acc_cols)
   m <- as.matrix(data.frame(x)[, col_names])
-
+  
   colnames(m) <- names(acc_cols)
   
   # TODO: may want a safer way to handle units. Some acc will have units, others not
@@ -407,10 +401,38 @@ new_frq_regime <- function(n, n_next = 0, prev_run = FALSE) {
   c(start, rep(FALSE, n - 1))
 }
 
-assert_matched_acc_units <- function(x, cols) {
-  for (i in seq_len(length(cols) - 1)) {
-    assertthat::assert_that(
-      get_units(x[[cols[[1]]]]) == get_units(x[[cols[[i + 1]]]])
+check_acc_cols <- function(x, acc_cols, call = rlang::caller_env()) {
+  assert_all_cols_present(x, acc_cols, call = call)
+  
+  if (attr(acc_cols, "type") == "burst") {
+    assert_burst_col_types(x, acc_cols, call = call)
+  } else {
+    assert_matched_acc_units(x, acc_cols, call = call)
+    assert_acc_cols_numeric(x, acc_cols, call = call)
+  }
+}
+
+assert_matched_acc_units <- function(x, cols, call = rlang::caller_env()) {
+  unique_units <- unique(
+    purrr::map(
+      cols, 
+      function(col) {
+        if (inherits(x[[col]], "units")) {
+          units(x[[col]])
+        } else {
+          NA
+        }
+      }
+    )
+  )
+  
+  if (length(unique_units) != 1) {
+    rlang::abort(
+      c(
+        "Multiple units detected across input acc columns.",
+        i = "All acceleration columns must have consistent units."
+      ),
+      call = call
     )
   }
 }
@@ -432,12 +454,26 @@ assert_acc_cols_numeric <- function(x, acc_cols, call = rlang::caller_env()) {
   }
 }
 
-# Hacky unit comparison for now. Some acc cols don't come with units
-get_units <- function(x) {
-  if (inherits(x, "units")) {
-    units(x)
-  } else {
-    "None"
+assert_burst_col_types <- function(x, acc_cols, call = rlang::caller_env()) {
+  bursts_col <- acc_cols[["bursts"]]
+  axes_col <- acc_cols[["axes"]]
+  freq_col <- acc_cols[["frequency"]]
+  
+  if (!is.character(x[[bursts_col]]) && !is.factor(x[[bursts_col]])) {
+    rlang::abort(c(
+      paste0("`bursts` column \"", bursts_col, "\" must be character, not ", class(x[[bursts_col]])[1])
+    ), call = call)
+  }
+  
+  if (!is.character(x[[axes_col]]) && !is.factor(x[[axes_col]])) {
+    rlang::abort(c(
+      paste0("`axes` column \"", axes_col, "\" must be character, not ", class(x[[axes_col]])[1])
+    ), call = call)
+  }
+  
+  if (!is.numeric(x[[freq_col]])) {
+    rlang::abort(c(
+      paste0("`frequency` column \"", freq_col, "\" must be numeric, not ", class(x[[freq_col]])[1])
+    ), call = call)
   }
 }
-

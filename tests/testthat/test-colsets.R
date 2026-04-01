@@ -137,6 +137,21 @@ test_that("is_unique_named_subset correctly identifies subsets", {
   expect_false(is_unique_named_subset(c("A", "B"), c(A = "A", B = "B", C = "C")))
 })
 
+test_that("acc_colset() errors on invalid specifications", {
+  # No columns specified
+  expect_error(acc_colset(), "No acc columns")
+
+  # Both long and burst args
+  expect_error(
+    acc_colset(acc_x = "x", bursts = "b", axes = "a", frequency = "f"),
+    "not both"
+  )
+
+  # Incomplete burst args
+  expect_error(acc_colset(bursts = "b"), "requires")
+  expect_error(acc_colset(bursts = "b", axes = "a"), "requires")
+})
+
 test_that("Can get colset type from colset", {
   expect_equal(attr(acc_eobs_cols(), "type"), "burst")
   expect_equal(attr(acc_burst_cols(), "type"), "burst")
