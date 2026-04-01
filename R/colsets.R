@@ -209,8 +209,6 @@ active_acc_colsets <- function(x) {
   
   if (length(colsets) == 0) {
     abort_missing_acc_colset()
-  } else if (length(colsets) > 1) {
-    rlang::warn("Detected multiple valid acceleration column sets.")
   }
   
   colsets

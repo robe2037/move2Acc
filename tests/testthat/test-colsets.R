@@ -35,7 +35,7 @@ test_that("Correctly subset active colsets for long-format acc cols", {
 })
 
 test_that("Can find active colsets in move2 object with multiple colsets", {
-  expect_warning(cols <- active_acc_colsets(move2::mt_stack(albatrosses(), gulls())))
+  cols <- active_acc_colsets(move2::mt_stack(albatrosses(), gulls()))
   expect_identical(
     cols, 
     list(eobs = acc_eobs_cols(), raw_xyz = acc_raw_xyz_cols())
@@ -61,7 +61,7 @@ test_that("Use data values to determine active colset if multiple present", {
   m[["acceleration_raw_x"]] <- NA
   m[["acceleration_raw_y"]] <- NA
   
-  expect_warning(acc_cols <- active_acc_colsets(m))
+  acc_cols <- active_acc_colsets(m)
   expect_identical(
     acc_cols$raw_xyz,
     new_acc_colset("acceleration_raw_z", type = "long")

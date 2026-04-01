@@ -70,6 +70,10 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
     }
   } else {
     colsets <- active_acc_colsets(x)
+    
+    if (length(colsets) > 1) {
+      rlang::warn("Detected multiple valid acceleration column sets.")
+    }
   }
   
   # Standardize case where user supplied a single colset as a vector
