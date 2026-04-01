@@ -31,10 +31,6 @@
 #'   output will match the number of rows in the input data `x` and acceleration
 #'   bursts will be stored at the index location corresponding to the start time
 #'   of the burst.
-#' @param force_int Logical indicating whether to coerce burst values to
-#'   integers. Defaults to `TRUE` for e-obs data (which stores integer ADC
-#'   values as floats) and `FALSE` otherwise. Set explicitly to override the
-#'   default.
 #' @param ... currently not used
 #'
 #' @details The resulting vector will be as long as the input. This means it 
@@ -55,7 +51,7 @@ as_acc.default <- function(x, ...) {
 
 #' @rdname as_acc
 #' @export
-as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
+as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
   if (!rlang::is_null(acc_cols)) {
     if (is_acc_colset(acc_cols)) {
       colsets <- acc_cols
@@ -99,7 +95,6 @@ as_acc.move2 <- function(x, acc_cols = NULL, min_frq = 1, merge_continuous = TRU
         min_frq = min_frq,
         merge_continuous = merge_continuous,
         drop = FALSE,
-        force_int = force_int,
         ...
       )
     }
@@ -123,17 +118,16 @@ as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, dro
   acc_type <- attr(acc_cols, "type")
 
   if (acc_type == "long") {
+    # We pass move2 alongside cols in long-format because burst parsing
+    # requires move2 metadata (track IDs, timestamps)
     acc <- as_acc_move2_long(x, acc_cols = acc_cols, min_frq = min_frq, ...)
   } else if (acc_type == "burst") {
-    # Default force_int to TRUE for eobs columns, FALSE otherwise
-    force_int <- force_int %||% all(as.character(acc_cols) %in% as.character(acc_eobs_cols()))
-
     acc <- as_acc_burst(
       x[[acc_cols[["bursts"]]]],
       x[[acc_cols[["axes"]]]],
       x[[acc_cols[["frequency"]]]],
       timestamp = move2::mt_time(x),
-      force_int = force_int,
+      force_int = force_int %||% is_acc_eobs_cols(acc_cols),
       ...
     )
   } else {
@@ -149,32 +143,6 @@ as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, dro
   }
   
   acc
-}
-
-as_acc_move2_eobs <- function(x, force_int = TRUE, ...) {
-  assert_all_cols_present(x, acc_eobs_cols())
-  
-  as_acc_burst(
-    x[["eobs_accelerations_raw"]],
-    x[["eobs_acceleration_axes"]],
-    x[["eobs_acceleration_sampling_frequency_per_axis"]],
-    timestamp = move2::mt_time(x),
-    force_int = force_int,
-    ...
-  )
-}
-
-as_acc_move2_burst <- function(x, force_int = FALSE, ...) {
-  assert_all_cols_present(x, acc_burst_cols())
-  
-  as_acc_burst(
-    x[["accelerations_raw"]],
-    x[["acceleration_axes"]],
-    x[["acceleration_sampling_frequency_per_axis"]],
-    timestamp = move2::mt_time(x),
-    force_int = force_int,
-    ...
-  )
 }
 
 as_acc_burst <- function(acc, axes, freq, timestamp, force_int = FALSE) {

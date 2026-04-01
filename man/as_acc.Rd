@@ -16,7 +16,6 @@ as_acc(x, ...)
   min_frq = 1,
   merge_continuous = TRUE,
   drop = TRUE,
-  force_int = NULL,
   ...
 )
 }
@@ -55,11 +54,6 @@ be dropped from the output. If \code{drop = FALSE}, then the length of the
 output will match the number of rows in the input data \code{x} and acceleration
 bursts will be stored at the index location corresponding to the start time
 of the burst.}
-
-\item{force_int}{Logical indicating whether to coerce burst values to
-integers. Defaults to \code{TRUE} for e-obs data (which stores integer ADC
-values as floats) and \code{FALSE} otherwise. Set explicitly to override the
-default.}
 }
 \description{
 In many cases the \code{as_acc} function will directly create an acceleration
