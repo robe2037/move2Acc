@@ -4,12 +4,12 @@
 \alias{map_acc}
 \title{Apply a function to each element of an \code{acc} vector}
 \usage{
-map_acc(acc, .f, simplify = FALSE, .progress = FALSE)
+map_acc(x, .f, simplify = FALSE, .progress = FALSE)
 }
 \arguments{
-\item{acc}{An \code{acc} vector}
+\item{x}{An \code{acc} vector}
 
-\item{.f}{A function to be applied to each element of \code{acc}. This can be
+\item{.f}{A function to be applied to each element of \code{x}. This can be
 supplied in one of the following ways:
 \itemize{
 \item A named function

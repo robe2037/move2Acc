@@ -5,9 +5,9 @@
 #' in an `acc` vector. Specify a set of calibration functions 
 #' with [acc_calibration()].
 #'
-#' @param acc An `acc` vector.
-#' @param calibration An `acc_calibration` object containing the calibration 
-#'   function(s) to apply to each burst in `acc`. See [acc_calibration()] to 
+#' @param x An `acc` vector.
+#' @param calibration An `acc_calibration` object containing the calibration
+#'   function(s) to apply to each burst in `x`. See [acc_calibration()] to
 #'   specify calibration functions.
 #'
 #' @return An `acc` vector of the same length as the input with calibrated
@@ -28,30 +28,30 @@
 #' acc_calibrate(a, acc_calibration(offset = 2048, slope = 0.001))
 #' 
 #' # Specify different calibration parameters for each burst.
-#' # Calibrations will be mapped to the input `acc` by index.
+#' # Calibrations will be mapped to the input `acc` object by index.
 #' acc_calibrate(
 #'   a, 
 #'   acc_calibration(offset = c(2048, 2046), slope = c(0.001, 0.002))
 #' )
-acc_calibrate <- function(acc, calibration) {
+acc_calibrate <- function(x, calibration) {
   if (!inherits(calibration, "acc_calibration")) {
     rlang::abort(c(
       "`calibration` must be an `acc_calibration` object.",
       i = "Use `acc_calibration()` or `as_acc_calibration()` to create one."
     ))
   }
-  
-  calibration <- vctrs::vec_recycle(calibration, length(acc))
-  
-  field(acc, "bursts") <- new_acc_list(purrr::map2(
-    bursts(acc),
+
+  calibration <- vctrs::vec_recycle(calibration, length(x))
+
+  field(x, "bursts") <- new_acc_list(purrr::map2(
+    bursts(x),
     calibration,
     function(.br, .calibrate) {
       .calibrate(.br)
     }
   ))
-  
-  acc
+
+  x
 }
 
 #' Create calibration functions for raw acceleration values

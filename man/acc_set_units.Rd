@@ -4,10 +4,10 @@
 \alias{acc_set_units}
 \title{Set or convert units on burst data in an \code{acc} vector}
 \usage{
-acc_set_units(acc, units)
+acc_set_units(x, units)
 }
 \arguments{
-\item{acc}{An \code{acc} vector.}
+\item{x}{An \code{acc} vector.}
 
 \item{units}{Character specifying the target units (e.g., \code{"m/s^2"}). For
 units in terms of gravitational acceleration, use \code{"standard_free_fall"}.}

@@ -4,13 +4,13 @@
 \alias{acc_calibrate}
 \title{Convert raw acceleration values to physical units in an \code{acc} vector}
 \usage{
-acc_calibrate(acc, calibration)
+acc_calibrate(x, calibration)
 }
 \arguments{
-\item{acc}{An \code{acc} vector.}
+\item{x}{An \code{acc} vector.}
 
 \item{calibration}{An \code{acc_calibration} object containing the calibration
-function(s) to apply to each burst in \code{acc}. See \code{\link[=acc_calibration]{acc_calibration()}} to
+function(s) to apply to each burst in \code{x}. See \code{\link[=acc_calibration]{acc_calibration()}} to
 specify calibration functions.}
 }
 \value{
@@ -32,7 +32,7 @@ acc_calibrate(a, acc_calibration("eobs", tag_id = 1000))
 acc_calibrate(a, acc_calibration(offset = 2048, slope = 0.001))
 
 # Specify different calibration parameters for each burst.
-# Calibrations will be mapped to the input `acc` by index.
+# Calibrations will be mapped to the input `acc` object by index.
 acc_calibrate(
   a, 
   acc_calibration(offset = c(2048, 2046), slope = c(0.001, 0.002))

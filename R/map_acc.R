@@ -19,8 +19,8 @@
 #' - `.fq` accesses each element of the vector returned by [freqs()]
 #' - `.st` accesses each element of the vector returned by [starts()]
 #' 
-#' @param acc An `acc` vector
-#' @param .f A function to be applied to each element of `acc`. This can be
+#' @param x An `acc` vector
+#' @param .f A function to be applied to each element of `x`. This can be
 #'   supplied in one of the following ways:
 #'   - A named function
 #'   - An anonymous function (e.g., `function(.br) nrow(.br) / .fq`)
@@ -76,16 +76,16 @@
 #' try(
 #'   map_acc(a, function(.br) .br, simplify = TRUE)
 #' )
-map_acc <- function(acc, .f, simplify = FALSE, .progress = FALSE) {
-  assertthat::assert_that(inherits(acc, "acc"))
-  
+map_acc <- function(x, .f, simplify = FALSE, .progress = FALSE) {
+  assertthat::assert_that(inherits(x, "acc"))
+
   f <- as_acc_mapper(.f)
-  
-  x <- purrr::pmap(
+
+  out <- purrr::pmap(
     list(
-      .br = bursts(acc),
-      .fq = freqs(acc),
-      .st = starts(acc)
+      .br = bursts(x),
+      .fq = freqs(x),
+      .st = starts(x)
     ),
     function(.br, .fq, .st) {
       f(.br = .br, .fq = .fq, .st = .st)
@@ -94,10 +94,10 @@ map_acc <- function(acc, .f, simplify = FALSE, .progress = FALSE) {
   )
   
   if (simplify) {
-    x <- purrr::list_simplify(x)
+    out <- purrr::list_simplify(out)
   }
-  
-  x
+
+  out
 }
 
 as_acc_mapper <- function(.f) {

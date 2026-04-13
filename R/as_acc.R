@@ -145,10 +145,10 @@ as_acc_move2_ <- function(x, acc_cols, min_frq = 1, merge_continuous = TRUE, dro
   acc
 }
 
-as_acc_burst <- function(acc, axes, freq, timestamp, force_int = FALSE) {
+as_acc_burst <- function(x, axes, freq, timestamp, force_int = FALSE) {
   colnms <- strsplit(as.character(axes), "")
   n_axis <- nchar(as.character(axes))
-  acc_split <- strsplit(as.character(acc), " ")
+  acc_split <- strsplit(as.character(x), " ")
   
   if (force_int) {
     all_acc <- unlist(acc_split)

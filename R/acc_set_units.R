@@ -8,7 +8,7 @@
 #' definitions. To calibrate the raw accelerometer measurements, use 
 #' [acc_calibrate()].
 #'
-#' @param acc An `acc` vector.
+#' @param x An `acc` vector.
 #' @param units Character specifying the target units (e.g., `"m/s^2"`). For
 #'   units in terms of gravitational acceleration, use `"standard_free_fall"`.
 #'
@@ -27,12 +27,12 @@
 #' # Convert between units
 #' a_ms2 <- acc_set_units(a, "m/s^2")
 #' acc_set_units(a_ms2, "standard_free_fall")
-acc_set_units <- function(acc, units) {
-  assertthat::assert_that(inherits(acc, "acc"))
+acc_set_units <- function(x, units) {
+  assertthat::assert_that(inherits(x, "acc"))
   assertthat::assert_that(is.character(units), length(units) == 1)
 
-  field(acc, "bursts") <- new_acc_list(
-    map_acc(acc, function(.br) {
+  field(x, "bursts") <- new_acc_list(
+    map_acc(x, function(.br) {
       if (is.null(.br)) return(NULL)
       nms <- colnames(.br)
       .br <- units::set_units(.br, units, mode = "standard")
@@ -41,5 +41,5 @@ acc_set_units <- function(acc, units) {
     })
   )
 
-  acc
+  x
 }
