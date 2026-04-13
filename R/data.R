@@ -44,13 +44,13 @@ NULL
 #' @rdname example_data
 #' @export
 albatrosses <- function() {
-  assertthat::assert_that(requireNamespace("move2", quietly = TRUE))
+  rlang::check_installed("move2")
   readRDS(system.file("extdata", "albatrosses.rds", package = "move2Acc"))
 }
 
 #' @rdname example_data
 #' @export
 gulls <- function() {
-  assertthat::assert_that(requireNamespace("move2", quietly = TRUE))
+  rlang::check_installed("move2")
   readRDS(system.file("extdata", "gulls.rds", package = "move2Acc"))
 }
