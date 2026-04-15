@@ -1,123 +1,112 @@
-d <- albatrosses()
-
-# Force same ID for a simpler expected merge output for this test
-d <- move2::mt_set_track_id(d, rep("tmp", nrow(d)))
-
-# Simulate bursts that start at the end point of the previous burst
-move2::mt_time(d) <- seq(
-  min(move2::mt_time(d)), 
-  by = "12 s",
-  length.out = nrow(d)
-)
-
 test_that("Can combine adjacent bursts into single burst", {
-  a <- as_acc(d, merge_continuous = FALSE)
-  a2 <- merge_acc(a)
-  
-  expect_true(is_acc(a2))
-  expect_length(a2, 9)
-  
-  # Split unmerged into acc groups based on whether the start timestamp plus
-  # the burst duration is equal to the next start timestamp (these are records
-  # that should have been merged in a2)
-  acc_grps <- split(
-    a, 
-    cumsum(c(TRUE, diff(starts(a)) != as.numeric(burst_dur(a)[-1])))
-  )
-  
-  expect_length(acc_grps, length(a2))
-  
-  # All start timestamps after merging should correspond to the start timestamp
-  # of the first entry in each grouped acc from above
-  expect_identical(
-    as.POSIXct(
-      unname(unlist(purrr::map(acc_grps, function(x) starts(x[1])))), 
-      "UTC"
+  # 5 bursts at 10 Hz, 30 samples each (3s duration). First 3 are adjacent,
+  # then a gap, then 1 standalone, then another gap — should merge into 3.
+  a <- acc(
+    c(
+      acc_burst_example(1:30, 1:30),
+      acc_burst_example(31:60, 31:60),
+      acc_burst_example(61:90, 61:90),
+      acc_burst_example(91:120, 91:120),
+      acc_burst_example(121:150, 121:150)
     ),
-    starts(a2)
+    frequency = units::set_units(10, "Hz"),
+    start = as.POSIXct(c(0, 3, 6, 20, 50), tz = "UTC")
   )
-  # Merged bursts should match bursts formed by rbind-ing the grouped bursts
-  expect_identical(
-    bursts(a2), 
-    purrr::map(acc_grps, function(x) do.call(rbind, bursts(x))),
-    ignore_attr = TRUE
+
+  a2 <- merge_acc(a)
+
+  expect_true(is_acc(a2))
+  expect_length(a2, 3)
+
+  expect_equal(n_samples(a2), as.integer(c(90, 30, 30)))
+  expect_identical(starts(a2), as.POSIXct(c(0, 20, 50), tz = "UTC"))
+
+  # Merged burst data matches concatenated originals
+  expect_equal(
+    bursts(a2)[[1]],
+    do.call(rbind, bursts(a)[1:3])
   )
+  expect_equal(bursts(a2)[[2]], bursts(a)[[4]])
+  expect_equal(bursts(a2)[[3]], bursts(a)[[5]])
 })
 
 test_that("Can merge with drop = FALSE", {
+  skip_if_not_installed("move2")
+  d <- albatrosses()
+  d <- move2::mt_set_track_id(d, rep("tmp", nrow(d)))
+  move2::mt_time(d) <- seq(
+    min(move2::mt_time(d)), by = "12 s", length.out = nrow(d)
+  )
   a <- as_acc(d, merge_continuous = TRUE, drop = FALSE)
-  
+
   expect_length(a, nrow(d))
   expect_length(a[!is.na(a)], 9)
   expect_identical(a[!is.na(a)], as_acc(d))
 })
 
 test_that("Same merged result if drop = TRUE regardless of NAs", {
-  a1 <- as_acc(d, merge_continuous = FALSE)
-  a2 <- as_acc(d, merge_continuous = FALSE, drop = FALSE)
+  # Construct an acc with NAs interspersed (simulating drop = FALSE output)
+  a1 <- acc(
+    c(
+      acc_burst_example(1:30, 1:30),
+      acc_burst_example(31:60, 31:60),
+      acc_burst_example(61:90, 61:90)
+    ),
+    frequency = units::set_units(10, "Hz"),
+    start = as.POSIXct(c(0, 3, 6), tz = "UTC")
+  )
+  a2 <- c(
+    a1[1],
+    acc(list(NULL), units::set_units(NA, "Hz")),
+    a1[2:3]
+  )
   expect_identical(merge_acc(a1), merge_acc(a2))
 })
 
 test_that("Can combine adjacent bursts with embedded NA", {
-  times <- seq(
-    min(move2::mt_time(d)), 
-    by = "12 s",
-    length.out = nrow(d)
-  )
-  
-  # Simulate an adjacent time gap across a NA value at position 7-8
-  times[7:length(times)] <- times[7:length(times)] - 12
-  
-  # Simulate bursts that start at the end point of the previous burst
-  d2 <- d
-  move2::mt_time(d2) <- times
-  
-  a <- as_acc(d2, merge_continuous = FALSE, drop = FALSE)
-  a2 <- merge_acc(a)
-  
-  expect_true(is_acc(a2))
-  expect_length(a2, 8)
-  
-  # Split unmerged into acc groups based on whether the start timestamp plus
-  # the burst duration is equal to the next start timestamp (these are records
-  # that should have been merged in a2)
-  i <- !is.na(a)
-  acc_grps <- split(
-    a[i], 
-    cumsum(c(TRUE, diff(starts(a[i])) != as.numeric(burst_dur(a[i])[-1])))
-  )
-  
-  expect_length(acc_grps, length(a2))
-  
-  # All start timestamps after merging should correspond to the start timestamp
-  # of the first entry in each grouped acc from above
-  expect_identical(
-    as.POSIXct(
-      unname(unlist(purrr::map(acc_grps, function(x) starts(x[1])))), 
-      "UTC"
+  # 4 bursts with an NA at position 3. Bursts 1-2 are adjacent and should
+  # merge. Bursts 4-5 are adjacent and should merge. The NA is skipped.
+  a <- c(
+    acc(
+      c(acc_burst_example(1:30), acc_burst_example(31:60)),
+      frequency = units::set_units(10, "Hz"),
+      start = as.POSIXct(c(0, 3), tz = "UTC")
     ),
-    starts(a2)
+    acc(list(NULL), units::set_units(NA, "Hz")),
+    acc(
+      c(acc_burst_example(61:90), acc_burst_example(91:120)),
+      frequency = units::set_units(10, "Hz"),
+      start = as.POSIXct(c(20, 23), tz = "UTC")
+    )
   )
-  # Merged bursts should match bursts formed by rbind-ing the grouped bursts
-  expect_identical(
-    bursts(a2), 
-    purrr::map(acc_grps, function(x) do.call(rbind, bursts(x))),
-    ignore_attr = TRUE
-  )
+
+  a2 <- merge_acc(a)
+
+  expect_true(is_acc(a2))
+  expect_length(a2, 2)
+  expect_equal(n_samples(a2), as.integer(c(60, 60)))
+  expect_identical(starts(a2), as.POSIXct(c(0, 20), tz = "UTC"))
 })
 
-test_that("drop = FALSE places merged bursts at correct indices", {                                                                                                                             
-  a <- as_acc(d, merge_continuous = TRUE, drop = FALSE)   
-  
-  # Start times of merged bursts should match the dropped version                                                                                                                               
+test_that("drop = FALSE places merged bursts at correct indices", {
+  skip_if_not_installed("move2")
+  d <- albatrosses()
+  d <- move2::mt_set_track_id(d, rep("tmp", nrow(d)))
+  move2::mt_time(d) <- seq(
+    min(move2::mt_time(d)), by = "12 s", length.out = nrow(d)
+  )
+  a <- as_acc(d, merge_continuous = TRUE, drop = FALSE)
+
+  # Start times of merged bursts should match the dropped version
   expect_identical(starts(a[!is.na(a)]), starts(as_acc(d)))
-  
-  # Positions of non-NA entries should be a subset of the original burst positions                                                                                                              
-  a_raw <- as_acc(d, merge_continuous = FALSE, drop = FALSE)                                                                                                                                    
-  expect_true(all(which(!is.na(a)) %in% which(!is.na(a_raw))))                                                                                                                                  
+
+  # Positions of non-NA entries should be a subset of the original burst positions
+  a_raw <- as_acc(d, merge_continuous = FALSE, drop = FALSE)
+  expect_true(all(which(!is.na(a)) %in% which(!is.na(a_raw))))
 })
 
 test_that("Non-mergeable bursts ignore merge arg regardless of drop arg", {
+  skip_if_not_installed("move2")
   g1 <- as_acc(gulls(), drop = FALSE, acc_cols = acc_raw_xyz_cols())
   g2 <- as_acc(gulls(), merge_continuous = FALSE, drop = FALSE, acc_cols = acc_raw_xyz_cols())
   expect_identical(g1, g2)
@@ -145,95 +134,59 @@ test_that("Partial merge with drop = FALSE respects ID boundaries", {
 }) 
 
 test_that("Do not combine bursts with different axes", {
-  t <- data.frame(
-    id = 1,
-    acceleration_axes = c("XYZ", "XYZ", "XY", "XYZ"),
-    acceleration_sampling_frequency_per_axis = 10,
-    accelerations_raw = c(
-      paste0(rep(1:5, each = 3), collapse = " "),
-      paste0(rep(6:10, each = 3), collapse = " "),
-      paste0(rep(11:15, each = 2), collapse = " "),
-      paste0(rep(16:20, each = 3), collapse = " ")
-    ),
-    timestamp = as.POSIXct(c(1, 1.5, 2, 2.5), "UTC"),
-    x = 1,
-    y = 1
+  # 3 adjacent bursts: XYZ, XY, XYZ. Middle burst has different axes so
+  # none should merge despite being temporally adjacent.
+  b_xyz1 <- matrix(1:30, ncol = 3, dimnames = list(NULL, c("X", "Y", "Z")))
+  b_xy   <- matrix(1:10, ncol = 2, dimnames = list(NULL, c("X", "Y")))
+  b_xyz2 <- matrix(31:45, ncol = 3, dimnames = list(NULL, c("X", "Y", "Z")))
+
+  a <- acc(
+    list(b_xyz1, b_xy, b_xyz2),
+    frequency = units::set_units(10, "Hz"),
+    start = as.POSIXct(c(0, 1, 1.5), tz = "UTC")
   )
-  
-  m <- move2::mt_as_move2(
-    t,
-    coords = c("x", "y"),
-    time_column = "timestamp",
-    track_id_column = "id"
-  )
-  
-  a <- as_acc(m)
-  
-  expect_length(a, 3)
+
+  expect_identical(merge_acc(a), a)
   expect_identical(
     purrr::map(bursts(a), colnames),
     list(c("X", "Y", "Z"), c("X", "Y"), c("X", "Y", "Z"))
   )
-  expect_identical(n_samples(a), as.integer(c(10, 5, 5)))
 })
 
 test_that("Do not combine bursts with different frequencies", {
-  t <- data.frame(
-    id = 1,
-    acceleration_axes = "XYZ",
-    acceleration_sampling_frequency_per_axis = c(10, 10, 20, 10),
-    accelerations_raw = c(
-      paste0(rep(1:5, each = 3), collapse = " "),
-      paste0(rep(6:10, each = 3), collapse = " "),
-      paste0(rep(11:20, each = 3), collapse = " "),
-      paste0(rep(21:25, each = 3), collapse = " ")
+  # 3 adjacent bursts with frequencies 10, 20, 10 Hz. Frequency mismatch
+  # should prevent any merging.
+  a <- acc(
+    c(
+      acc_burst_example(1:20, 1:20),
+      acc_burst_example(21:40, 21:40),
+      acc_burst_example(41:50, 41:50)
     ),
-    timestamp = as.POSIXct(c(1, 1.5, 2, 2.5), "UTC"),
-    x = 1,
-    y = 1
+    frequency = units::set_units(c(10, 20, 10), "Hz"),
+    start = as.POSIXct(c(0, 2, 3), tz = "UTC")
   )
-  
-  m <- move2::mt_as_move2(
-    t,
-    coords = c("x", "y"),
-    time_column = "timestamp",
-    track_id_column = "id"
-  )
-  
-  a <- as_acc(m)
-  
-  expect_length(a, 3)
+
+  expect_identical(merge_acc(a), a)
   expect_identical(as.numeric(freqs(a)), c(10, 20, 10))
-  expect_identical(as.numeric(burst_dur(a)), c(1, 0.5, 0.5))
 })
 
 test_that("Do not combine bursts with different IDs", {
-  t <- data.frame(
-    id = c(1, 1, 1, 2),
-    acceleration_axes = "XYZ",
-    acceleration_sampling_frequency_per_axis = 10,
-    accelerations_raw = c(
-      paste0(rep(1:5, each = 3), collapse = " "),
-      paste0(rep(6:10, each = 3), collapse = " "),
-      paste0(rep(11:15, each = 3), collapse = " "),
-      paste0(rep(16:20, each = 3), collapse = " ")
+  # 4 adjacent bursts, same freq/axes, but acc_ids split at position 3-4
+  a <- acc(
+    c(
+      acc_burst_example(1:30),
+      acc_burst_example(31:60),
+      acc_burst_example(61:90),
+      acc_burst_example(91:120)
     ),
-    timestamp = as.POSIXct(c(1, 1.5, 2, 2.5), "UTC"),
-    x = 1,
-    y = 1
+    frequency = units::set_units(10, "Hz"),
+    start = as.POSIXct(c(0, 3, 6, 9), tz = "UTC")
   )
-  
-  m <- move2::mt_as_move2(
-    t,
-    coords = c("x", "y"),
-    time_column = "timestamp",
-    track_id_column = "id"
-  )
-  
-  a <- as_acc(m)
-  
-  expect_length(a, 2)
-  expect_identical(n_samples(a), as.integer(c(15, 5)))
+
+  a2 <- merge_acc(a, acc_ids = c(1, 1, 1, 2))
+
+  expect_length(a2, 2)
+  expect_equal(n_samples(a2), as.integer(c(90, 30)))
 })
 
 test_that("Don't combine bursts without start time", {

@@ -18,11 +18,13 @@ test_that("Can validate colsets", {
 })
 
 test_that("Can find active colsets in move2 object", {
+  skip_if_not_installed("move2")
   expect_identical(active_acc_colsets(albatrosses()), list(eobs = acc_eobs_cols()))
   expect_identical(active_acc_colsets(gulls()), list(raw_xyz = acc_raw_xyz_cols()))
 })
 
 test_that("Correctly subset active colsets for long-format acc cols", {
+  skip_if_not_installed("move2")
   gulls_data <- gulls()
   gulls_sub <- gulls_data[, setdiff(colnames(gulls_data), "acceleration_raw_y")]
   expect_identical(
@@ -35,6 +37,7 @@ test_that("Correctly subset active colsets for long-format acc cols", {
 })
 
 test_that("Can find active colsets in move2 object with multiple colsets", {
+  skip_if_not_installed("move2")
   cols <- active_acc_colsets(move2::mt_stack(albatrosses(), gulls()))
   expect_identical(
     cols, 
@@ -43,6 +46,7 @@ test_that("Can find active colsets in move2 object with multiple colsets", {
 })
 
 test_that("Error if no colset detected", {
+  skip_if_not_installed("move2")
   alb_data <- albatrosses()
   
   col_subset <- setdiff(colnames(alb_data), "eobs_acceleration_axes")
@@ -55,6 +59,7 @@ test_that("Error if no colset detected", {
 })
 
 test_that("Use data values to determine active colset if multiple present", {
+  skip_if_not_installed("move2")
   m <- move2::mt_stack(gulls(), albatrosses())
   
   # Missing data shouldn't matter if at least one of the set still contains data
@@ -81,6 +86,7 @@ test_that("Use data values to determine active colset if multiple present", {
 })
 
 test_that("Correctly identify that a non-full burst colset is invalid", {
+  skip_if_not_installed("move2")
   alb <- albatrosses()
   alb$eobs_acceleration_axes <- NA
   expect_error(active_acc_colsets(alb))

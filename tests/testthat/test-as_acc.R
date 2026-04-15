@@ -1,3 +1,5 @@
+skip_if_not_installed("move2")
+
 test_that("Can get acc from burst-format acc data", {
   alb_data <- albatrosses()
   
