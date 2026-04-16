@@ -8,18 +8,13 @@
 #' @export
 acc_example <- function() {
   acc(
-    c(acc_burst_example(1:4, 5:8, 9:12), acc_burst_example(1:4, 5:8)),
-    frequency = units::set_units(2:3, "Hz"),
-    start = as.POSIXct(c(1, 10), tz = "UTC")
+    list(
+      cbind(X = sin(1:30 / 10), Y = cos(1:30 / 10), Z = 1),
+      cbind(X = sin(1:20 / 10 + 2), Y = cos(1:20 / 10 + 3), Z = 1)
+    ),
+    frequency = units::set_units(c(20, 20), "Hz"),
+    start = as.POSIXct(c(0, 10), tz = "UTC")
   )
-}
-
-#' @export
-#' @keywords internal
-#' @rdname acc_example
-acc_burst_example <- function(x = NULL, y = NULL, z = NULL) {
-  vctrs::vec_size_common(x, y, z)
-  new_acc_list(list(do.call(cbind, list(X = x, Y = y, Z = z))))
 }
 
 # From dplyr

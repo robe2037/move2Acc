@@ -2,12 +2,9 @@
 % Please edit documentation in R/utils.R
 \name{acc_example}
 \alias{acc_example}
-\alias{acc_burst_example}
 \title{Example \code{acc} vector}
 \usage{
 acc_example()
-
-acc_burst_example(x = NULL, y = NULL, z = NULL)
 }
 \value{
 An \code{acc} vector with two bursts.

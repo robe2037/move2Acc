@@ -15,15 +15,34 @@
 #' @export
 #'
 #' @examples
-#'   a<-acc(list(cbind(z=cos(1:200/(80/(pi*2))),
-#'   x=sin(1:200/(5/(pi*2))))), units::set_units(400,'Hz'))
-#'   peak_frequency(a)
-#'   peak_frequency(a, units::set_units(.25, "Hz"))
-#'   # Increasing resolution more
-#'   peak_frequency(a, units::set_units(.005, "Hz"))
-#'   a<-acc(list(cbind(z=cos(80+1:200/(80/(pi*2))),
-#'   x=sin((1:200)/(5/(pi*2))))), units::set_units(400,'Hz'))
-#'   peak_frequency(a, units::set_units(.005, "Hz"))
+#' a <- acc(
+#'   list(
+#'     cbind(
+#'       X = sin(1:200 / (5  / (pi * 2))),
+#'       Z = cos(1:200 / (80 / (pi * 2)))
+#'     )
+#'   ), 
+#'   units::set_units(400, "Hz")
+#' )
+#' 
+#' peak_frequency(a)
+#' 
+#' peak_frequency(a, units::set_units(.25, "Hz"))
+#' 
+#' # Increasing resolution more
+#' peak_frequency(a, units::set_units(.005, "Hz"))
+#' 
+#' a <- acc(
+#'   list(
+#'     cbind(
+#'       X = sin((1:200) / (5 / (pi * 2))),
+#'       Z = cos(80 + 1:200 / (80 / (pi * 2)))
+#'     )
+#'   ), 
+#'   units::set_units(400, "Hz")
+#' )
+#' 
+#' peak_frequency(a, units::set_units(.005, "Hz"))
 peak_frequency <- function(x, resolution = NA) {
   x_na <- is.na(x)
 

@@ -23,7 +23,7 @@ The result is a list of \code{acc} vectors of the same length as the input.
 }
 \examples{
 a <- acc(
-  c(acc_burst_example(1:60, 1:60), acc_burst_example(101:140)),
+  list(cbind(X = 1:60, Y = 1:60), cbind(X = 101:140)),
   frequency = c(units::set_units(20, "Hz"), units::set_units(40, "Hz")),
   start = as.POSIXct(c(0, 10), tz = "UTC")
 )

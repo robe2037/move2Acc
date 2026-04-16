@@ -54,8 +54,8 @@ Functions to explore an \code{acc} vector
 \examples{
 x <- acc(
   bursts = list(
-    cbind(x = sin(1:30 / 10), y = cos(1:30 / 10), z = 1),
-    cbind(x = sin(1:20 / 10 + 2), y = cos(1:20 / 10 + 3))
+    cbind(X = sin(1:30 / 10), Y = cos(1:30 / 10), Z = 1),
+    cbind(X = sin(1:20 / 10 + 2), Y = cos(1:20 / 10 + 3))
   ),
   frequency = units::as_units(c(20, 30), "Hz")
 )
@@ -68,8 +68,8 @@ is.na(x)
 na.omit(x)
  y <- acc(
   bursts = list(
-    cbind(x = sin(1:20 / 10), y = cos(1:20 / 10)),
-    cbind(x = sin(1:20 / 10 + 2), y = cos(1:20 / 10 + 3))
+    cbind(X = sin(1:20 / 10), Y = cos(1:20 / 10)),
+    cbind(X = sin(1:20 / 10 + 2), Y = cos(1:20 / 10 + 3))
   ),
   frequency = units::as_units(c(20, 20), "Hz")
 )

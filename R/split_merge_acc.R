@@ -20,7 +20,7 @@
 #'
 #' @examples
 #' a <- acc(
-#'   c(acc_burst_example(1:60, 1:60), acc_burst_example(61:100, 61:100), acc_burst_example(101:140)),
+#'   list(cbind(X = 1:60, Y = 1:60), cbind(X = 61:100, Y = 61:100), cbind(X = 101:140)),
 #'   frequency = units::set_units(20, "Hz"),
 #'   start = as.POSIXct(c(0, 3, 5), tz = "UTC")
 #' )
@@ -124,7 +124,7 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
 #'
 #' @examples
 #' a <- acc(
-#'   c(acc_burst_example(1:60, 1:60), acc_burst_example(101:140)),
+#'   list(cbind(X = 1:60, Y = 1:60), cbind(X = 101:140)),
 #'   frequency = c(units::set_units(20, "Hz"), units::set_units(40, "Hz")),
 #'   start = as.POSIXct(c(0, 10), tz = "UTC")
 #' )

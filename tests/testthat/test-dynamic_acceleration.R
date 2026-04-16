@@ -1,47 +1,59 @@
+expected_vedba <- function(b) {
+  if (inherits(b, "units")) b <- units::drop_units(b)
+  b <- t(b) - colMeans(b)
+  mean(sqrt(colSums(b ^ 2)))
+}
+
+expected_odba <- function(b) {
+  if (inherits(b, "units")) b <- units::drop_units(b)
+  b <- t(b) - colMeans(b)
+  mean(colSums(abs(b)))
+}
+
 test_that("Can calcluate vedba (with units)", {
   a <- acc_example()
   bursts(a) <- map_acc(a, ~ units::set_units(.br, "m/s^2"))
-  
+
   result <- vedba(a)
-  
+
   expect_s3_class(result[[1]], "units")
   expect_equal(units(result[[1]]), units(bursts(a)[[1]]))
-  expect_equal(as.numeric(result[[1]]), mean(sqrt(c(6.75, 0.75, 0.75, 6.75))))
-  expect_equal(as.numeric(result[[2]]), mean(sqrt(c(4.5, 0.5, 0.5, 4.5))))
+  expect_equal(as.numeric(result[[1]]), expected_vedba(bursts(a)[[1]]))
+  expect_equal(as.numeric(result[[2]]), expected_vedba(bursts(a)[[2]]))
 })
 
 test_that("Can calculate odba (with units)", {
   a <- acc_example()
   bursts(a) <- map_acc(a, ~ units::set_units(.br, "m/s^2"))
-  
+
   result <- odba(a)
-  
+
   expect_s3_class(result[[1]], "units")
   expect_equal(units(result[[1]]), units(bursts(a)[[1]]))
-  expect_equal(as.numeric(result[[1]]), mean(c(4.5, 1.5, 1.5, 4.5)))
-  expect_equal(as.numeric(result[[2]]), mean(c(3, 1, 1, 3)))
+  expect_equal(as.numeric(result[[1]]), expected_odba(bursts(a)[[1]]))
+  expect_equal(as.numeric(result[[2]]), expected_odba(bursts(a)[[2]]))
 })
 
 test_that("Can calculate vedba (without units)", {
   a <- acc_example()
   result <- vedba(a)
-  
+
   expect_length(result, length(a))
   expect_true(all(result >= 0))
-  
-  expect_equal(result[[1]], mean(sqrt(c(6.75, 0.75, 0.75, 6.75))))
-  expect_equal(result[[2]], mean(sqrt(c(4.5, 0.5, 0.5, 4.5))))
+
+  expect_equal(result[[1]], expected_vedba(bursts(a)[[1]]))
+  expect_equal(result[[2]], expected_vedba(bursts(a)[[2]]))
 })
 
 test_that("Can calculate odba (without units)", {
   a <- acc_example()
   result <- odba(a)
-  
+
   expect_length(result, length(a))
   expect_true(all(result >= 0))
-  
-  expect_equal(result[[1]], mean(c(4.5, 1.5, 1.5, 4.5)))
-  expect_equal(result[[2]], mean(c(3, 1, 1, 3)))
+
+  expect_equal(result[[1]], expected_odba(bursts(a)[[1]]))
+  expect_equal(result[[2]], expected_odba(bursts(a)[[2]]))
 })
 
 test_that("Single-sample burst returns zero", {
