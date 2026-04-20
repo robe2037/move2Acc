@@ -1,20 +1,25 @@
-test_that("Can validate colsets", {
-  expect_true(is_valid_acc_colset(acc_colset_eobs()))
-  expect_true(is_valid_acc_colset(acc_colset_burst()))
-  expect_true(is_valid_acc_colset(acc_colset_xyz()))
-  expect_true(is_valid_acc_colset(acc_colset_raw_xyz()))
-  
+test_that("Config predicates validate colsets against supported defaults", {
+  matches_any <- function(cols, config) {
+    any(purrr::map_lgl(config, function(entry) entry$is_(cols)))
+  }
+  cfg <- acc_colset_config()
+
+  expect_true(matches_any(acc_colset_eobs(), cfg))
+  expect_true(matches_any(acc_colset_burst(), cfg))
+  expect_true(matches_any(acc_colset_xyz(), cfg))
+  expect_true(matches_any(acc_colset_raw_xyz(), cfg))
+
   # Burst-format acc cols must contain all listed cols
-  expect_false(is_valid_acc_colset(acc_colset_eobs()[1:2]))
-  expect_false(is_valid_acc_colset(acc_colset_burst()[1]))
-  
+  expect_false(matches_any(acc_colset_eobs()[1:2], cfg))
+  expect_false(matches_any(acc_colset_burst()[1], cfg))
+
   # Long-format acc cols can consist of a subset of allowable cols
-  expect_true(is_valid_acc_colset(acc_colset_xyz()[1:2]))
-  expect_true(is_valid_acc_colset(acc_colset_raw_xyz()[3]))
-  
+  expect_true(matches_any(acc_colset_xyz()[1:2], cfg))
+  expect_true(matches_any(acc_colset_raw_xyz()[3], cfg))
+
   # Duplicates excluded
-  expect_false(is_valid_acc_colset(c(acc_colset_raw_xyz(), acc_colset_xyz())))
-  expect_false(is_valid_acc_colset(c(acc_colset_xyz(), acc_colset_xyz())))
+  expect_false(matches_any(c(acc_colset_raw_xyz(), acc_colset_xyz()), cfg))
+  expect_false(matches_any(c(acc_colset_xyz(), acc_colset_xyz()), cfg))
 })
 
 test_that("Can find active colsets in move2 object", {

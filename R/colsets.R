@@ -385,58 +385,41 @@ is_acc_colset <- function(x) {
 
 # Colset config and validation -------------------------------------------------
 
-# Config to define each colset group and logical checks for that colset
-#
-# is_ functions designed to check whether an input colset `x` is a valid
-# representation of the colset in the config
-#
-# is_in_ functions designed to check whether an input move2 `x` contains a given
-# colset while accounting for fact that subsets are allowed for certain colsets
+# Registry of supported default colsets. Each entry is built
+# via `register_colset()`, which derives the appropriate is_/is_in_ checks from
+# the colset's own `type` attribute.
 acc_colset_config <- function() {
   list(
-    eobs = list(
-      cols = acc_colset_eobs(),
-      is_ = function(x) is_acc_colset_eobs(x),
-      is_in_ = function(x) all(acc_colset_eobs() %in% colnames(x))
-    ),
-    burst = list(
-      cols = acc_colset_burst(),
-      is_ = function(x) is_acc_colset_burst(x),
-      is_in_ = function(x) all(acc_colset_burst() %in% colnames(x))
-    ),
-    xyz = list(
-      cols = acc_colset_xyz(),
-      is_ = function(x) is_acc_colset_xyz(x),
-      is_in_ = function(x) any(acc_colset_xyz() %in% colnames(x))
-    ),
-    raw_xyz = list(
-      cols = acc_colset_raw_xyz(),
-      is_ = function(x) is_acc_colset_raw_xyz(x),
-      is_in_ = function(x) any(acc_colset_raw_xyz() %in% colnames(x))
-    )
+    eobs = register_colset(acc_colset_eobs()),
+    burst = register_colset(acc_colset_burst()),
+    xyz = register_colset(acc_colset_xyz()),
+    raw_xyz = register_colset(acc_colset_raw_xyz())
   )
 }
 
-is_valid_acc_colset <- function(cols) {
-  any(purrr::map_lgl(acc_colset_config(), function(colset) colset$is_(cols)))
-}
-
-# is_* functions designed to check whether a vector represents a given colset
-# while accounting for fact that subsets are allowed for certain colsets
-is_acc_colset_eobs <- function(x) {
-  setequal(x, acc_colset_eobs()) && length(x) == length(acc_colset_eobs())
-}
-
-is_acc_colset_burst <- function(x) {
-  setequal(x, acc_colset_burst()) && length(x) == length(acc_colset_burst())
-}
-
-is_acc_colset_raw_xyz <- function(x) {
-  is_unique_named_subset(x, acc_colset_raw_xyz())
-}
-
-is_acc_colset_xyz <- function(x) {
-  is_unique_named_subset(x, acc_colset_xyz())
+# Build a single config entry from a colset. The predicate pair is determined
+# by the colset's `type` attribute:
+#
+# - "burst" colsets require all columns to be present (the three burst cols
+#   are inseparable — you can't parse bursts without axes and frequency).
+# - "long" colsets allow subsets (each axis column is independently useful).
+#
+# `is_` checks whether a colset vector matches this entry; `is_in_` checks
+# whether a `move2` object contains the required columns.
+register_colset <- function(cols) {
+  if (attr(cols, "type") == "burst") {
+    list(
+      cols = cols,
+      is_ = function(x) setequal(x, cols) && length(x) == length(cols),
+      is_in_ = function(m) all(cols %in% colnames(m))
+    )
+  } else {
+    list(
+      cols = cols,
+      is_ = function(x) is_unique_named_subset(x, cols),
+      is_in_ = function(m) any(cols %in% colnames(m))
+    )
+  }
 }
 
 # General helpers --------------------------------------------------------------

@@ -122,12 +122,15 @@ as_acc_move2_ <- function(x, colset, min_freq = 1, merge_continuous = TRUE, drop
   if (acc_type == "long") {
     acc <- as_acc_move2_long(x, colset = colset, min_freq = min_freq, ...)
   } else if (acc_type == "burst") {
+    eobs_config <- acc_colset_config()[["eobs"]]
+    is_acc_eobs_cols <- eobs_config$is_(colset)
+    
     acc <- as_acc_burst(
       x[[colset[["bursts"]]]],
       x[[colset[["axes"]]]],
       x[[colset[["frequency"]]]],
       timestamp = move2::mt_time(x),
-      force_int = force_int %||% is_acc_colset_eobs(colset),
+      force_int = force_int %||% is_acc_eobs_cols,
       ...
     )
   } else {
