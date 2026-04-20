@@ -5,16 +5,16 @@
 \title{Specify acceleration data columns}
 \usage{
 acc_colset(
-  acc_x = NULL,
-  acc_y = NULL,
-  acc_z = NULL,
+  x = NULL,
+  y = NULL,
+  z = NULL,
   bursts = NULL,
   axes = NULL,
   frequency = NULL
 )
 }
 \arguments{
-\item{acc_x, acc_y, acc_z}{In long-format data, the column name(s) for the
+\item{x, y, z}{In long-format data, the column name(s) for the
 X, Y, and/or Z acceleration axes.}
 
 \item{bursts}{For burst-format data, the column name containing the raw burst
@@ -35,7 +35,7 @@ Use this function to manually specify the columns that should be used when
 constructing an \code{acc} vector with \code{as_acc()}.
 
 For long-format data (one measurement per row), specify axis columns
-with \code{acc_x}, \code{acc_y}, and/or \code{acc_z}.
+with \code{x}, \code{y}, and/or \code{z}.
 
 For burst-format data (where each row contains burst data in a single string),
 specify the columns containing the raw burst data, axes, and sampling
@@ -43,10 +43,10 @@ frequency.
 }
 \examples{
 # Specify the column names for long-format data for each axis
-acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y", acc_z = "my_acc_z")
+acc_colset(x = "my_acc_x", y = "my_acc_y", z = "my_acc_z")
 
 # Long format data may consist of a subset of axes
-acc_colset(acc_x = "my_acc_x", acc_y = "my_acc_y")
+acc_colset(x = "my_acc_x", y = "my_acc_y")
 
 # Specify the column names for the bursts, axes, and frequency for
 # burst-format data

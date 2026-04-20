@@ -95,7 +95,7 @@ test_that("Can manually specify acc columns to use for parsing", {
 })
 
 test_that("Can manually specify a subset of long-format cols", {
-  col <- acc_colset(acc_y = "acceleration_raw_y")
+  col <- acc_colset(y = "acceleration_raw_y")
   
   a <- as_acc(gulls(), colset = col)
   i <- which_acc_vals(gulls(), colset = col)
@@ -413,7 +413,7 @@ test_that("as_acc() checks long-format coltypes", {
     as_acc(g, colset = acc_colset_raw_xyz()),
     "Detected non-numeric columns"
   )
-  expect_silent(as_acc(g, colset = acc_colset(acc_y = "acceleration_raw_y")))
+  expect_silent(as_acc(g, colset = acc_colset(y = "acceleration_raw_y")))
 })
 
 test_that("as_acc() rejects plain character vector for colset", {
@@ -470,11 +470,7 @@ test_that("Custom long-format colset works end-to-end", {
   colnames(gul)[colnames(gul) == "acceleration_raw_z"] <- "acc_z"
   
   # Use the eobs columns via a custom colset (equivalent to acc_colset_eobs())
-  custom <- acc_colset(
-    acc_x = "acc_x",
-    acc_y = "acc_y",
-    acc_z = "acc_z"
-  )
+  custom <- acc_colset(x = "acc_x", y = "acc_y", z = "acc_z")
   
   # adjust for fact that eobs uses force_int = TRUE, but custom cols don't
   expect_identical(
