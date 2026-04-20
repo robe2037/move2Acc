@@ -4,7 +4,7 @@
 \alias{duplicated_acc_rows}
 \title{Identify rows with acceleration data from multiple column sets}
 \usage{
-duplicated_acc_rows(x, colset = NULL)
+duplicated_acc_rows(x, colsets = NULL)
 }
 \arguments{
 \item{x}{A \code{move2} containing acceleration data as collected by EOBS,

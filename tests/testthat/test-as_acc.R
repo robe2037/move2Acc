@@ -78,7 +78,7 @@ test_that("Can manually specify acc columns to use for parsing", {
   cols <- acc_colset_raw_xyz()
   
   a <- as_acc(gulls(), colset = cols)
-  i <- which_acc_vals(gulls(), colset = cols)
+  i <- which_sensor_vals(gulls(), colset = cols)
   
   expect_equal(
     unlist(map_acc(a, ~ .br[, 1])),
@@ -98,7 +98,7 @@ test_that("Can manually specify a subset of long-format cols", {
   col <- acc_colset(y = "acceleration_raw_y")
   
   a <- as_acc(gulls(), colset = col)
-  i <- which_acc_vals(gulls(), colset = col)
+  i <- which_sensor_vals(gulls(), colset = col)
   
   expect_equal(unlist(map_acc(a, ~ .br[, 1])), gulls()[[as.character(col)]][i])
 })

@@ -60,7 +60,7 @@ test_that("Error if no colset detected", {
   
   expect_error(
     active_acc_colsets(alb_data),
-    "Could not identify a full acceleration column set"
+    "Could not identify a full acc column set"
   )
 })
 

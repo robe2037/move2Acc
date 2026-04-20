@@ -82,7 +82,7 @@ as_acc.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE
     colsets <- list(colsets)
   }
   
-  dup <- duplicated_acc_rows(x, colset = colsets)
+  dup <- duplicated_acc_rows(x, colsets = colsets)
   
   if (length(dup) > 0) {
     rlang::abort(c(
@@ -134,7 +134,7 @@ as_acc_move2_ <- function(x, colset, min_freq = 1, merge_continuous = TRUE, drop
       ...
     )
   } else {
-    abort_missing_acc_colset()
+    abort_missing_colset("acc")
   }
   
   if (merge_continuous) {
@@ -210,7 +210,7 @@ as_acc_move2_long <- function(x,
   # timestamps collected at a minimum frequency
   ts_grps <- parse_bursts(x, colset = colset, min_freq = min_freq)
 
-  acc_i <- which_acc_vals(x, colset = colset)
+  acc_i <- which_sensor_vals(x, colset = colset)
   
   # Split all rows with acc data into burst groups based on timestamp groups
   idx <- unname(split(acc_i, ts_grps))
@@ -253,7 +253,7 @@ as_acc_move2_long <- function(x,
   acc
 }
 
-which_acc_vals <- function(x, colset) {
+which_sensor_vals <- function(x, colset) {
   assert_all_cols_present(x, colset)
 
   x <- as.data.frame(x) # Drop sticky move2 columns
@@ -315,7 +315,7 @@ parse_bursts <- function(x, colset, min_freq = 1, freq_tol = 1e-6) {
 
   burst_gap_thresh <- units::set_units(1 / min_freq, "s")
   
-  acc_i <- which_acc_vals(x, colset = colset)
+  acc_i <- which_sensor_vals(x, colset = colset)
   idx <- split(acc_i, as.character(move2::mt_track_id(x[acc_i, ])))
   
   grps <- lapply(

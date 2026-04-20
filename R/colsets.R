@@ -59,6 +59,23 @@ acc_colset <- function(x = NULL,
   )
 }
 
+mag_colset <- function(x = NULL,
+                       y = NULL,
+                       z = NULL,
+                       bursts = NULL,
+                       axes = NULL,
+                       frequency = NULL) {
+  build_colset_(
+    sensor = "mag",
+    x = x,
+    y = y,
+    z = z,
+    bursts = bursts,
+    axes = axes,
+    frequency = frequency
+  )
+}
+
 #' @export
 print.colset <- function(x, ...) {
   type <- attr(x, "type")
@@ -165,6 +182,46 @@ acc_colset_raw_xyz <- function() {
   )
 }
 
+valid_mag_colsets <- function() {
+  purrr::map(mag_colset_config(), function(colset) colset$cols)
+}
+
+mag_colset_burst <- function() {
+  new_colset(
+    cols = c(
+      bursts = "magnetic_fields_raw", 
+      axes = "magnetic_field_axes", 
+      frequency = "magnetic_field_sampling_frequency_per_axis"
+    ),
+    type = "burst",
+    sensor = "mag"
+  )
+}
+
+mag_colset_raw_xyz <- function() {
+  new_colset(
+    cols = c(
+      X = "magnetic_field_x", 
+      Y = "magnetic_field_y", 
+      Z = "magnetic_field_z"
+    ),
+    type = "long",
+    sensor = "mag"
+  )
+}
+
+mag_colset_xyz <- function() {
+  new_colset(
+    cols = c(
+      X = "magnetic_field_raw_x", 
+      Y = "magnetic_field_raw_y", 
+      Z = "magnetic_field_raw_z"
+    ),
+    type = "long",
+    sensor = "mag"
+  )
+}
+
 # Colsets in a move2 object ----------------------------------------------------
 
 #' Identify acceleration columns present in a `move2` object
@@ -234,20 +291,30 @@ acc_colset_raw_xyz <- function() {
 #'   active_acc_colsets(alb)
 #' }
 active_acc_colsets <- function(x) {
-  i <- which(
-    purrr::map_lgl(acc_colset_config(), function(colset) colset$is_in_(x))
-  )
+  active_colsets_(x, "acc")
+}
+
+active_mag_colsets <- function(x) {
+  active_colsets_(x, "mag")
+}
+
+# Apply active colset logic in a move2 for a given sensor. Active colsets
+# are fully present (if burst-format) and contain data.
+active_colsets_ <- function(x, sensor) {
+  config <- switch(sensor, acc = acc_colset_config(), mag = mag_colset_config())
+  i <- which(purrr::map_lgl(config, function(colset) colset$is_in_(x)))
 
   if (length(i) == 0) {
-    abort_missing_acc_colset()
+    abort_missing_colset(sensor)
   }
-
-  poss_colsets <- valid_acc_colsets()[i]
+  
+  poss_colsets <- config[i]
 
   colsets <- purrr::compact(
     purrr::map(
       poss_colsets,
-      function(colset) {
+      function(colset_config) {
+        colset <- colset_config$cols
         cols_in_x <- intersect(colset, colnames(x))
         cols_present <- cols_in_x[!cols_empty(x, cols_in_x)]
 
@@ -262,7 +329,7 @@ active_acc_colsets <- function(x) {
             new_colset(
               cols = cols_present,
               type = attr(colset, "type"),
-              sensor = "acc"
+              sensor = sensor
             )
           )
         }
@@ -273,7 +340,7 @@ active_acc_colsets <- function(x) {
   )
 
   if (length(colsets) == 0) {
-    abort_missing_acc_colset()
+    abort_missing_colset(sensor)
   }
 
   colsets
@@ -300,25 +367,30 @@ active_acc_colsets <- function(x) {
 #'   - [as_acc()] to generate an `acc` vector from a `move2` object.
 #'
 #' @export
-duplicated_acc_rows <- function(x, colset = NULL) {
-  colsets <- colset %||% active_acc_colsets(x)
+duplicated_acc_rows <- function(x, colsets = NULL) {
+  duplicated_sensor_rows(x, colsets %||% active_acc_colsets(x))
+}
 
+duplicated_mag_rows <- function(x, colsets = NULL) {
+  duplicated_sensor_rows(x, colsets %||% active_mag_colsets(x))
+}
+
+duplicated_sensor_rows <- function(x, colsets = NULL) {
   # Standardize case where user supplied a single colset as a vector
   if (!rlang::is_list(colsets)) {
     colsets <- list(colsets)
   }
-
-  acc_rows <- unlist(
+  
+  rows <- unlist(
     purrr::map(
       colsets,
-      function(cols) which_acc_vals(x, colset = cols)
+      function(cols) which_sensor_vals(x, colset = cols)
     )
   )
-
+  
   # Would be nice to return duplicated groups too so user knows what the issue is...
-  sort(unique(acc_rows[duplicated(acc_rows) | duplicated(acc_rows, fromLast = TRUE)]))
+  sort(unique(rows[duplicated(rows) | duplicated(rows, fromLast = TRUE)]))
 }
-
 # Colset construction helpers --------------------------------------------------
 
 # Shared argument handling for sensor colset constructors. Standardizes the
@@ -370,7 +442,7 @@ build_colset_ <- function(sensor,
 # not depend on sensor type (e.g. `print`).
 new_colset <- function(cols, type, sensor) {
   type <- rlang::arg_match(type, c("long", "burst"))
-  sensor <- rlang::arg_match(sensor, "acc")
+  sensor <- rlang::arg_match(sensor, valid_sensors())
 
   structure(
     cols,
@@ -381,6 +453,14 @@ new_colset <- function(cols, type, sensor) {
 
 is_acc_colset <- function(x) {
   inherits(x, "acc_colset")
+}
+
+is_mag_colset <- function(x) {
+  inherits(x, "mag_colset")
+}
+
+valid_sensors <- function() {
+  c("acc", "mag")
 }
 
 # Colset config and validation -------------------------------------------------
@@ -397,15 +477,23 @@ acc_colset_config <- function() {
   )
 }
 
-# Build a single config entry from a colset. The predicate pair is determined
-# by the colset's `type` attribute:
+mag_colset_config <- function() {
+  list(
+    burst = register_colset(mag_colset_burst()),
+    xyz = register_colset(mag_colset_xyz()),
+    raw_xyz = register_colset(mag_colset_raw_xyz())
+  )
+}
+
+# Build a single config entry from a colset.
 #
-# - "burst" colsets require all columns to be present (the three burst cols
-#   are inseparable — you can't parse bursts without axes and frequency).
-# - "long" colsets allow subsets (each axis column is independently useful).
+# - "burst" type colsets require all columns to be present
+# - "long" type colsets allow subsets of the axis cols
 #
-# `is_` checks whether a colset vector matches this entry; `is_in_` checks
-# whether a `move2` object contains the required columns.
+# - `is_` checks whether a colset vector matches this entry (including subsets
+#   for long format)
+# - `is_in_` checks whether a `move2` object contains the required columns
+#   (including subsets for long format)
 register_colset <- function(cols) {
   if (attr(cols, "type") == "burst") {
     list(
@@ -453,11 +541,13 @@ assert_all_cols_present <- function(x, cols, call = rlang::caller_env()) {
   }
 }
 
-abort_missing_acc_colset <- function(call = rlang::caller_env()) {
+abort_missing_colset <- function(sensor, call = rlang::caller_env()) {
   rlang::abort(
     c(
-      "Could not identify a full acceleration column set in the input data.",
-      "i" = "Use `valid_acc_colsets()` to see supported acceleration column sets."
+      paste0("Could not identify a full ", sensor, " column set in the input data."),
+      "i" = paste0(
+        "Use `valid_", sensor, "_colsets()` to see supported ", sensor, " column sets."
+      )
     ),
     call = call
   )
