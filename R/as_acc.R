@@ -54,48 +54,49 @@ as_acc.default <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
-  assertthat::assert_that(move2::mt_is_track_id_cleaved(x))
-  assertthat::assert_that(move2::mt_is_time_ordered(x))
+  as_sensor(
+    x, 
+    sensor = "acc", 
+    colset = colset, 
+    min_freq = min_freq,
+    merge_continuous = merge_continuous,
+    drop = drop, 
+    ...
+  )
+}
 
-  if (!rlang::is_null(colset)) {
-    if (is_acc_colset(colset)) {
-      colsets <- colset
-    } else if (rlang::is_list(colset) && all(purrr::map_lgl(colset, is_acc_colset))) {
-      colsets <- colset
-    } else {
-      rlang::abort(
-        c(
-          "`colset` must be an `acc_colset` object or a list of such objects.",
-          i = "Use `acc_colset()` to create an `acc_colset` object.")
-      )
-    }
-  } else {
-    colsets <- active_acc_colsets(x)
-    
-    if (length(colsets) > 1) {
-      rlang::warn("Detected multiple valid acceleration column sets.")
-    }
-  }
-  
-  # Standardize case where user supplied a single colset as a vector
-  if (!rlang::is_list(colsets)) {
-    colsets <- list(colsets)
-  }
-  
-  dup <- duplicated_acc_rows(x, colsets = colsets)
+# --------------------------
+
+as_sensor <- function(x, sensor, ...) {
+  UseMethod("as_sensor")
+}
+
+#' @export
+as_sensor.default <- function(x, sensor, ...) {
+  vctrs::vec_cast(x, new_sensor_rcrd(sensor))
+}
+
+#' @export
+as_sensor.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+  colsets <- parse_colsets(x, colset, sensor)
+  dup <- duplicated_sensor_rows(x, colsets = colsets)
   
   if (length(dup) > 0) {
     rlang::abort(c(
-      paste0("`x` contains ", length(dup), " timestamps with multiple sources of acceleration data."),
-      i = "Use `duplicated_acc_rows()` to identify duplications."
+      paste0(
+        "`x` contains ", length(dup),
+        " timestamps with multiple sources of ", sensor, " data."
+      ),
+      i = paste0("Use `duplicated_", sensor, "_rows()` to identify duplications.")
     ))
   }
   
-  acc <- purrr::map(
+  out <- purrr::map(
     colsets, 
     function(cols) {
-      as_acc_move2_(
+      as_sensor_move2_(
         x,
+        sensor = sensor,
         colset = cols,
         min_freq = min_freq,
         merge_continuous = merge_continuous,
@@ -105,70 +106,72 @@ as_acc.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE
     }
   )
   
-  acc <- purrr::reduce(acc, function(.x, .y) dplyr::coalesce(.x, .y))
+  out <- purrr::reduce(out, function(.x, .y) dplyr::coalesce(.x, .y))
   
   if (drop) {
-    acc <- acc[!is.na(acc)]
+    out <- out[!is.na(out)]
   }
   
-  acc
+  out
 }
 
-as_acc_move2_ <- function(x, colset, min_freq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
+as_sensor_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
   check_colset(x, colset)
+  
+  sensor_type <- attr(colset, "type")
+  
+  if (sensor_type == "long") {
+    out <- as_sensor_move2_long(x, colset = colset, sensor = sensor, min_freq = min_freq, ...)
+  } else if (sensor_type == "burst") {
+    # eobs bursts are integer-encoded; other burst sources are numeric. This
+    # is the only sensor-specific default in the burst pipeline.
+    is_acc_eobs_cols <- sensor == "acc" && acc_colset_config()[["eobs"]]$is_(colset)
 
-  acc_type <- attr(colset, "type")
-
-  if (acc_type == "long") {
-    acc <- as_acc_move2_long(x, colset = colset, min_freq = min_freq, ...)
-  } else if (acc_type == "burst") {
-    eobs_config <- acc_colset_config()[["eobs"]]
-    is_acc_eobs_cols <- eobs_config$is_(colset)
-    
-    acc <- as_acc_burst(
+    out <- as_sensor_burst(
       x[[colset[["bursts"]]]],
       x[[colset[["axes"]]]],
       x[[colset[["frequency"]]]],
+      sensor = sensor,
       timestamp = move2::mt_time(x),
       force_int = force_int %||% is_acc_eobs_cols,
       ...
     )
   } else {
-    abort_missing_colset("acc")
+    abort_missing_colset(sensor)
   }
   
   if (merge_continuous) {
-    acc <- merge_acc(acc, acc_ids = move2::mt_track_id(x), drop = drop)
+    out <- merge_bursts(out, ids = move2::mt_track_id(x), drop = drop)
   }
   
   if (drop) {
-    acc <- acc[!is.na(acc)]
+    out <- out[!is.na(out)]
   }
   
-  acc
+  out
 }
 
-as_acc_burst <- function(x, axes, freq, timestamp, force_int = FALSE) {
+as_sensor_burst <- function(x, axes, freq, sensor, timestamp, force_int = FALSE) {
   colnms <- strsplit(as.character(axes), "")
   n_axis <- nchar(as.character(axes))
-  acc_split <- strsplit(as.character(x), " ")
-  
+  vals_split <- strsplit(as.character(x), " ")
+
   if (force_int) {
-    all_acc <- unlist(acc_split)
-    all_acc <- all_acc[!is.na(all_acc)]
-    
-    if (any((as.numeric(all_acc) %% 1) != 0)) {
+    all_vals <- unlist(vals_split)
+    all_vals <- all_vals[!is.na(all_vals)]
+
+    if (any((as.numeric(all_vals) %% 1) != 0)) {
       rlang::warn(
         paste0(
-          "Detected numeric acceleration values, but expected integers. ",
+          "Detected numeric values, but expected integers. ",
           "Some precision will be lost."
         )
       )
     }
-    
-    mlist <- purrr::map(acc_split, function(x) as.integer(as.numeric(x)))
+
+    mlist <- purrr::map(vals_split, function(x) as.integer(as.numeric(x)))
   } else {
-    mlist <- purrr::map(acc_split, function(x) as.numeric(x))
+    mlist <- purrr::map(vals_split, function(x) as.numeric(x))
   }
   
   i <- !is.na(n_axis)
@@ -185,47 +188,46 @@ as_acc_burst <- function(x, axes, freq, timestamp, force_int = FALSE) {
   
   mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
   
-  acc(mlist, frequency = freq, start = timestamp)
+  sensor_rcrd(sensor = sensor, bursts = mlist, frequency = freq, start = timestamp)
 }
 
-# TODO: this should maybe be refactored to be analogous to `as_acc_burst` which doesn't
-# take input move2 `x`, just takes the data cols.
-as_acc_move2_long <- function(x,
-                              colset,
-                              min_freq = 1,
-                              timestamp = move2::mt_time(x),
-                              freq_digits = 4,
-                              ...) {
+as_sensor_move2_long <- function(x,
+                                 colset,
+                                 sensor,
+                                 min_freq = 1,
+                                 timestamp = move2::mt_time(x),
+                                 freq_digits = 4,
+                                 ...) {
   col_names <- as.character(colset)
   m <- as.matrix(data.frame(x)[, col_names])
-
+  
   colnames(m) <- names(colset)
-
+  
   # TODO: may want a safer way to handle units. Some acc will have units, others not
   if (inherits(x[[colset[[1]]]], "units")) {
     m <- m * units::as_units(units::deparse_unit(x[[colset[[1]]]]))
   }
-
+  
   # Generate vector of ids for each distinct burst based on sequential
   # timestamps collected at a minimum frequency
   ts_grps <- parse_bursts(x, colset = colset, min_freq = min_freq)
 
-  acc_i <- which_sensor_vals(x, colset = colset)
-  
-  # Split all rows with acc data into burst groups based on timestamp groups
-  idx <- unname(split(acc_i, ts_grps))
-  
+  vals_i <- which_sensor_vals(x, colset = colset)
+
+  # Split all rows with sensor data into burst groups based on timestamp groups
+  idx <- unname(split(vals_i, ts_grps))
+
   # Extract records for each burst into a separate matrix
-  acc_lst <- lapply(idx, function(i) {
+  burst_lst <- lapply(idx, function(i) {
     x <- m[i, , drop = FALSE]
     rownames(x) <- NULL # Standardize data.frame and tibble inputs
     x
   })
-  
+
   # Calculate mean frequency for each burst
   freq <- unname(unlist(
     lapply(
-      split(move2::mt_time(x[acc_i, ]), ts_grps), 
+      split(move2::mt_time(x[vals_i, ]), ts_grps),
       function(y) {
         ifelse(length(y) <= 1, NA, mean(1 / units::as_units(diff(y))))
       }
@@ -235,10 +237,11 @@ as_acc_move2_long <- function(x,
   freq <- round(freq, digits = freq_digits)
   
   # Attach acc bursts to index of the first record that belongs to that burst
-  acc <- vec_rep(
-    acc(
-      list(NULL), 
-      units::set_units(NA, "Hz"), 
+  out <- vec_rep(
+    sensor_rcrd(
+      sensor,
+      bursts = list(NULL), 
+      frequency = units::set_units(NA, "Hz"), 
       start = as.POSIXct(NA, tz = attr(timestamp, "tzone") %||% "UTC")
     ), 
     nrow(x)
@@ -247,19 +250,58 @@ as_acc_move2_long <- function(x,
   i <- sapply(idx, function(x) x[1]) # first index of each ts group
   
   if (length(i) > 0) {
-    acc[i] <- acc(acc_lst, units::as_units(freq, "Hz"), start = timestamp[i])
+    out[i] <- sensor_rcrd(sensor, bursts = burst_lst, frequency = units::as_units(freq, "Hz"), start = timestamp[i])
   }
   
-  acc
+  out
 }
+
+
+# Resolve user-supplied `colset` into a list of validated sensor colsets.
+# Falls back to colsets detected in `x` when `colset` is NULL.
+parse_colsets <- function(x, colset, sensor) {
+  is_colset <- function(obj) inherits(obj, paste0(sensor, "_colset"))
+  
+  if (!rlang::is_null(colset)) {
+    if (is_colset(colset)) {
+      colsets <- colset
+    } else if (rlang::is_list(colset) && all(purrr::map_lgl(colset, is_colset))) {
+      colsets <- colset
+    } else {
+      rlang::abort(c(
+        paste0(
+          "`colset` must be an `", sensor, "_colset` object or a list of such objects."
+        ),
+        i = paste0("Use `", sensor, "_colset()` to create an `", sensor, "_colset` object.")
+      ))
+    }
+  } else {
+    colsets <- active_colsets_(x, sensor = sensor)
+    
+    if (length(colsets) > 1) {
+      rlang::warn(paste0(
+        "Detected multiple valid ", sensor, " column sets."
+      ))
+    }
+  }
+  
+  # Standardize case where user supplied a single colset as a vector
+  if (!rlang::is_list(colsets)) {
+    colsets <- list(colsets)
+  }
+  
+  colsets
+}
+
+# --------------------------
 
 which_sensor_vals <- function(x, colset) {
   assert_all_cols_present(x, colset)
-
+  
   x <- as.data.frame(x) # Drop sticky move2 columns
-
+  
   type <- attr(colset, "type")
-
+  
   # Long-format columns only need at least one column to have data
   if (type == "long") {
     has_vals <- which(rowSums(!is.na(x[colset])) > 0)
@@ -308,15 +350,15 @@ which_sensor_vals <- function(x, colset) {
 #' @noRd
 parse_bursts <- function(x, colset, min_freq = 1, freq_tol = 1e-6) {
   assertthat::assert_that(min_freq >= 0)
-
+  
   if (!inherits(min_freq, "units")) {
     min_freq <- units::set_units(min_freq, "Hz")
   }
-
-  burst_gap_thresh <- units::set_units(1 / min_freq, "s")
   
-  acc_i <- which_sensor_vals(x, colset = colset)
-  idx <- split(acc_i, as.character(move2::mt_track_id(x[acc_i, ])))
+  burst_gap_thresh <- units::set_units(1 / min_freq, "s")
+
+  vals_i <- which_sensor_vals(x, colset = colset)
+  idx <- split(vals_i, as.character(move2::mt_track_id(x[vals_i, ])))
   
   grps <- lapply(
     idx,
@@ -326,7 +368,7 @@ parse_bursts <- function(x, colset, min_freq = 1, freq_tol = 1e-6) {
       # Identify collection split points based on min freq and freq changes
       below_freq <- c(TRUE, d > burst_gap_thresh)
       freq_bounds <- freq_changes(as.numeric(d), freq_tol = freq_tol)
-
+      
       i[cumsum(below_freq | freq_bounds)]
     }
   )
@@ -408,16 +450,16 @@ new_freq_regime <- function(n, n_next = 0, prev_run = FALSE) {
 
 check_colset <- function(x, colset, call = rlang::caller_env()) {
   assert_all_cols_present(x, colset, call = call)
-
+  
   if (attr(colset, "type") == "burst") {
     assert_burst_col_types(x, colset, call = call)
   } else {
-    assert_matched_acc_units(x, colset, call = call)
+    assert_matched_units(x, colset, call = call)
     assert_colset_numeric(x, colset, call = call)
   }
 }
 
-assert_matched_acc_units <- function(x, cols, call = rlang::caller_env()) {
+assert_matched_units <- function(x, cols, call = rlang::caller_env()) {
   unique_units <- unique(
     purrr::map(
       cols, 
@@ -434,8 +476,8 @@ assert_matched_acc_units <- function(x, cols, call = rlang::caller_env()) {
   if (length(unique_units) != 1) {
     rlang::abort(
       c(
-        "Multiple units detected across input acc columns.",
-        i = "All acceleration columns must have consistent units."
+        "Multiple units detected across input columns.",
+        i = "All columns must have consistent units."
       ),
       call = call
     )
@@ -444,7 +486,7 @@ assert_matched_acc_units <- function(x, cols, call = rlang::caller_env()) {
 
 assert_colset_numeric <- function(x, colset, call = rlang::caller_env()) {
   cols_num <- purrr::map_lgl(colset, function(col) is.numeric(x[[col]]))
-
+  
   if (any(!cols_num)) {
     rlang::abort(
       c(
@@ -452,7 +494,7 @@ assert_colset_numeric <- function(x, colset, call = rlang::caller_env()) {
           "Detected non-numeric columns: \"",
           paste0(colset[!cols_num], collapse = "\", \""), "\""
         ),
-        i = "Acceleration columns must contain numeric data."
+        i = "Columns must contain numeric data."
       ),
       call = call
     )

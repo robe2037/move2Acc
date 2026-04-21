@@ -4,7 +4,6 @@
 \alias{n_axis}
 \alias{explore-functions}
 \alias{is_uniform}
-\alias{is.na.acc}
 \alias{bursts}
 \alias{bursts<-}
 \alias{freqs}
@@ -20,8 +19,6 @@
 n_axis(x)
 
 is_uniform(x)
-
-\method{is.na}{acc}(x)
 
 bursts(x)
 

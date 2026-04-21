@@ -10,7 +10,7 @@
 #' 
 #' @details
 #' This function behaves similarly to the [purrr::map()] family of functions.
-#' However, `map_acc()` only matches arguments by name, not position. Thus,
+#' However, `map_bursts()` only matches arguments by name, not position. Thus,
 #' the input to `.f` must use the specified terminology (`.br`, `.fq`, 
 #' and/or `.st`) to access specific data from each `acc` element.
 #' For a given `acc` vector `x`:
@@ -42,17 +42,17 @@
 #' a <- acc_example()
 #' 
 #' # Use `.br` to access the burst matrix for each element:
-#' n_samp <- map_acc(a, function(.br) nrow(.br))
+#' n_samp <- map_bursts(a, function(.br) nrow(.br))
 #' 
 #' n_samp
 #' 
 #' # Use `.fq` to access the frequency value for each element:
-#' burst_len <- map_acc(a, function(.br, .fq) nrow(.br) / .fq)
+#' burst_len <- map_bursts(a, function(.br, .fq) nrow(.br) / .fq)
 #' 
 #' burst_len
 #' 
 #' # Use `.st` to access the start time for each element:
-#' burst_end <- map_acc(
+#' burst_end <- map_bursts(
 #'   a, 
 #'   function(.br, .fq, .st) as.numeric(nrow(.br) / .fq) + .st
 #' )
@@ -64,22 +64,22 @@
 #'   as.numeric(nrow(.br) / .fq) + .st + offset
 #' }
 #' 
-#' map_acc(a, get_burst_end)
+#' map_bursts(a, get_burst_end)
 #' 
-#' map_acc(a, function(.br, .fq, .st) get_burst_end(.br, .fq, .st, offset = 5))
+#' map_bursts(a, function(.br, .fq, .st) get_burst_end(.br, .fq, .st, offset = 5))
 #' 
 #' # Use simplify to reduce to a vector format:
-#' map_acc(a, get_burst_end, simplify = TRUE)
+#' map_bursts(a, get_burst_end, simplify = TRUE)
 #' 
 #' # Note that this will fail if the result cannot be simplified to the same
 #' # length as the input `acc` vector
 #' try(
-#'   map_acc(a, function(.br) .br, simplify = TRUE)
+#'   map_bursts(a, function(.br) .br, simplify = TRUE)
 #' )
-map_acc <- function(x, .f, simplify = FALSE, .progress = FALSE) {
-  assertthat::assert_that(inherits(x, "acc"))
+map_bursts <- function(x, .f, simplify = FALSE, .progress = FALSE) {
+  assert_sensor_rcrd(x)
 
-  f <- as_acc_mapper(.f)
+  f <- as_sensor_mapper(.f)
 
   out <- purrr::pmap(
     list(
@@ -100,7 +100,7 @@ map_acc <- function(x, .f, simplify = FALSE, .progress = FALSE) {
   out
 }
 
-as_acc_mapper <- function(.f) {
+as_sensor_mapper <- function(.f) {
   if (rlang::is_formula(.f)) {
     # Build function with custom arg names to refer to acc fields
     f <- rlang::new_function(

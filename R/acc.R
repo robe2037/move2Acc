@@ -10,7 +10,30 @@
 acc <- function(bursts = list(),
                 frequency = units::set_units(double(), "Hz"),
                 start = NULL) {
-  bursts <- acc_list(bursts)
+  sensor_rcrd("acc", bursts = bursts, frequency = frequency, start = start)
+}
+
+new_acc <- function(bursts = new_acc_list(list()),
+                    frequency = units::set_units(double(), "Hz"),
+                    start = as.POSIXct(double(), tz = "UTC")) {
+  new_sensor_rcrd("acc", bursts = bursts, frequency = frequency, start = start)
+}
+
+acc_list <- function(x) {
+  sensor_list(x, "acc")
+}
+
+new_acc_list <- function(x) {
+  new_sensor_list(x, "acc")
+}
+
+# -------------------
+
+sensor_rcrd <- function(sensor,
+                        bursts = list(),
+                        frequency = units::set_units(double(), "Hz"),
+                        start = NULL) {
+  bursts <- sensor_list(bursts, sensor)
   n <- vec_size(bursts)
   
   if (!inherits(frequency, "units")) {
@@ -41,25 +64,27 @@ acc <- function(bursts = list(),
     start[na_burst] <- as.POSIXct(NA, tz = tz)
   }
   
-  new_acc(
+  new_sensor_rcrd(
+    sensor,
     bursts = bursts,
     frequency = frequency,
     start = start
   )
 }
 
-new_acc <- function(bursts = new_acc_list(list()),
-                    frequency = units::set_units(double(), "Hz"),
-                    start = as.POSIXct(double(), tz = "UTC")) {
+new_sensor_rcrd <- function(sensor,
+                            bursts = new_sensor_list(list(), sensor),
+                            frequency = units::set_units(double(), "Hz"),
+                            start = as.POSIXct(double(), tz = "UTC")) {
   new_rcrd(
     list(bursts = bursts, frequency = frequency, start = start),
-    class = "acc"
+    class = c(sensor, "sensor_rcrd")
   )
 }
 
-acc_list <- function(x) {
+sensor_list <- function(x, sensor) {
   valid_axes <- c("X", "Y", "Z")
-
+  
   is_valid <- purrr::map_lgl(
     x,
     function(b) {
@@ -68,14 +93,45 @@ acc_list <- function(x) {
       !is.null(nms) && length(nms) > 0 && all(nms %in% valid_axes)
     }
   )
-
+  
   if (any(!is_valid)) {
     rlang::abort("Burst matrix columns must be named \"X\", \"Y\", or \"Z\".")
   }
-
-  new_acc_list(x)
+  
+  new_sensor_list(x, sensor)
 }
 
-new_acc_list <- function(x) {
-  new_list_of(x, ptype = matrix(numeric()), class = "acc_list")
+
+new_sensor_list <- function(x, sensor) {
+  new_list_of(
+    x,
+    ptype = matrix(numeric()),
+    class = c(paste0(sensor, "_list"), "sensor_list")
+  )
+}
+
+# Assert that x is one of the supported sensor vector classes. Centralizes the
+# check so the error message lists concrete subclasses (e.g. `acc`, `mag`)
+# without exposing the internal `sensor_rcrd` parent class.
+assert_sensor_rcrd <- function(x,
+                               arg = rlang::caller_arg(x),
+                               call = rlang::caller_env()) {
+  if (inherits(x, "sensor_rcrd")) return(invisible(x))
+
+  sensors <- valid_sensors()
+  names <- paste0("`", sensors, "`")
+
+  msg <- paste0(
+    "`", arg, "` must be ",
+    if (length(sensors) == 1) {
+      paste0("an ", names, " vector.")
+    } else {
+      paste0(
+        paste0("an ", names[-length(names)], collapse = ", "),
+        " or ", names[length(names)], " vector."
+      )
+    }
+  )
+
+  rlang::abort(msg, call = call)
 }

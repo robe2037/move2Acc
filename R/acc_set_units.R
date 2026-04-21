@@ -32,7 +32,7 @@ acc_set_units <- function(x, units) {
   assertthat::assert_that(is.character(units), length(units) == 1)
 
   bursts(x) <- new_acc_list(
-    map_acc(x, function(.br) {
+    map_bursts(x, function(.br) {
       if (is.null(.br)) return(NULL)
       nms <- colnames(.br)
       .br <- units::set_units(.br, units, mode = "standard")

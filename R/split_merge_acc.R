@@ -6,7 +6,7 @@
 #' frequencies or acceleration axes will not be merged.
 #'
 #' @param x An `acc` vector
-#' @param acc_ids Vector indicating groups to which the elements in `x` belong.
+#' @param ids Vector indicating groups to which the elements in `x` belong.
 #'   If provided, bursts in `x` will not be merged across different values of
 #'   this vector, even if their timestamps and frequencies align.
 #' @param drop Logical indicating whether to drop entries that have been merged
@@ -25,10 +25,10 @@
 #'   start = as.POSIXct(c(0, 3, 5), tz = "UTC")
 #' )
 #' 
-#' merge_acc(a)
-merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
+#' merge_bursts(a)
+merge_bursts <- function(x, ids = NULL, drop = TRUE) {
   n <- vec_size(x)
-  
+
   # Work only with non-NA entries; track their original positions
   valid <- which(!is.na(x))
   
@@ -67,12 +67,12 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
   )
   is_same_n_axis <- (axes[-1] == axes[-nv]) & (n_axis(xv)[-1] == n_axis(xv)[-nv])
   
-  if (rlang::is_null(acc_ids)) {
+  if (rlang::is_null(ids)) {
     is_same_id <- vctrs::vec_recycle(TRUE, nv - 1)
   } else {
     # Don't collapse bursts across different sources, if IDs provided
-    acc_ids_v <- acc_ids[valid]
-    is_same_id <- (acc_ids_v[-1] == acc_ids_v[-nv]) | (is.na(acc_ids_v[-1]) & is.na(acc_ids_v[-nv]))
+    ids_v <- ids[valid]
+    is_same_id <- (ids_v[-1] == ids_v[-nv]) | (is.na(ids_v[-1]) & is.na(ids_v[-nv]))
   }
   
   to_bind <- c(FALSE, is_adjacent_burst & is_same_freq & is_same_n_axis & is_same_id)
@@ -92,15 +92,16 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
   # Get first entry in each group. This defines the burst freq and start time.
   merged_i <- purrr::map_int(idx, function(x) x[1])
   
-  merged <- acc(
-    bursts_comb,
+  merged <- sensor_rcrd(
+    sensor = class(x)[1],
+    bursts = bursts_comb,
     frequency = units::set_units(fq[merged_i], "Hz"),
     start = sv[merged_i]
   )
 
   # If retaining index matching, fill merged idx with NA acc
   if (!drop) {
-    out <- vec_rep(acc(list(NULL), units::set_units(NA, "Hz")), n)
+    out <- vec_rep(sensor_rcrd(sensor = class(x)[1], bursts = list(NULL), frequency = units::set_units(NA, "Hz")), n)
     out[valid[merged_i]] <- merged
     merged <- out
   }
@@ -113,7 +114,7 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
 #' Split the bursts in an `acc` object into bursts of a given time duration.
 #' The result is a list of `acc` vectors of the same length as the input.
 #'
-#' @inheritParams merge_acc
+#' @inheritParams merge_bursts
 #' @param interval Numeric or units object defining the time intervals at which
 #'   `x` will be split. If no units are provided, the interval is assumed to
 #'   be in period units of `x` (i.e., 1 divided by the frequency units).
@@ -129,7 +130,7 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
 #'   start = as.POSIXct(c(0, 10), tz = "UTC")
 #' )
 #'
-#' x <- split_acc(a, units::set_units(1, "s"))
+#' x <- split_bursts(a, units::set_units(1, "s"))
 #' x
 #'
 #' # Flatten to a single acc vector
@@ -139,8 +140,8 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
 #' # Start times are updated to match the start of each split component
 #' starts(flat)
 #' 
-#' # Use merge_acc() on flat
-#' identical(merge_acc(flat), a)
+#' # Use merge_bursts() on flat
+#' identical(merge_bursts(flat), a)
 #'
 #' \dontrun{
 #' # In a dataframe, split and unnest to retain index matching
@@ -150,28 +151,30 @@ merge_acc <- function(x, acc_ids = NULL, drop = TRUE) {
 #' tbl <- tibble::tibble(id = c("a", "b"), burst = a)
 #'
 #' tbl <- tbl |>
-#'   mutate(burst = split_acc(burst, units::set_units(1, "s"))) |>
+#'   mutate(burst = split_bursts(burst, units::set_units(1, "s"))) |>
 #'   unnest(burst) |>
 #'   mutate(timestamp = starts(burst))
 #'   
 #' tbl
 #'   
-#' # Use merge_acc() to recover original bursts
+#' # Use merge_bursts() to recover original bursts
 #' tbl |> 
-#'   mutate(burst = merge_acc(burst, acc_ids = id, drop = FALSE))
+#'   mutate(burst = merge_bursts(burst, ids = id, drop = FALSE))
 #' }
-split_acc <- function(x, interval) {
+split_bursts <- function(x, interval) {
   assertthat::assert_that(
     as.numeric(interval) > 0,
     msg = "`interval` must be a positive number"
   )
   
-  x <- map_acc(
+  sensor <- class(x)[1]
+  
+  x <- map_bursts(
     x,
     function(.br, .fq, .st) {
       if (rlang::is_empty(.br) || nrow(.br) < 1) {
         return(
-          acc(list(NULL), .fq, .st)
+          sensor_rcrd(sensor, list(NULL), .fq, .st)
         )
       }
       
@@ -192,10 +195,11 @@ split_acc <- function(x, interval) {
       idx <- unname(split(seq_len(nrow(.br)), ceiling(seq_len(nrow(.br)) / i)))
       b_split <- lapply(idx, function(j) .br[j, , drop = FALSE])
       
-      a <- acc(
-        b_split, 
-        .fq, 
-        .st + cumsum(c(0, rep(interval, length(b_split) - 1)))
+      a <- sensor_rcrd(
+        sensor = sensor,
+        bursts = b_split, 
+        frequency = .fq, 
+        start = .st + cumsum(c(0, rep(interval, length(b_split) - 1)))
       )
     }
   )

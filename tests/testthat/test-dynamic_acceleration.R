@@ -12,7 +12,7 @@ expected_odba <- function(b) {
 
 test_that("Can calcluate vedba (with units)", {
   a <- acc_example()
-  bursts(a) <- map_acc(a, ~ units::set_units(.br, "m/s^2"))
+  bursts(a) <- map_bursts(a, ~ units::set_units(.br, "m/s^2"))
 
   result <- vedba(a)
 
@@ -24,7 +24,7 @@ test_that("Can calcluate vedba (with units)", {
 
 test_that("Can calculate odba (with units)", {
   a <- acc_example()
-  bursts(a) <- map_acc(a, ~ units::set_units(.br, "m/s^2"))
+  bursts(a) <- map_bursts(a, ~ units::set_units(.br, "m/s^2"))
 
   result <- odba(a)
 

@@ -65,7 +65,7 @@ odba_ <- function(b, ...) {
 
 # Handle NA value logic. Process only non-NA entries, then reassign.
 # For speed considerations, as accumulation of NA values can add meaningful
-# processing time in map_acc()
+# processing time in map_bursts()
 dba_ <- function(x, .f) {
   if (length(x) == 0) {
     return(NULL)
@@ -77,7 +77,7 @@ dba_ <- function(x, .f) {
     return(rep(NA_real_, length(x)))
   }
   
-  dba_non_na <- map_acc(x[!x_na], function(.br) .f(.br), simplify = TRUE)
+  dba_non_na <- map_bursts(x[!x_na], function(.br) .f(.br), simplify = TRUE)
   
   if (all(!x_na)) {
     return(dba_non_na)
