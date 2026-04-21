@@ -459,10 +459,6 @@ is_mag_colset <- function(x) {
   inherits(x, "mag_colset")
 }
 
-valid_sensors <- function() {
-  c("acc", "mag")
-}
-
 # Colset config and validation -------------------------------------------------
 
 # Registry of supported default colsets. Each entry is built

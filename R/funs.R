@@ -49,11 +49,6 @@ is_uniform<-function(x){
 }
 
 #' @export
-is.na.sensor_rcrd <- function(x) {
-  vctrs::vec_detect_missing(x)
-}
-
-#' @export
 #' @rdname explore-functions
 bursts <- function(x) {
   field(x, "bursts")
@@ -148,42 +143,10 @@ filter_freq <- function(x, min_freq = 0, max_freq = Inf, keep_na = FALSE) {
   x[freqs(x) <= max_freq & freqs(x) >= min_freq | is.na(freqs(x))]
 }
 
-#' @export
-#' @rdname explore-functions
-is_acc <- function(x) {
-  inherits(x, "acc")
-}
-
 # TODO finish function and export?
 static_acc <- function(x) {
   # should this return a list or a dataframe
   # TODO fix NA
   lapply(bursts(x)[!is.na(x)], colMeans)
 }
-
-# Shared implementations of vctrs type-combination logic. vctrs' double
-# dispatch only looks at `class(x)[1]` / `class(y)[1]` — it does not walk the
-# class chain — so concrete sensor classes need their own S3 method entries.
-# Each entry is a one-line wrapper; the logic lives here.
-sensor_ptype2 <- function(x, y, ..., x_arg = "", y_arg = "") {
-  freq_common <- vctrs::vec_ptype2(freqs(x), freqs(y))
-  start_common <- vctrs::vec_ptype2(starts(x), starts(y))
-
-  new_sensor_rcrd(
-    class(x)[1],
-    frequency = freq_common,
-    start = start_common
-  )
-}
-
-sensor_cast <- function(x, to, ..., x_arg = "", to_arg = "") {
-  freqs(x) <- units::set_units(freqs(x), units::deparse_unit(freqs(to)), mode = "standard")
-  x
-}
-
-#' @export
-vec_ptype2.acc.acc <- function(x, y, ...) sensor_ptype2(x, y, ...)
-
-#' @export
-vec_cast.acc.acc <- function(x, to, ...) sensor_cast(x, to, ...)
 
