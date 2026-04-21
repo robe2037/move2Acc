@@ -15,7 +15,7 @@
 \alias{n_samples}
 \alias{burst_units}
 \alias{is_mag}
-\title{Functions to explore an \code{acc} vector}
+\title{Functions to explore an \code{acc} or \code{mag} vector}
 \usage{
 is_acc(x)
 
@@ -44,12 +44,12 @@ burst_units(x)
 is_mag(x)
 }
 \arguments{
-\item{x}{an acc vector}
+\item{x}{An \code{acc} or \code{mag} vector.}
 
 \item{value}{Replacement value.}
 }
 \description{
-Functions to explore an \code{acc} vector
+Functions to explore an \code{acc} or \code{mag} vector
 }
 \examples{
 x <- acc(

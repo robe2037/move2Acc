@@ -2,12 +2,12 @@
 % Please edit documentation in R/map_bursts.R
 \name{map_bursts}
 \alias{map_bursts}
-\title{Apply a function to each element of an \code{acc} vector}
+\title{Apply a function to each element of an \code{acc} or \code{mag} vector}
 \usage{
 map_bursts(x, .f, simplify = FALSE, .progress = FALSE)
 }
 \arguments{
-\item{x}{An \code{acc} vector}
+\item{x}{An \code{acc} or \code{mag} vector}
 
 \item{.f}{A function to be applied to each element of \code{x}. This can be
 supplied in one of the following ways:
@@ -31,8 +31,8 @@ basic progress bar, use a string to give it a name.}
 }
 \description{
 This function provides a general framework to apply an arbitrary function
-to each element of an \code{acc} vector while providing access to each element's
-burst, frequency, and start time metadata.
+to each element of an \code{acc} or \code{mag} vector while providing access to each
+element's burst, frequency, and start time metadata.
 
 Note that some \link[=explore-functions]{common operations} have already been implemented as stand-alone
 functions.
@@ -41,8 +41,8 @@ functions.
 This function behaves similarly to the \code{\link[purrr:map]{purrr::map()}} family of functions.
 However, \code{map_bursts()} only matches arguments by name, not position. Thus,
 the input to \code{.f} must use the specified terminology (\code{.br}, \code{.fq},
-and/or \code{.st}) to access specific data from each \code{acc} element.
-For a given \code{acc} vector \code{x}:
+and/or \code{.st}) to access specific data from each element.
+For a given vector \code{x}:
 \itemize{
 \item \code{.br} accesses each element of the list returned by \code{\link[=bursts]{bursts()}}
 \item \code{.fq} accesses each element of the vector returned by \code{\link[=freqs]{freqs()}}
@@ -83,7 +83,7 @@ map_bursts(a, function(.br, .fq, .st) get_burst_end(.br, .fq, .st, offset = 5))
 map_bursts(a, get_burst_end, simplify = TRUE)
 
 # Note that this will fail if the result cannot be simplified to the same
-# length as the input `acc` vector
+# length as the input vector
 try(
   map_bursts(a, function(.br) .br, simplify = TRUE)
 )

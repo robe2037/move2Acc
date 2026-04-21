@@ -2,24 +2,25 @@
 % Please edit documentation in R/split_merge.R
 \name{split_bursts}
 \alias{split_bursts}
-\title{Split an \code{acc} object at regular intervals}
+\title{Split an \code{acc} or \code{mag} object at regular intervals}
 \usage{
 split_bursts(x, interval)
 }
 \arguments{
-\item{x}{An \code{acc} vector}
+\item{x}{An \code{acc} or \code{mag} vector}
 
 \item{interval}{Numeric or units object defining the time intervals at which
 \code{x} will be split. If no units are provided, the interval is assumed to
 be in period units of \code{x} (i.e., 1 divided by the frequency units).}
 }
 \value{
-A list of \code{acc} vectors, the same length as \code{x}. Each element
-contains the split pieces of the corresponding input burst.
+A list of vectors (same class as \code{x}), the same length as \code{x}.
+Each element contains the split pieces of the corresponding input burst.
 }
 \description{
-Split the bursts in an \code{acc} object into bursts of a given time duration.
-The result is a list of \code{acc} vectors of the same length as the input.
+Split the bursts in an \code{acc} or \code{mag} object into bursts of a given time
+duration. The result is a list of vectors of the same length as the input,
+with the same class as \code{x}.
 }
 \examples{
 a <- acc(
@@ -31,7 +32,7 @@ a <- acc(
 x <- split_bursts(a, units::set_units(1, "s"))
 x
 
-# Flatten to a single acc vector
+# Flatten to a single vector
 flat <- purrr::reduce(x, c)
 flat
 

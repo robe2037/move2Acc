@@ -59,7 +59,50 @@ acc_colset <- function(x = NULL,
   )
 }
 
+#' Specify magnetometer data columns
+#'
+#' @description
+#' Define which columns in a `move2` object contain magnetometer data.
+#' Use this function to manually specify the columns that should be used when
+#' constructing a `mag` vector with `as_mag()`.
+#'
+#' For long-format data (one measurement per row), specify axis columns
+#' with `x`, `y`, and/or `z`.
+#'
+#' For burst-format data (where each row contains burst data in a single string),
+#' specify the columns containing the raw burst data, axes, and sampling
+#' frequency.
+#'
+#' @param x,y,z In long-format data, the column name(s) for the
+#'   X, Y, and/or Z magnetometer axes.
+#' @param bursts For burst-format data, the column name containing the raw burst
+#'   strings.
+#' @param axes For burst-format data, the column name containing the axis
+#'   labels.
+#' @param frequency For burst-format data, the column name containing the
+#'   sampling frequency.
+#'
+#' @returns A `mag_colset` object.
+#'
+#' @seealso [active_mag_colsets()] for automatic colset detection, [as_mag()] to
+#'   construct a `mag` vector using a colset specification.
+#'
 #' @export
+#'
+#' @examples
+#' # Specify the column names for long-format data for each axis
+#' mag_colset(x = "my_mag_x", y = "my_mag_y", z = "my_mag_z")
+#'
+#' # Long format data may consist of a subset of axes
+#' mag_colset(x = "my_mag_x", y = "my_mag_y")
+#'
+#' # Specify the column names for the bursts, axes, and frequency for
+#' # burst-format data
+#' mag_colset(
+#'   bursts = "my_raw_mag",
+#'   axes = "my_axes",
+#'   frequency = "my_freq"
+#' )
 mag_colset <- function(x = NULL,
                        y = NULL,
                        z = NULL,
@@ -183,17 +226,39 @@ acc_colset_raw_xyz <- function() {
   )
 }
 
+#' Valid magnetometer data column sets
+#'
+#' @description
+#' These sets of columns can be used by [as_mag()] when parsing magnetometer
+#' bursts contained in a `move2` object. A `move2` object must contain one
+#' of these column sets to be processed by `as_mag()`.
+#'
+#' - `mag_colset_burst()` must be present in its entirety within a data
+#' source to be used when parsing magnetometer data.
+#' - For `mag_colset_xyz()` and `mag_colset_raw_xyz()`, any subset of the
+#' set's columns can be used to parse magnetometer data.
+#'
+#' To determine the default columns that will be used by `as_mag()` for a given
+#' `move2` object, see [active_mag_colsets()].
+#'
+#' @returns For `valid_mag_colsets()`, a list of `mag_colset` objects
+#'   containing valid column sets. Otherwise, a `mag_colset` object.
+#'
 #' @export
+#'
+#' @examples
+#' valid_mag_colsets()
 valid_mag_colsets <- function() {
   purrr::map(mag_colset_config(), function(colset) colset$cols)
 }
 
 #' @export
+#' @rdname valid_mag_colsets
 mag_colset_burst <- function() {
   new_colset(
     cols = c(
-      bursts = "magnetic_fields_raw", 
-      axes = "magnetic_field_axes", 
+      bursts = "magnetic_fields_raw",
+      axes = "magnetic_field_axes",
       frequency = "magnetic_field_sampling_frequency_per_axis"
     ),
     type = "burst",
@@ -202,6 +267,7 @@ mag_colset_burst <- function() {
 }
 
 #' @export
+#' @rdname valid_mag_colsets
 mag_colset_xyz <- function() {
   new_colset(
     cols = c(
@@ -215,6 +281,7 @@ mag_colset_xyz <- function() {
 }
 
 #' @export
+#' @rdname valid_mag_colsets
 mag_colset_raw_xyz <- function() {
   new_colset(
     cols = c(
@@ -258,8 +325,8 @@ mag_colset_raw_xyz <- function() {
 #' burst-format column sets for data from Movebank include [acc_colset_eobs()]
 #' and [acc_colset_burst()].
 #'
-#' If your input data use different column names for these columns, use this
-#' function to specify the column names that correspond to each of the
+#' If your input data use different column names for these columns, use
+#' [acc_colset()] to specify the column names that correspond to each of the
 #' axes (for long-format data) or burst data and associated metadata (for
 #' burst-format data).
 #'
@@ -299,7 +366,47 @@ active_acc_colsets <- function(x) {
   active_colsets_(x, "acc")
 }
 
+#' Identify magnetometer columns present in a `move2` object
+#'
+#' @description
+#' `active_mag_colsets()` determines the sets of columns that will be used
+#' by default to construct magnetometer bursts with `as_mag()`. Column sets
+#' are processed independently, but a given `move2` may contain multiple
+#' column sets with magnetometer data.
+#'
+#' @details
+#' `move2` objects store magnetometer data in two ways: long-format
+#' magnetometer columns and burst-format magnetometer columns.
+#'
+#' Long-format columns store one magnetometer measurement (possibly for multiple
+#' axes) in a single row. Note that
+#' not all axes need to be present for a long-format column set to be considered
+#' active in a `move2` object.
+#'
+#' Burst-format columns store a burst of magnetometer data as a space-delimited
+#' string. This string must be segmented into axis-specific measurements using
+#' an associated column that indicates the axes present for the bursted data.
+#' A further column provides the sampling frequency of the burst.
+#' All three of these columns must be present for a burst-format column set
+#' to be considered active in a `move2` object.
+#'
+#' Standard long-format column sets for data from
+#' Movebank include [mag_colset_raw_xyz()] and [mag_colset_xyz()]. The standard
+#' burst-format column set for data from Movebank is [mag_colset_burst()].
+#'
+#' If your input data use different column names for these columns, use
+#' [mag_colset()] to specify the column names that correspond to each of the
+#' axes (for long-format data) or burst data and associated metadata (for
+#' burst-format data).
+#'
+#' @inheritParams as_mag
+#'
+#' @returns A list of `mag_colset` objects.
+#'
 #' @export
+#'
+#' @seealso [valid_mag_colsets()] for currently supported default colsets,
+#'   [as_mag()] to build a `mag` vector from a `move2` object.
 active_mag_colsets <- function(x) {
   active_colsets_(x, "mag")
 }
@@ -362,7 +469,7 @@ active_colsets_ <- function(x, sensor) {
 #' of `as_acc()` to avoid processing duplicated records.
 #'
 #' @inheritParams as_acc
-#' @param colset List of `acc_colset` objects to check for
+#' @param colsets List of `acc_colset` objects to check for
 #'   overlap. Defaults to the column sets detected by [active_acc_colsets()].
 #'
 #' @returns An integer vector of row indices with duplicated acceleration data
@@ -377,6 +484,26 @@ duplicated_acc_rows <- function(x, colsets = NULL) {
   duplicated_sensor_rows(x, colsets %||% active_acc_colsets(x))
 }
 
+#' Identify rows with magnetometer data from multiple column sets
+#'
+#' This function returns the row indices of a `move2` object
+#' where more than one magnetometer column set contains data. `as_mag()`
+#' refuses to build `mag` objects for rows where multiple input sources exist.
+#' These rows can be modified to remove data from additional column sets.
+#' Alternatively, specific columns can be passed to the `colset` argument
+#' of `as_mag()` to avoid processing duplicated records.
+#'
+#' @inheritParams as_mag
+#' @param colsets List of `mag_colset` objects to check for
+#'   overlap. Defaults to the column sets detected by [active_mag_colsets()].
+#'
+#' @returns An integer vector of row indices with duplicated magnetometer data
+#'   across column sets.
+#'
+#' @seealso
+#'   - [active_mag_colsets()] to identify available column sets in a `move2` object.
+#'   - [as_mag()] to generate a `mag` vector from a `move2` object.
+#'
 #' @export
 duplicated_mag_rows <- function(x, colsets = NULL) {
   duplicated_sensor_rows(x, colsets %||% active_mag_colsets(x))

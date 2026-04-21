@@ -1,7 +1,7 @@
 
-#' Functions to explore an `acc` vector
+#' Functions to explore an `acc` or `mag` vector
 #'
-#' @param x an acc vector
+#' @param x An `acc` or `mag` vector.
 #' @param value Replacement value.
 #'
 #' @rdname explore-functions
@@ -111,9 +111,9 @@ burst_units <- function(x) {
   )
 }
 
-#' Filter an acc vector by burst frequency
+#' Filter an `acc` or `mag` vector by burst frequency
 #'
-#' @param x An `acc` vector
+#' @param x An `acc` or `mag` vector.
 #' @param min_freq,max_freq Numeric or units values indicating the minimum
 #'   and/or maximum frequency thresholds to use when determining the records in
 #'   `x` to retain. Elements in `x` whose frequency falls within these limits
@@ -123,7 +123,7 @@ burst_units <- function(x) {
 #'   frequency should be retained in the output. By default, these elements
 #'   are removed.
 #'
-#' @returns An `acc` vector
+#' @returns A vector of the same class as `x`.
 #' @export
 #'
 #' @examples

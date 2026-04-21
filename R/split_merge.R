@@ -1,11 +1,11 @@
-#' Merge adjacent bursts in an `acc` vector
-#' 
-#' For a given `acc` vector, identify temporally adjacent bursts and merge
-#' them into a single burst. Bursts that end at the same time as the start
-#' time of the next burst are considered adjacent. Bursts with different
-#' frequencies or acceleration axes will not be merged.
+#' Merge adjacent bursts in an `acc` or `mag` vector
 #'
-#' @param x An `acc` vector
+#' For a given `acc` or `mag` vector, identify temporally adjacent bursts and
+#' merge them into a single burst. Bursts that end at the same time as the
+#' start time of the next burst are considered adjacent. Bursts with different
+#' frequencies or axes will not be merged.
+#'
+#' @param x An `acc` or `mag` vector
 #' @param ids Vector indicating groups to which the elements in `x` belong.
 #'   If provided, bursts in `x` will not be merged across different values of
 #'   this vector, even if their timestamps and frequencies align.
@@ -14,8 +14,8 @@
 #'   as the input `x`, with `NA` values at positions where bursts were merged
 #'   into a preceding burst. This is useful for retaining index matching between
 #'   the input and output vectors. Default is `TRUE`.
-#' 
-#' @returns An `acc` vector
+#'
+#' @returns A vector of the same class as `x`.
 #' @export
 #'
 #' @examples
@@ -78,7 +78,7 @@ merge_bursts <- function(x, ids = NULL, drop = TRUE) {
   to_bind <- c(FALSE, is_adjacent_burst & is_same_freq & is_same_n_axis & is_same_id)
   to_bind[is.na(to_bind)] <- FALSE
   
-  # Split entries in the acc vector into groups that should be collapsed and
+  # Split entries in the vector into groups that should be collapsed and
   # rbind burst matrices
   idx <- unname(split(seq_along(to_bind), cumsum(!to_bind)))
   
@@ -99,7 +99,7 @@ merge_bursts <- function(x, ids = NULL, drop = TRUE) {
     start = sv[merged_i]
   )
 
-  # If retaining index matching, fill merged idx with NA acc
+  # If retaining index matching, fill merged idx with NA entries
   if (!drop) {
     out <- vec_rep(sensor_rcrd(sensor = class(x)[1], bursts = list(NULL), frequency = units::set_units(NA, "Hz")), n)
     out[valid[merged_i]] <- merged
@@ -109,18 +109,19 @@ merge_bursts <- function(x, ids = NULL, drop = TRUE) {
   merged
 }
 
-#' Split an `acc` object at regular intervals
+#' Split an `acc` or `mag` object at regular intervals
 #'
-#' Split the bursts in an `acc` object into bursts of a given time duration.
-#' The result is a list of `acc` vectors of the same length as the input.
+#' Split the bursts in an `acc` or `mag` object into bursts of a given time
+#' duration. The result is a list of vectors of the same length as the input,
+#' with the same class as `x`.
 #'
 #' @inheritParams merge_bursts
 #' @param interval Numeric or units object defining the time intervals at which
 #'   `x` will be split. If no units are provided, the interval is assumed to
 #'   be in period units of `x` (i.e., 1 divided by the frequency units).
 #'
-#' @returns A list of `acc` vectors, the same length as `x`. Each element
-#'   contains the split pieces of the corresponding input burst.
+#' @returns A list of vectors (same class as `x`), the same length as `x`.
+#'   Each element contains the split pieces of the corresponding input burst.
 #' @export
 #'
 #' @examples
@@ -133,7 +134,7 @@ merge_bursts <- function(x, ids = NULL, drop = TRUE) {
 #' x <- split_bursts(a, units::set_units(1, "s"))
 #' x
 #'
-#' # Flatten to a single acc vector
+#' # Flatten to a single vector
 #' flat <- purrr::reduce(x, c)
 #' flat
 #' 

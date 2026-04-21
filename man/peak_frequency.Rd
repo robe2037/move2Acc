@@ -2,12 +2,12 @@
 % Please edit documentation in R/peak_frequency.R
 \name{peak_frequency}
 \alias{peak_frequency}
-\title{Calculate the peak frequency per axis for acceleration bursts}
+\title{Calculate the peak frequency per axis for bursts}
 \usage{
 peak_frequency(x, resolution = NA)
 }
 \arguments{
-\item{x}{An \code{acc} vector}
+\item{x}{An \code{acc} or \code{mag} vector.}
 
 \item{resolution}{A scalar with the \link[units:units]{units} Hertz}
 }
@@ -15,11 +15,11 @@ peak_frequency(x, resolution = NA)
 returns a list with the same length as \code{x} with the peak frequency per axis
 }
 \description{
-Calculate the peak frequency per axis for acceleration bursts
+Calculate the peak frequency per axis for bursts
 }
 \details{
 To increase the resolution of the result zero padding can be used. This can be controlled using the resolution
-argument. Note that increasing resolution without increasing the number of samples in a acceleration burst has a
+argument. Note that increasing resolution without increasing the number of samples in a burst has a
 limited ability to get closer to the true frequency.
 }
 \examples{

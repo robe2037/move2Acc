@@ -143,7 +143,7 @@ as_sensor_move2_long <- function(x,
 
   colnames(m) <- names(colset)
 
-  # TODO: may want a safer way to handle units. Some acc will have units, others not
+  # TODO: may want a safer way to handle units. Some columns will have units, others not
   if (inherits(x[[colset[[1]]]], "units")) {
     m <- m * units::as_units(units::deparse_unit(x[[colset[[1]]]]))
   }
@@ -176,7 +176,7 @@ as_sensor_move2_long <- function(x,
 
   freq <- round(freq, digits = freq_digits)
 
-  # Attach acc bursts to index of the first record that belongs to that burst
+  # Attach bursts to index of the first record that belongs to that burst
   out <- vec_rep(
     sensor_rcrd(
       sensor,
@@ -249,10 +249,10 @@ which_sensor_vals <- function(x, colset) {
   has_vals
 }
 
-#' Group long-format acceleration records into bursts
+#' Group long-format sensor records into bursts
 #'
 #' @description
-#' Based on the timestamps of the records in long-format acceleration
+#' Based on the timestamps of the records in long-format sensor
 #' data, identify bursts based on the observed time gaps between records. Gaps
 #' that exceed a set threshold will be used to group records into bursts.
 #' Further, any observed changes in data collection frequency will also be
@@ -260,19 +260,19 @@ which_sensor_vals <- function(x, colset) {
 #'
 #' @details
 #' For continuous data, sensors may dynamically update collection frequency.
-#' However, an `acc` burst should not contain data from multiple collection
+#' However, a burst should not contain data from multiple collection
 #' frequencies, so we must split these data into distinct bursts, despite the
 #' fact that there may be no gap in collection.
 #'
-#' For acceleration records at the boundary of a frequency change, there is
+#' For records at the boundary of a frequency change, there is
 #' a fundamental ambiguity as to whether these records should be included in
 #' the burst prior to or the burst after the boundary timestamp. See comments
 #' to `freq_changes` for details on our approach.
 #'
-#' @param x move2 object with long-format acceleration data
+#' @param x move2 object with long-format sensor data
 #' @param min_freq Numeric value indicating the
 #'   minimum allowable within-burst data collection frequency when identifying
-#'   bursts in long-format acceleration data. Any two adjacent timestamps
+#'   bursts in long-format sensor data. Any two adjacent timestamps
 #'   that fall outside of the period defined by this frequency will be split
 #'   into separate bursts. If no units are provided, this value is assumed to
 #'   be in Hz.
@@ -316,9 +316,9 @@ parse_bursts <- function(x, colset, min_freq = 1, freq_tol = 1e-6) {
 # Identify transition points from one frequency to another within a sequential
 # time difference vector.
 #
-# Sequential acceleration data may change frequency. This can occur either from
+# Sequential sensor data may change frequency. This can occur either from
 # legitimate burst gaps or from changes in collection frequency. In general,
-# when a change of frequency is detected, we create a new group of acceleration
+# when a change of frequency is detected, we create a new group of sensor
 # values. See `new_freq_regime()` for more on the logic of how split points
 # are determined in ambiguous cases.
 freq_changes <- function(x, freq_tol = 1e-6) {

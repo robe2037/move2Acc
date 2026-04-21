@@ -2,17 +2,17 @@
 % Please edit documentation in R/plot_time.R
 \name{plot_time}
 \alias{plot_time}
-\title{Ploting the acceleration bursts over time}
+\title{Plot bursts over time}
 \usage{
 plot_time(x, time, ylab = "Acceleration")
 }
 \arguments{
-\item{x}{an acc vector}
+\item{x}{An \code{acc} or \code{mag} vector.}
 
-\item{time}{a \code{POSIXct} with the start time of acc bursts}
+\item{time}{a \code{POSIXct} with the start time of bursts}
 
 \item{ylab}{A character with the y axis label}
 }
 \description{
-Ploting the acceleration bursts over time
+Plot bursts over time
 }

@@ -1,25 +1,25 @@
-#' Apply a function to each element of an `acc` vector
-#' 
-#' @description 
+#' Apply a function to each element of an `acc` or `mag` vector
+#'
+#' @description
 #' This function provides a general framework to apply an arbitrary function
-#' to each element of an `acc` vector while providing access to each element's
-#' burst, frequency, and start time metadata.
-#' 
+#' to each element of an `acc` or `mag` vector while providing access to each
+#' element's burst, frequency, and start time metadata.
+#'
 #' Note that some [common operations][explore-functions] have already been implemented as stand-alone
 #' functions.
-#' 
+#'
 #' @details
 #' This function behaves similarly to the [purrr::map()] family of functions.
 #' However, `map_bursts()` only matches arguments by name, not position. Thus,
-#' the input to `.f` must use the specified terminology (`.br`, `.fq`, 
-#' and/or `.st`) to access specific data from each `acc` element.
-#' For a given `acc` vector `x`:
-#' 
+#' the input to `.f` must use the specified terminology (`.br`, `.fq`,
+#' and/or `.st`) to access specific data from each element.
+#' For a given vector `x`:
+#'
 #' - `.br` accesses each element of the list returned by [bursts()]
 #' - `.fq` accesses each element of the vector returned by [freqs()]
 #' - `.st` accesses each element of the vector returned by [starts()]
-#' 
-#' @param x An `acc` vector
+#'
+#' @param x An `acc` or `mag` vector
 #' @param .f A function to be applied to each element of `x`. This can be
 #'   supplied in one of the following ways:
 #'   - A named function
@@ -72,7 +72,7 @@
 #' map_bursts(a, get_burst_end, simplify = TRUE)
 #' 
 #' # Note that this will fail if the result cannot be simplified to the same
-#' # length as the input `acc` vector
+#' # length as the input vector
 #' try(
 #'   map_bursts(a, function(.br) .br, simplify = TRUE)
 #' )
@@ -102,7 +102,7 @@ map_bursts <- function(x, .f, simplify = FALSE, .progress = FALSE) {
 
 as_sensor_mapper <- function(.f) {
   if (rlang::is_formula(.f)) {
-    # Build function with custom arg names to refer to acc fields
+    # Build function with custom arg names to refer to record fields
     f <- rlang::new_function(
       args = rlang::pairlist2(.br = , .fq = , .st = ),
       body = rlang::f_rhs(.f),

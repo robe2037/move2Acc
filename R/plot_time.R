@@ -1,8 +1,8 @@
-#' Ploting the acceleration bursts over time
+#' Plot bursts over time
 #'
-#' @param x an acc vector
+#' @param x An `acc` or `mag` vector.
 #'
-#' @param time a `POSIXct` with the start time of acc bursts
+#' @param time a `POSIXct` with the start time of bursts
 #' @param ylab A character with the y axis label
 #'
 #' @export

@@ -2,12 +2,12 @@
 % Please edit documentation in R/split_merge.R
 \name{merge_bursts}
 \alias{merge_bursts}
-\title{Merge adjacent bursts in an \code{acc} vector}
+\title{Merge adjacent bursts in an \code{acc} or \code{mag} vector}
 \usage{
 merge_bursts(x, ids = NULL, drop = TRUE)
 }
 \arguments{
-\item{x}{An \code{acc} vector}
+\item{x}{An \code{acc} or \code{mag} vector}
 
 \item{ids}{Vector indicating groups to which the elements in \code{x} belong.
 If provided, bursts in \code{x} will not be merged across different values of
@@ -20,13 +20,13 @@ into a preceding burst. This is useful for retaining index matching between
 the input and output vectors. Default is \code{TRUE}.}
 }
 \value{
-An \code{acc} vector
+A vector of the same class as \code{x}.
 }
 \description{
-For a given \code{acc} vector, identify temporally adjacent bursts and merge
-them into a single burst. Bursts that end at the same time as the start
-time of the next burst are considered adjacent. Bursts with different
-frequencies or acceleration axes will not be merged.
+For a given \code{acc} or \code{mag} vector, identify temporally adjacent bursts and
+merge them into a single burst. Bursts that end at the same time as the
+start time of the next burst are considered adjacent. Bursts with different
+frequencies or axes will not be merged.
 }
 \examples{
 a <- acc(

@@ -42,8 +42,8 @@ Movebank include \code{\link[=acc_colset_raw_xyz]{acc_colset_raw_xyz()}} and \co
 burst-format column sets for data from Movebank include \code{\link[=acc_colset_eobs]{acc_colset_eobs()}}
 and \code{\link[=acc_colset_burst]{acc_colset_burst()}}.
 
-If your input data use different column names for these columns, use this
-function to specify the column names that correspond to each of the
+If your input data use different column names for these columns, use
+\code{\link[=acc_colset]{acc_colset()}} to specify the column names that correspond to each of the
 axes (for long-format data) or burst data and associated metadata (for
 burst-format data).
 }
