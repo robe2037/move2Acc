@@ -3,6 +3,54 @@ acc_burst_example <- function(x = NULL, y = NULL, z = NULL) {
   new_sensor_list(list(do.call(cbind, list(X = x, Y = y, Z = z))), "acc")
 }
 
+# Fabricated long-format mag move2. Uses the column names expected by
+# `mag_colset_xyz()` (i.e. `magnetic_field_{x,y,z}`). Two bursts at 10 Hz,
+# separated by a gap so `as_mag()` splits them.
+mag_example_long <- function(id = "long") {
+  t <- data.frame(
+    id = id,
+    magnetic_field_x = as.numeric(1:10),
+    magnetic_field_y = as.numeric(11:20),
+    magnetic_field_z = as.numeric(21:30),
+    timestamp = as.POSIXct(
+      c(seq(1, 1.4, by = 0.1), seq(3, 3.4, by = 0.1)),
+      tz = "UTC"
+    ),
+    x = 1, y = 1
+  )
+
+  move2::mt_as_move2(
+    t,
+    coords = c("x", "y"),
+    time_column = "timestamp",
+    track_id_column = "id"
+  )
+}
+
+# Fabricated burst-format mag move2. Uses the column names expected by
+# `mag_colset_burst()`. Two XYZ bursts at 10 Hz, separated by a gap so that
+# `merge_bursts` does not collapse them.
+mag_example_burst <- function(id = "burst") {
+  t <- data.frame(
+    id = id,
+    magnetic_field_axes = "XYZ",
+    magnetic_field_sampling_frequency_per_axis = 10,
+    magnetic_fields_raw = c(
+      paste0(rep(1:5, each = 3), collapse = " "),
+      paste0(rep(6:10, each = 3), collapse = " ")
+    ),
+    timestamp = as.POSIXct(c(10, 30), tz = "UTC"),
+    x = 1, y = 1
+  )
+
+  move2::mt_as_move2(
+    t,
+    coords = c("x", "y"),
+    time_column = "timestamp",
+    track_id_column = "id"
+  )
+}
+
 # Build sample data source to simulate case where "bursted" data is actually
 # continuous, as bursts are adjacent in time.
 albatrosses_messy <- function() {

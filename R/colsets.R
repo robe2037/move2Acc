@@ -202,11 +202,11 @@ mag_colset_burst <- function() {
 }
 
 #' @export
-mag_colset_raw_xyz <- function() {
+mag_colset_xyz <- function() {
   new_colset(
     cols = c(
-      X = "magnetic_field_x", 
-      Y = "magnetic_field_y", 
+      X = "magnetic_field_x",
+      Y = "magnetic_field_y",
       Z = "magnetic_field_z"
     ),
     type = "long",
@@ -215,11 +215,11 @@ mag_colset_raw_xyz <- function() {
 }
 
 #' @export
-mag_colset_xyz <- function() {
+mag_colset_raw_xyz <- function() {
   new_colset(
     cols = c(
-      X = "magnetic_field_raw_x", 
-      Y = "magnetic_field_raw_y", 
+      X = "magnetic_field_raw_x",
+      Y = "magnetic_field_raw_y",
       Z = "magnetic_field_raw_z"
     ),
     type = "long",

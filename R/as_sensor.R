@@ -209,7 +209,7 @@ parse_colsets <- function(x, colset, sensor) {
     } else {
       rlang::abort(c(
         paste0(
-          "`colset` must be an `", sensor, "_colset` object or a list of such objects."
+          "`colset` must be a(n) `", sensor, "_colset` object or a list of such objects."
         ),
         i = paste0("Use `", sensor, "_colset()` to create an `", sensor, "_colset` object.")
       ))

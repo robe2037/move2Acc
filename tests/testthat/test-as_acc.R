@@ -188,7 +188,7 @@ test_that("Multi-colset drop = TRUE is subset of drop = FALSE", {
 
 test_that("Correctly error on bad colset specifications", {
   expect_error(as_acc(gulls(), colset = acc_colset_eobs()), "Missing columns")
-  expect_error(as_acc(gulls(), colset = "foobar"), "must be an `acc_colset`")
+  expect_error(as_acc(gulls(), colset = "foobar"), "must be.+`acc_colset`")
 })
 
 test_that("Can split long-format data into bursts by inferred frequency", {
