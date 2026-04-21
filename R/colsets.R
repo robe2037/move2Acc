@@ -59,6 +59,7 @@ acc_colset <- function(x = NULL,
   )
 }
 
+#' @export
 mag_colset <- function(x = NULL,
                        y = NULL,
                        z = NULL,
@@ -182,10 +183,12 @@ acc_colset_raw_xyz <- function() {
   )
 }
 
+#' @export
 valid_mag_colsets <- function() {
   purrr::map(mag_colset_config(), function(colset) colset$cols)
 }
 
+#' @export
 mag_colset_burst <- function() {
   new_colset(
     cols = c(
@@ -198,6 +201,7 @@ mag_colset_burst <- function() {
   )
 }
 
+#' @export
 mag_colset_raw_xyz <- function() {
   new_colset(
     cols = c(
@@ -210,6 +214,7 @@ mag_colset_raw_xyz <- function() {
   )
 }
 
+#' @export
 mag_colset_xyz <- function() {
   new_colset(
     cols = c(
@@ -294,6 +299,7 @@ active_acc_colsets <- function(x) {
   active_colsets_(x, "acc")
 }
 
+#' @export
 active_mag_colsets <- function(x) {
   active_colsets_(x, "mag")
 }
@@ -371,6 +377,7 @@ duplicated_acc_rows <- function(x, colsets = NULL) {
   duplicated_sensor_rows(x, colsets %||% active_acc_colsets(x))
 }
 
+#' @export
 duplicated_mag_rows <- function(x, colsets = NULL) {
   duplicated_sensor_rows(x, colsets %||% active_mag_colsets(x))
 }

@@ -31,14 +31,15 @@ acc_set_units <- function(x, units) {
   assertthat::assert_that(inherits(x, "acc"))
   assertthat::assert_that(is.character(units), length(units) == 1)
 
-  bursts(x) <- new_acc_list(
+  bursts(x) <- new_sensor_list(
     map_bursts(x, function(.br) {
       if (is.null(.br)) return(NULL)
       nms <- colnames(.br)
       .br <- units::set_units(.br, units, mode = "standard")
       colnames(.br) <- nms
       .br
-    })
+    }),
+    sensor = "acc"
   )
 
   x

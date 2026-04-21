@@ -1,6 +1,4 @@
 test_that("create zero length", {
-  expect_identical(acc(), new_acc())
-  expect_length(new_acc(), 0)
   expect_length(acc(), 0)
 })
 

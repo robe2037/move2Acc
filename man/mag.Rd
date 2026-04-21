@@ -13,7 +13,7 @@ mag(
 \arguments{
 \item{bursts}{a list of matrices}
 
-\item{frequency}{The frequency of the magnetometer recordings. Either the
+\item{frequency}{The sampling frequency of the recordings in \code{bursts}. Either the
 same length of \code{bursts} or it will be recycled. If no units are specified,
 the frequency is assumed to be in Hz.}
 

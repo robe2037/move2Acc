@@ -1,6 +1,6 @@
 acc_burst_example <- function(x = NULL, y = NULL, z = NULL) {
   vctrs::vec_size_common(x, y, z)
-  new_acc_list(list(do.call(cbind, list(X = x, Y = y, Z = z))))
+  new_sensor_list(list(do.call(cbind, list(X = x, Y = y, Z = z))), "acc")
 }
 
 # Build sample data source to simulate case where "bursted" data is actually

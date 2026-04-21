@@ -48,7 +48,7 @@ as_acc <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.default <- function(x, ...) {
-  vctrs::vec_cast(x, new_acc())
+  vctrs::vec_cast(x, new_sensor_rcrd("acc"))
 }
 
 #' @rdname as_acc
