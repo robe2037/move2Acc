@@ -120,5 +120,5 @@ test_that("Error on unrecognized arg names (do not match by position)", {
 test_that("map_bursts() basic requirements", {
   expect_error(map_bursts(acc_example(), "foobar"), "must be a function or")
   expect_error(map_bursts(acc_example(), NULL), "must be a function or")
-  expect_error(map_bursts(1, length), "must be an `acc` or `mag` vector")
+  expect_error(map_bursts(1, length), "must be an `acc`,.*`gyro` vector")
 })

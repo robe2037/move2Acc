@@ -294,6 +294,121 @@ mag_colset_raw_xyz <- function() {
   )
 }
 
+#' Specify gyroscope data columns
+#'
+#' @description
+#' Define which columns in a `move2` object contain gyroscope data.
+#' Use this function to manually specify the columns that should be used when
+#' constructing a `gyro` vector with `as_gyro()`.
+#'
+#' For long-format data (one measurement per row), specify axis columns
+#' with `x`, `y`, and/or `z`.
+#'
+#' For burst-format data (where each row contains burst data in a single string),
+#' specify the columns containing the raw burst data, axes, and sampling
+#' frequency.
+#'
+#' @param x,y,z In long-format data, the column name(s) for the
+#'   X, Y, and/or Z gyroscope axes.
+#' @param bursts For burst-format data, the column name containing the raw burst
+#'   strings.
+#' @param axes For burst-format data, the column name containing the axis
+#'   labels.
+#' @param frequency For burst-format data, the column name containing the
+#'   sampling frequency.
+#'
+#' @returns A `gyro_colset` object.
+#'
+#' @seealso [active_gyro_colsets()] for automatic colset detection, [as_gyro()]
+#'   to construct a `gyro` vector using a colset specification.
+#'
+#' @export
+#'
+#' @examples
+#' # Specify the column names for long-format data for each axis
+#' gyro_colset(x = "my_gyro_x", y = "my_gyro_y", z = "my_gyro_z")
+#'
+#' # Long format data may consist of a subset of axes
+#' gyro_colset(x = "my_gyro_x", y = "my_gyro_y")
+#'
+#' # Specify the column names for the bursts, axes, and frequency for
+#' # burst-format data
+#' gyro_colset(
+#'   bursts = "my_raw_gyro",
+#'   axes = "my_axes",
+#'   frequency = "my_freq"
+#' )
+gyro_colset <- function(x = NULL,
+                        y = NULL,
+                        z = NULL,
+                        bursts = NULL,
+                        axes = NULL,
+                        frequency = NULL) {
+  build_colset_(
+    sensor = "gyro",
+    x = x,
+    y = y,
+    z = z,
+    bursts = bursts,
+    axes = axes,
+    frequency = frequency
+  )
+}
+
+#' Valid gyroscope data column sets
+#'
+#' @description
+#' These sets of columns can be used by [as_gyro()] when parsing gyroscope
+#' bursts contained in a `move2` object. A `move2` object must contain one
+#' of these column sets to be processed by `as_gyro()`.
+#'
+#' - `gyro_colset_burst()` must be present in its entirety within a data
+#' source to be used when parsing gyroscope data.
+#' - For `gyro_colset_xyz()`, any subset of the set's columns can be used to
+#' parse gyroscope data.
+#'
+#' To determine the default columns that will be used by `as_gyro()` for a given
+#' `move2` object, see [active_gyro_colsets()].
+#'
+#' @returns For `valid_gyro_colsets()`, a list of `gyro_colset` objects
+#'   containing valid column sets. Otherwise, a `gyro_colset` object.
+#'
+#' @export
+#'
+#' @examples
+#' valid_gyro_colsets()
+valid_gyro_colsets <- function() {
+  purrr::map(gyro_colset_config(), function(colset) colset$cols)
+}
+
+#' @export
+#' @rdname valid_gyro_colsets
+gyro_colset_burst <- function() {
+  new_colset(
+    cols = c(
+      bursts = "angular_velocities_raw",
+      axes = "gyroscope_axes",
+      frequency = "gyroscope_sampling_frequency_per_axis"
+    ),
+    type = "burst",
+    sensor = "gyro"
+  )
+}
+
+#' @export
+#' @rdname valid_gyro_colsets
+gyro_colset_xyz <- function() {
+  new_colset(
+    cols = c(
+      X = "angular_velocity_x",
+      Y = "angular_velocity_y",
+      Z = "angular_velocity_z"
+    ),
+    type = "long",
+    sensor = "gyro"
+  )
+}
+
 # Colsets in a move2 object ----------------------------------------------------
 
 #' Identify acceleration columns present in a `move2` object
@@ -411,10 +526,60 @@ active_mag_colsets <- function(x) {
   active_colsets_(x, "mag")
 }
 
+#' Identify gyroscope columns present in a `move2` object
+#'
+#' @description
+#' `active_gyro_colsets()` determines the sets of columns that will be used
+#' by default to construct gyroscope bursts with `as_gyro()`. Column sets
+#' are processed independently, but a given `move2` may contain multiple
+#' column sets with gyroscope data.
+#'
+#' @details
+#' `move2` objects store gyroscope data in two ways: long-format
+#' gyroscope columns and burst-format gyroscope columns.
+#'
+#' Long-format columns store one gyroscope measurement (possibly for multiple
+#' axes) in a single row. Note that
+#' not all axes need to be present for a long-format column set to be considered
+#' active in a `move2` object.
+#'
+#' Burst-format columns store a burst of gyroscope data as a space-delimited
+#' string. This string must be segmented into axis-specific measurements using
+#' an associated column that indicates the axes present for the bursted data.
+#' A further column provides the sampling frequency of the burst.
+#' All three of these columns must be present for a burst-format column set
+#' to be considered active in a `move2` object.
+#'
+#' The standard long-format column set for data from Movebank is
+#' [gyro_colset_xyz()]. The standard burst-format column set for data from
+#' Movebank is [gyro_colset_burst()].
+#'
+#' If your input data use different column names for these columns, use
+#' [gyro_colset()] to specify the column names that correspond to each of the
+#' axes (for long-format data) or burst data and associated metadata (for
+#' burst-format data).
+#'
+#' @inheritParams as_gyro
+#'
+#' @returns A list of `gyro_colset` objects.
+#'
+#' @export
+#'
+#' @seealso [valid_gyro_colsets()] for currently supported default colsets,
+#'   [as_gyro()] to build a `gyro` vector from a `move2` object.
+active_gyro_colsets <- function(x) {
+  active_colsets_(x, "gyro")
+}
+
 # Apply active colset logic in a move2 for a given sensor. Active colsets
 # are fully present (if burst-format) and contain data.
 active_colsets_ <- function(x, sensor) {
-  config <- switch(sensor, acc = acc_colset_config(), mag = mag_colset_config())
+  config <- switch(
+    sensor,
+    acc = acc_colset_config(),
+    mag = mag_colset_config(),
+    gyro = gyro_colset_config()
+  )
   i <- which(purrr::map_lgl(config, function(colset) colset$is_in_(x)))
 
   if (length(i) == 0) {
@@ -509,6 +674,31 @@ duplicated_mag_rows <- function(x, colsets = NULL) {
   duplicated_sensor_rows(x, colsets %||% active_mag_colsets(x))
 }
 
+#' Identify rows with gyroscope data from multiple column sets
+#'
+#' This function returns the row indices of a `move2` object
+#' where more than one gyroscope column set contains data. `as_gyro()`
+#' refuses to build `gyro` objects for rows where multiple input sources exist.
+#' These rows can be modified to remove data from additional column sets.
+#' Alternatively, specific columns can be passed to the `colset` argument
+#' of `as_gyro()` to avoid processing duplicated records.
+#'
+#' @inheritParams as_gyro
+#' @param colsets List of `gyro_colset` objects to check for
+#'   overlap. Defaults to the column sets detected by [active_gyro_colsets()].
+#'
+#' @returns An integer vector of row indices with duplicated gyroscope data
+#'   across column sets.
+#'
+#' @seealso
+#'   - [active_gyro_colsets()] to identify available column sets in a `move2` object.
+#'   - [as_gyro()] to generate a `gyro` vector from a `move2` object.
+#'
+#' @export
+duplicated_gyro_rows <- function(x, colsets = NULL) {
+  duplicated_sensor_rows(x, colsets %||% active_gyro_colsets(x))
+}
+
 duplicated_sensor_rows <- function(x, colsets = NULL) {
   # Standardize case where user supplied a single colset as a vector
   if (!rlang::is_list(colsets)) {
@@ -593,6 +783,10 @@ is_mag_colset <- function(x) {
   inherits(x, "mag_colset")
 }
 
+is_gyro_colset <- function(x) {
+  inherits(x, "gyro_colset")
+}
+
 # Colset config and validation -------------------------------------------------
 
 # Registry of supported default colsets. Each entry is built
@@ -612,6 +806,13 @@ mag_colset_config <- function() {
     burst = register_colset(mag_colset_burst()),
     xyz = register_colset(mag_colset_xyz()),
     raw_xyz = register_colset(mag_colset_raw_xyz())
+  )
+}
+
+gyro_colset_config <- function() {
+  list(
+    burst = register_colset(gyro_colset_burst()),
+    xyz = register_colset(gyro_colset_xyz())
   )
 }
 

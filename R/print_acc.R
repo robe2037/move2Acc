@@ -48,6 +48,16 @@ vec_ptype_full.mag <- function(x, ...) {
   "magnetometer"
 }
 
+#' @export
+vec_ptype_abbr.gyro <- function(x, ...) {
+  "gyro"
+}
+
+#' @export
+vec_ptype_full.gyro <- function(x, ...) {
+  "gyroscope"
+}
+
 # todo does this need export?
 pillar_shaft.sensor_rcrd <- function(x, ...) {
   out <- format(x)

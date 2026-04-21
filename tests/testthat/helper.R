@@ -51,6 +51,54 @@ mag_example_burst <- function(id = "burst") {
   )
 }
 
+# Fabricated long-format gyro move2. Uses the column names expected by
+# `gyro_colset_xyz()` (i.e. `angular_velocity_{x,y,z}`). Two bursts at 10 Hz,
+# separated by a gap so `as_gyro()` splits them.
+gyro_example_long <- function(id = "long") {
+  t <- data.frame(
+    id = id,
+    angular_velocity_x = as.numeric(1:10),
+    angular_velocity_y = as.numeric(11:20),
+    angular_velocity_z = as.numeric(21:30),
+    timestamp = as.POSIXct(
+      c(seq(1, 1.4, by = 0.1), seq(3, 3.4, by = 0.1)),
+      tz = "UTC"
+    ),
+    x = 1, y = 1
+  )
+
+  move2::mt_as_move2(
+    t,
+    coords = c("x", "y"),
+    time_column = "timestamp",
+    track_id_column = "id"
+  )
+}
+
+# Fabricated burst-format gyro move2. Uses the column names expected by
+# `gyro_colset_burst()`. Two XYZ bursts at 10 Hz, separated by a gap so that
+# `merge_bursts` does not collapse them.
+gyro_example_burst <- function(id = "burst") {
+  t <- data.frame(
+    id = id,
+    gyroscope_axes = "XYZ",
+    gyroscope_sampling_frequency_per_axis = 10,
+    angular_velocities_raw = c(
+      paste0(rep(1:5, each = 3), collapse = " "),
+      paste0(rep(6:10, each = 3), collapse = " ")
+    ),
+    timestamp = as.POSIXct(c(10, 30), tz = "UTC"),
+    x = 1, y = 1
+  )
+
+  move2::mt_as_move2(
+    t,
+    coords = c("x", "y"),
+    time_column = "timestamp",
+    track_id_column = "id"
+  )
+}
+
 # Build sample data source to simulate case where "bursted" data is actually
 # continuous, as bursts are adjacent in time.
 albatrosses_messy <- function() {

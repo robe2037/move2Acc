@@ -2,7 +2,7 @@
 # concrete sensor. Helpers like `assert_sensor_rcrd()` and
 # `parse_colsets()` read from it.
 valid_sensors <- function() {
-  c("acc", "mag")
+  c("acc", "mag", "gyro")
 }
 
 # Parent class `sensor_rcrd` defines the shared (bursts, frequency, start)
@@ -102,10 +102,14 @@ assert_sensor_rcrd <- function(x,
     "`", arg, "` must be ",
     if (length(sensors) == 1) {
       paste0("an ", names, " vector.")
+    } else if (length(sensors) == 2) {
+      paste0("an ", names[1], " or ", names[2], " vector.")
     } else {
+      # Oxford-comma list for three or more: "an `a`, `b`, or `c` vector."
       paste0(
-        paste0("an ", names[-length(names)], collapse = ", "),
-        " or ", names[length(names)], " vector."
+        "an ",
+        paste0(names[-length(names)], collapse = ", "),
+        ", or ", names[length(names)], " vector."
       )
     }
   )
