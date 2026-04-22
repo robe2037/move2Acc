@@ -18,7 +18,7 @@ test_that("gyro() stamps the gyro_list subclass onto the bursts field", {
 
   expect_s3_class(
     vctrs::field(g, "bursts"),
-    c("gyro_list", "sensor_list", "vctrs_list_of", "vctrs_vctr", "list"),
+    c("gyro_list", "burst_list", "vctrs_list_of", "vctrs_vctr", "list"),
     exact = TRUE
   )
 })
@@ -75,7 +75,7 @@ test_that("vec_cast between gyro vectors harmonizes frequency units", {
   expect_identical(units::deparse_unit(freqs(r)), "Hz")
 })
 
-test_that("gyro() enforces X/Y/Z axis names via sensor_list validation", {
+test_that("gyro() enforces X/Y/Z axis names via burst_list validation", {
   expect_error(
     gyro(list(cbind(A = 1:3, B = 1:3))),
     "X.*Y.*Z"

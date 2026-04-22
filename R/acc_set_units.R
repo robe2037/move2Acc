@@ -31,7 +31,7 @@ acc_set_units <- function(x, units) {
   assertthat::assert_that(inherits(x, "acc"))
   assertthat::assert_that(is.character(units), length(units) == 1)
 
-  bursts(x) <- new_sensor_list(
+  bursts(x) <- new_burst_list(
     map_bursts(x, function(.br) {
       if (is.null(.br)) return(NULL)
       nms <- colnames(.br)

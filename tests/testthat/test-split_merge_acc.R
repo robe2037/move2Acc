@@ -299,7 +299,7 @@ test_that("Correctly split when burst length not divisible by interval", {
 
 test_that("split_bursts() retains NA", {
   a <- acc(
-    c(acc_burst_example(1:60, 1:60), new_sensor_list(list(NULL), "acc"), acc_burst_example(101:140)),
+    c(acc_burst_example(1:60, 1:60), new_burst_list(list(NULL), "acc"), acc_burst_example(101:140)),
     frequency = c(units::set_units(20, "Hz"), units::set_units(NA, "Hz"), units::set_units(40, "Hz")),
     start = as.POSIXct(c(0, 10, 10), tz = "UTC")
   )
@@ -331,7 +331,7 @@ test_that("Can recover split continuous data by merging", {
 
 test_that("Can recover split continuous data by merging with NA", {
   a <- acc(
-    c(acc_burst_example(1:60, 1:60), new_sensor_list(list(NULL), "acc"), acc_burst_example(101:140)),
+    c(acc_burst_example(1:60, 1:60), new_burst_list(list(NULL), "acc"), acc_burst_example(101:140)),
     frequency = c(units::set_units(20, "Hz"), units::set_units(NA, "Hz"), units::set_units(40, "Hz")),
     start = as.POSIXct(c(0, 10, 10), tz = "UTC")
   )
@@ -412,7 +412,7 @@ test_that("split_bursts() round-trip in dataframe workflow", {
     c(
       acc_burst_example(1:60, 1:60),
       acc_burst_example(61:100, 61:100),
-      new_sensor_list(list(NULL), "acc"),
+      new_burst_list(list(NULL), "acc"),
       acc_burst_example(42, 43),
       acc_burst_example(101:140)
     ),

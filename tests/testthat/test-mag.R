@@ -18,7 +18,7 @@ test_that("mag() stamps the mag_list subclass onto the bursts field", {
 
   expect_s3_class(
     vctrs::field(m, "bursts"),
-    c("mag_list", "sensor_list", "vctrs_list_of", "vctrs_vctr", "list"),
+    c("mag_list", "burst_list", "vctrs_list_of", "vctrs_vctr", "list"),
     exact = TRUE
   )
 })
@@ -72,7 +72,7 @@ test_that("vec_cast between mag vectors harmonizes frequency units", {
   expect_identical(units::deparse_unit(freqs(r)), "Hz")
 })
 
-test_that("mag() enforces X/Y/Z axis names via sensor_list validation", {
+test_that("mag() enforces X/Y/Z axis names via burst_list validation", {
   expect_error(
     mag(list(cbind(A = 1:3, B = 1:3))),
     "X.*Y.*Z"

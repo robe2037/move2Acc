@@ -43,7 +43,7 @@ acc_calibrate <- function(x, calibration) {
 
   calibration <- vctrs::vec_recycle(calibration, length(x))
 
-  bursts(x) <- new_sensor_list(
+  bursts(x) <- new_burst_list(
     purrr::map2(
       bursts(x),
       calibration,

@@ -11,7 +11,7 @@ sensor_rcrd <- function(sensor,
                         bursts = list(),
                         frequency = units::set_units(double(), "Hz"),
                         start = NULL) {
-  bursts <- sensor_list(bursts, sensor)
+  bursts <- burst_list(bursts, sensor)
   n <- vec_size(bursts)
 
   if (!inherits(frequency, "units")) {
@@ -51,7 +51,7 @@ sensor_rcrd <- function(sensor,
 }
 
 new_sensor_rcrd <- function(sensor,
-                            bursts = new_sensor_list(list(), sensor),
+                            bursts = new_burst_list(list(), sensor),
                             frequency = units::set_units(double(), "Hz"),
                             start = as.POSIXct(double(), tz = "UTC")) {
   new_rcrd(
@@ -60,7 +60,7 @@ new_sensor_rcrd <- function(sensor,
   )
 }
 
-sensor_list <- function(x, sensor) {
+burst_list <- function(x, sensor) {
   valid_axes <- c("X", "Y", "Z")
 
   is_valid <- purrr::map_lgl(
@@ -76,14 +76,14 @@ sensor_list <- function(x, sensor) {
     rlang::abort("Burst matrix columns must be named \"X\", \"Y\", or \"Z\".")
   }
 
-  new_sensor_list(x, sensor)
+  new_burst_list(x, sensor)
 }
 
-new_sensor_list <- function(x, sensor) {
+new_burst_list <- function(x, sensor) {
   new_list_of(
     x,
     ptype = matrix(numeric()),
-    class = c(paste0(sensor, "_list"), "sensor_list")
+    class = c(paste0(sensor, "_list"), "burst_list")
   )
 }
 

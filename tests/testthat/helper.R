@@ -1,6 +1,6 @@
 acc_burst_example <- function(x = NULL, y = NULL, z = NULL) {
   vctrs::vec_size_common(x, y, z)
-  new_sensor_list(list(do.call(cbind, list(X = x, Y = y, Z = z))), "acc")
+  new_burst_list(list(do.call(cbind, list(X = x, Y = y, Z = z))), "acc")
 }
 
 # Fabricated long-format mag move2. Uses the column names expected by
