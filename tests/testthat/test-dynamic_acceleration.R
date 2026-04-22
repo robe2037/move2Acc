@@ -89,7 +89,7 @@ test_that("vedba and odba return NA for NA elements (unitless)", {
 })
 
 test_that("vedba and odba return units NA for NA elements (with units)", {
-  a <- acc_set_units(acc_example(), "m/s^2")
+  a <- set_burst_units(acc_example(), "m/s^2")
   a_na <- c(acc(list(NULL), units::set_units(NA, "Hz")), a)
 
   v <- vedba(a_na)
@@ -103,8 +103,8 @@ test_that("vedba and odba return units NA for NA elements (with units)", {
 })
 
 test_that("dba uses first available units for output", {
-  a1 <- acc_set_units(acc_example()[1], "m/s^2")
-  a2 <- acc_set_units(acc_example()[2], "standard_free_fall")
+  a1 <- set_burst_units(acc_example()[1], "m/s^2")
+  a2 <- set_burst_units(acc_example()[2], "standard_free_fall")
 
   v1 <- vedba(c(a1, a2))
   o1 <- odba(c(a1, a2))
@@ -129,7 +129,7 @@ test_that("dba uses first available units for output", {
 })
 
 test_that("vedba and odba error on mixed unitless and units bursts", {
-  a <- c(acc_example()[1], acc_set_units(acc_example()[2], "m/s^2"))
+  a <- c(acc_example()[1], set_burst_units(acc_example()[2], "m/s^2"))
 
   expect_error(vedba(a), "Can't combine")
   expect_error(odba(a), "Can't combine")

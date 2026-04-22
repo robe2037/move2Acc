@@ -202,7 +202,7 @@ test_that("burst_units are safely extracted", {
   expect_identical(burst_units(a), c(NA_character_, NA_character_))
 
   # Units bursts return unit string
-  a_u <- acc_set_units(a, "m/s^2")
+  a_u <- set_burst_units(a, "m/s^2")
   expect_identical(burst_units(a_u), c("m/s^2", "m/s^2"))
 
   # NA acc elements return NA
@@ -211,8 +211,8 @@ test_that("burst_units are safely extracted", {
 
   # Mixed units are reported per element
   a_mixed <- c(
-    acc_set_units(a[1], "m/s^2"),
-    acc_set_units(a[2], "standard_free_fall")
+    set_burst_units(a[1], "m/s^2"),
+    set_burst_units(a[2], "standard_free_fall")
   )
   expect_identical(burst_units(a_mixed), c("m/s^2", "standard_free_fall"))
 })

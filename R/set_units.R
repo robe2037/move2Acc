@@ -1,0 +1,103 @@
+#' Set or convert units on sensor burst data
+#'
+#' @description
+#' Methods to attach or convert units on the
+#' burst matrices of `acc`, `mag`, and `gyro` vectors. Each method validates
+#' that the target unit is dimensionally compatible with its sensor type:
+#'
+#' - `acc`: acceleration units (e.g., `"m/s^2"`, `"standard_free_fall"`)
+#' - `mag`: magnetic flux density units (e.g., `"tesla"`, `"uT"`, `"gauss"`)
+#' - `gyro`: angular velocity units (e.g., `"rad/s"`, `"degree/s"`)
+#'
+#' To calibrate raw accelerometer values rather than simply attaching or
+#' converting units, use [acc_calibrate()].
+#'
+#' @param x An `acc`, `mag`, or `gyro` vector.
+#' @param value Character specifying the target units (e.g., `"m/s^2"`). For
+#'   units in terms of gravitational acceleration, use `"standard_free_fall"`.
+#' @param ... Unused.
+#'
+#' @returns The input vector with units attached to each burst matrix.
+#'
+#' @seealso [acc_calibrate()] to calibrate raw acceleration values.
+#'
+#' @export
+#'
+#' @examples
+#' a <- acc_example()
+#'
+#' # Attach units to unitless bursts
+#' set_burst_units(a, "m/s^2")
+#'
+#' # Convert between units
+#' a_ms2 <- set_burst_units(a, "m/s^2")
+#' set_burst_units(a_ms2, "standard_free_fall")
+#'
+#' # Dimensionally incompatible units error
+#' try(set_burst_units(a, "kg"))
+set_burst_units <- function(x, value, ...) {
+  UseMethod("set_burst_units")
+}
+
+#' @export
+set_burst_units.acc <- function(x, value, ...) {
+  set_burst_units_(x, value, reference = "m/s^2", sensor = "acc")
+}
+
+#' @export
+set_burst_units.mag <- function(x, value, ...) {
+  set_burst_units_(x, value, reference = "tesla", sensor = "mag")
+}
+
+#' @export
+set_burst_units.gyro <- function(x, value, ...) {
+  set_burst_units_(x, value, reference = "degree/s", sensor = "gyro")
+}
+
+# Also include methods for units::set_units, which may be some users' intuition:
+
+#' @exportS3Method units::set_units
+set_units.acc <- function(x, value, ...) {
+  set_burst_units(x, value)
+}
+
+#' @exportS3Method units::set_units
+set_units.mag <- function(x, value, ...) {
+  set_burst_units(x, value)
+}
+
+#' @exportS3Method units::set_units
+set_units.gyro <- function(x, value, ...) {
+  set_burst_units(x, value)
+}
+
+set_burst_units_ <- function(x, value, reference, sensor) {
+  assertthat::assert_that(is.character(value), length(value) == 1)
+  
+  can_convert <- units::ud_are_convertible(reference, value)
+  
+  if (!can_convert) {
+    rlang::abort(c(
+      paste0(value, " units not valid for `", sensor, "` vector."),
+      i = paste0("Units must be convertible to ", reference)
+    ))
+  }
+  
+  bursts_converted <- map_bursts(
+    x, 
+    function(.br) {
+      if (is.null(.br)) {
+        return(NULL)
+      }
+      
+      nms <- colnames(.br)
+      .br <- units::set_units(.br, value, mode = "standard")
+      colnames(.br) <- nms
+      .br
+    }
+  )
+  
+  bursts(x) <- new_burst_list(bursts_converted, sensor = sensor)
+  
+  x
+}
