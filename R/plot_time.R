@@ -6,9 +6,9 @@
 #' @param ylab A character with the y axis label
 #'
 #' @export
-plot_time <- function(x, time, ylab = "Acceleration") {
-  vec_check_size(time, vec_size(x))
+plot_time <- function(x, ylab = "Acceleration") {
   rlang::check_installed("dygraphs","dplyr")
+  time <- starts(x)
   dt <- mapply(function(x, n) c(units::drop_units((c(0, seq_len(n))) / x)),
                x = freqs(x)[!is.na(x)],
                n = n_samples(x)[!is.na(x)], SIMPLIFY = F
