@@ -101,9 +101,9 @@ n_samples <- function(x) {
 
 #' @export
 #' @rdname explore-functions
-burst_units <- function(x) {
-  map_bursts(
-    x, 
+imu_units <- function(x) {
+  map_imu(
+    x,
     function(.br) {
       tryCatch(as.character(units(.br)), error = function(cnd) NA_character_)
     },

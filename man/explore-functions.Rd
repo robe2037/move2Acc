@@ -13,7 +13,7 @@
 \alias{starts<-}
 \alias{burst_dur}
 \alias{n_samples}
-\alias{burst_units}
+\alias{imu_units}
 \alias{is_gyro}
 \alias{is_mag}
 \title{Functions to explore an \code{acc} or \code{mag} vector}
@@ -40,7 +40,7 @@ burst_dur(x)
 
 n_samples(x)
 
-burst_units(x)
+imu_units(x)
 
 is_gyro(x)
 

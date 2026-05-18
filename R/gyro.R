@@ -1,5 +1,5 @@
-# Concrete `gyro` subclass of `sensor_rcrd`. All shared record-level logic
-# lives in R/sensor_rcrd.R; this file only holds the gyro-specific constructor,
+# Concrete `gyro` subclass of `imu`. All shared record-level logic
+# lives in R/imu.R; this file only holds the gyro-specific constructor,
 # predicate, and S3 dispatch wrappers.
 
 #' Create a `gyro` vector
@@ -13,7 +13,7 @@
 gyro <- function(bursts = list(),
                  frequency = units::set_units(double(), "Hz"),
                  start = NULL) {
-  sensor_rcrd("gyro", bursts = bursts, frequency = frequency, start = start)
+  imu("gyro", bursts = bursts, frequency = frequency, start = start)
 }
 
 #' @export
@@ -23,7 +23,7 @@ is_gyro <- function(x) {
 }
 
 #' @export
-vec_ptype2.gyro.gyro <- function(x, y, ...) sensor_ptype2(x, y, ...)
+vec_ptype2.gyro.gyro <- function(x, y, ...) imu_ptype2(x, y, ...)
 
 #' @export
-vec_cast.gyro.gyro <- function(x, to, ...) sensor_cast(x, to, ...)
+vec_cast.gyro.gyro <- function(x, to, ...) imu_cast(x, to, ...)

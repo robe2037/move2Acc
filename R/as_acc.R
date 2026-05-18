@@ -48,13 +48,13 @@ as_acc <- function(x, ...) {
 #' @rdname as_acc
 #' @export
 as_acc.default <- function(x, ...) {
-  vctrs::vec_cast(x, new_sensor_rcrd("acc"))
+  vctrs::vec_cast(x, new_imu("acc"))
 }
 
 #' @rdname as_acc
 #' @export
 as_acc.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
-  as_sensor(
+  as_imu(
     x,
     sensor = "acc",
     colset = colset,

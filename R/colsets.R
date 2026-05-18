@@ -124,7 +124,7 @@ mag_colset <- function(x = NULL,
 print.colset <- function(x, ...) {
   type <- attr(x, "type")
   sensor <- class(x)[1]
-  
+
   if (type == "long") {
     cat(paste0(
       "<", sensor, "> long-format [",
@@ -585,7 +585,7 @@ active_colsets_ <- function(x, sensor) {
   if (length(i) == 0) {
     abort_missing_colset(sensor)
   }
-  
+
   poss_colsets <- config[i]
 
   colsets <- purrr::compact(
@@ -646,7 +646,7 @@ active_colsets_ <- function(x, sensor) {
 #'
 #' @export
 duplicated_acc_rows <- function(x, colsets = NULL) {
-  duplicated_sensor_rows(x, colsets %||% active_acc_colsets(x))
+  duplicated_imu_rows(x, colsets %||% active_acc_colsets(x))
 }
 
 #' Identify rows with magnetometer data from multiple column sets
@@ -671,7 +671,7 @@ duplicated_acc_rows <- function(x, colsets = NULL) {
 #'
 #' @export
 duplicated_mag_rows <- function(x, colsets = NULL) {
-  duplicated_sensor_rows(x, colsets %||% active_mag_colsets(x))
+  duplicated_imu_rows(x, colsets %||% active_mag_colsets(x))
 }
 
 #' Identify rows with gyroscope data from multiple column sets
@@ -696,10 +696,10 @@ duplicated_mag_rows <- function(x, colsets = NULL) {
 #'
 #' @export
 duplicated_gyro_rows <- function(x, colsets = NULL) {
-  duplicated_sensor_rows(x, colsets %||% active_gyro_colsets(x))
+  duplicated_imu_rows(x, colsets %||% active_gyro_colsets(x))
 }
 
-duplicated_sensor_rows <- function(x, colsets = NULL) {
+duplicated_imu_rows <- function(x, colsets = NULL) {
   # Standardize case where user supplied a single colset as a vector
   if (!rlang::is_list(colsets)) {
     colsets <- list(colsets)
@@ -708,7 +708,7 @@ duplicated_sensor_rows <- function(x, colsets = NULL) {
   rows <- unlist(
     purrr::map(
       colsets,
-      function(cols) which_sensor_vals(x, colset = cols)
+      function(cols) which_imu_vals(x, colset = cols)
     )
   )
   
@@ -766,7 +766,7 @@ build_colset_ <- function(sensor,
 # not depend on sensor type (e.g. `print`).
 new_colset <- function(cols, type, sensor) {
   type <- rlang::arg_match(type, c("long", "burst"))
-  sensor <- rlang::arg_match(sensor, valid_sensors())
+  sensor <- rlang::arg_match(sensor, valid_imu_types())
 
   structure(
     cols,

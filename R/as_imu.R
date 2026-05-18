@@ -1,23 +1,16 @@
-# Shared move2 -> `sensor_rcrd` conversion pipeline. `as_acc.move2()`
-# is a wrapper that passes the appropriate
-# `sensor` string into `as_sensor()`; everything below works in sensor-neutral
-# terms.
-
-# Top-level dispatch -----------------------------------------------------------
-
-as_sensor <- function(x, sensor, ...) {
-  UseMethod("as_sensor")
+as_imu <- function(x, sensor, ...) {
+  UseMethod("as_imu")
 }
 
 #' @export
-as_sensor.default <- function(x, sensor, ...) {
-  vctrs::vec_cast(x, new_sensor_rcrd(sensor))
+as_imu.default <- function(x, sensor, ...) {
+  vctrs::vec_cast(x, new_imu(sensor))
 }
 
 #' @export
-as_sensor.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+as_imu.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
   colsets <- parse_colsets(x, colset, sensor)
-  dup <- duplicated_sensor_rows(x, colsets = colsets)
+  dup <- duplicated_imu_rows(x, colsets = colsets)
 
   if (length(dup) > 0) {
     rlang::abort(c(
@@ -32,7 +25,7 @@ as_sensor.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_contin
   out <- purrr::map(
     colsets,
     function(cols) {
-      as_sensor_move2_(
+      as_imu_move2_(
         x,
         sensor = sensor,
         colset = cols,
@@ -55,19 +48,19 @@ as_sensor.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_contin
 
 # Pipeline internals -----------------------------------------------------------
 
-as_sensor_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
+as_imu_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
   check_colset(x, colset)
 
-  sensor_type <- attr(colset, "type")
+  colset_type <- attr(colset, "type")
 
-  if (sensor_type == "long") {
-    out <- as_sensor_move2_long(x, colset = colset, sensor = sensor, min_freq = min_freq, ...)
-  } else if (sensor_type == "burst") {
+  if (colset_type == "long") {
+    out <- as_imu_move2_long(x, colset = colset, sensor = sensor, min_freq = min_freq, ...)
+  } else if (colset_type == "burst") {
     # eobs bursts are integer-encoded; other burst sources are numeric. This
-    # is the only sensor-specific default in the burst pipeline.
+    # is the only IMU-class-specific default in the burst pipeline.
     is_acc_eobs_cols <- sensor == "acc" && acc_colset_config()[["eobs"]]$is_(colset)
 
-    out <- as_sensor_burst(
+    out <- as_imu_burst(
       x[[colset[["bursts"]]]],
       x[[colset[["axes"]]]],
       x[[colset[["frequency"]]]],
@@ -81,7 +74,7 @@ as_sensor_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous =
   }
 
   if (merge_continuous) {
-    out <- merge_bursts(out, ids = move2::mt_track_id(x), drop = drop)
+    out <- merge_imu(out, ids = move2::mt_track_id(x), drop = drop)
   }
 
   if (drop) {
@@ -91,7 +84,7 @@ as_sensor_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous =
   out
 }
 
-as_sensor_burst <- function(x, axes, freq, sensor, timestamp, force_int = FALSE) {
+as_imu_burst <- function(x, axes, freq, sensor, timestamp, force_int = FALSE) {
   colnms <- strsplit(as.character(axes), "")
   n_axis <- nchar(as.character(axes))
   vals_split <- strsplit(as.character(x), " ")
@@ -128,16 +121,16 @@ as_sensor_burst <- function(x, axes, freq, sensor, timestamp, force_int = FALSE)
 
   mlist[i] <- mapply("colnames<-", mlist[i], colnms[i], SIMPLIFY = FALSE)
 
-  sensor_rcrd(sensor = sensor, bursts = mlist, frequency = freq, start = timestamp)
+  imu(sensor = sensor, bursts = mlist, frequency = freq, start = timestamp)
 }
 
-as_sensor_move2_long <- function(x,
-                                 colset,
-                                 sensor,
-                                 min_freq = 1,
-                                 timestamp = move2::mt_time(x),
-                                 freq_digits = 4,
-                                 ...) {
+as_imu_move2_long <- function(x,
+                              colset,
+                              sensor,
+                              min_freq = 1,
+                              timestamp = move2::mt_time(x),
+                              freq_digits = 4,
+                              ...) {
   col_names <- as.character(colset)
   m <- as.matrix(data.frame(x)[, col_names])
 
@@ -152,9 +145,9 @@ as_sensor_move2_long <- function(x,
   # timestamps collected at a minimum frequency
   ts_grps <- parse_bursts(x, colset = colset, min_freq = min_freq)
 
-  vals_i <- which_sensor_vals(x, colset = colset)
+  vals_i <- which_imu_vals(x, colset = colset)
 
-  # Split all rows with sensor data into burst groups based on timestamp groups
+  # Split all rows with IMU data into burst groups based on timestamp groups
   idx <- unname(split(vals_i, ts_grps))
 
   # Extract records for each burst into a separate matrix
@@ -178,7 +171,7 @@ as_sensor_move2_long <- function(x,
 
   # Attach bursts to index of the first record that belongs to that burst
   out <- vec_rep(
-    sensor_rcrd(
+    imu(
       sensor,
       bursts = list(NULL),
       frequency = units::set_units(NA, "Hz"),
@@ -190,13 +183,13 @@ as_sensor_move2_long <- function(x,
   i <- sapply(idx, function(x) x[1]) # first index of each ts group
 
   if (length(i) > 0) {
-    out[i] <- sensor_rcrd(sensor, bursts = burst_lst, frequency = units::as_units(freq, "Hz"), start = timestamp[i])
+    out[i] <- imu(sensor, bursts = burst_lst, frequency = units::as_units(freq, "Hz"), start = timestamp[i])
   }
 
   out
 }
 
-# Resolve user-supplied `colset` into a list of validated sensor colsets.
+# Resolve user-supplied `colset` into a list of validated IMU colsets.
 # Falls back to colsets detected in `x` when `colset` is NULL.
 parse_colsets <- function(x, colset, sensor) {
   is_colset <- function(obj) inherits(obj, paste0(sensor, "_colset"))
@@ -232,7 +225,7 @@ parse_colsets <- function(x, colset, sensor) {
   colsets
 }
 
-which_sensor_vals <- function(x, colset) {
+which_imu_vals <- function(x, colset) {
   assert_all_cols_present(x, colset)
 
   x <- as.data.frame(x) # Drop sticky move2 columns
@@ -249,17 +242,17 @@ which_sensor_vals <- function(x, colset) {
   has_vals
 }
 
-#' Group long-format sensor records into bursts
+#' Group long-format IMU records into bursts
 #'
 #' @description
-#' Based on the timestamps of the records in long-format sensor
+#' Based on the timestamps of the records in long-format IMU
 #' data, identify bursts based on the observed time gaps between records. Gaps
 #' that exceed a set threshold will be used to group records into bursts.
 #' Further, any observed changes in data collection frequency will also be
 #' used to split records into distinct bursts.
 #'
 #' @details
-#' For continuous data, sensors may dynamically update collection frequency.
+#' For continuous data, IMUs may dynamically update collection frequency.
 #' However, a burst should not contain data from multiple collection
 #' frequencies, so we must split these data into distinct bursts, despite the
 #' fact that there may be no gap in collection.
@@ -269,10 +262,10 @@ which_sensor_vals <- function(x, colset) {
 #' the burst prior to or the burst after the boundary timestamp. See comments
 #' to `freq_changes` for details on our approach.
 #'
-#' @param x move2 object with long-format sensor data
+#' @param x move2 object with long-format IMU data
 #' @param min_freq Numeric value indicating the
 #'   minimum allowable within-burst data collection frequency when identifying
-#'   bursts in long-format sensor data. Any two adjacent timestamps
+#'   bursts in long-format IMU data. Any two adjacent timestamps
 #'   that fall outside of the period defined by this frequency will be split
 #'   into separate bursts. If no units are provided, this value is assumed to
 #'   be in Hz.
@@ -280,7 +273,7 @@ which_sensor_vals <- function(x, colset) {
 #'   changes in data collection frequency in continuous data. Time differences
 #'   that are within this value will be considered equal for the purposes of
 #'   identifying consistent runs of a given collection frequency. This avoids
-#'   error associated with floating point representation and sensor collection
+#'   error associated with floating point representation and IMU collection
 #'   noise when identifying bursts.
 #'
 #' @returns Integer vector of IDs identifying burst groups
@@ -294,7 +287,7 @@ parse_bursts <- function(x, colset, min_freq = 1, freq_tol = 1e-6) {
 
   burst_gap_thresh <- units::set_units(1 / min_freq, "s")
 
-  vals_i <- which_sensor_vals(x, colset = colset)
+  vals_i <- which_imu_vals(x, colset = colset)
   idx <- split(vals_i, as.character(move2::mt_track_id(x[vals_i, ])))
 
   grps <- lapply(
@@ -316,9 +309,9 @@ parse_bursts <- function(x, colset, min_freq = 1, freq_tol = 1e-6) {
 # Identify transition points from one frequency to another within a sequential
 # time difference vector.
 #
-# Sequential sensor data may change frequency. This can occur either from
+# Sequential IMU data may change frequency. This can occur either from
 # legitimate burst gaps or from changes in collection frequency. In general,
-# when a change of frequency is detected, we create a new group of sensor
+# when a change of frequency is detected, we create a new group of IMU
 # values. See `new_freq_regime()` for more on the logic of how split points
 # are determined in ambiguous cases.
 freq_changes <- function(x, freq_tol = 1e-6) {

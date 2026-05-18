@@ -1,12 +1,12 @@
-# Most `mag` behavior is inherited from `sensor_rcrd` and is exercised by the
+# Most `mag` behavior is inherited from `imu` and is exercised by the
 # `test-acc.R` suite. These tests target only the mag-specific dispatch and
 # class layer: the concrete `mag` subclass, its S3 methods, and the
-# same-sensor / cross-sensor combination rules.
+# same-class / cross-class combination rules.
 
 test_that("mag() produces an empty mag vector with the expected class chain", {
   m <- mag()
 
-  expect_s3_class(m, c("mag", "sensor_rcrd", "vctrs_rcrd", "vctrs_vctr"), exact = TRUE)
+  expect_s3_class(m, c("mag", "imu", "vctrs_rcrd", "vctrs_vctr"), exact = TRUE)
   expect_length(m, 0)
 })
 

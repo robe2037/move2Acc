@@ -29,7 +29,7 @@ mag_example_long <- function(id = "long") {
 
 # Fabricated burst-format mag move2. Uses the column names expected by
 # `mag_colset_burst()`. Two XYZ bursts at 10 Hz, separated by a gap so that
-# `merge_bursts` does not collapse them.
+# `merge_imu` does not collapse them.
 mag_example_burst <- function(id = "burst") {
   t <- data.frame(
     id = id,
@@ -77,7 +77,7 @@ gyro_example_long <- function(id = "long") {
 
 # Fabricated burst-format gyro move2. Uses the column names expected by
 # `gyro_colset_burst()`. Two XYZ bursts at 10 Hz, separated by a gap so that
-# `merge_bursts` does not collapse them.
+# `merge_imu` does not collapse them.
 gyro_example_burst <- function(id = "burst") {
   t <- data.frame(
     id = id,

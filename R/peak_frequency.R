@@ -50,7 +50,7 @@ peak_frequency <- function(x, resolution = NA) {
     return(as.list(rep(NA_real_, length(x))))
   }
 
-  peak_freq_non_na <- map_bursts(
+  peak_freq_non_na <- map_imu(
     x[!x_na],
     function(.br, .fq) peak_freq_(.br, .fq, resolution = resolution)
   )

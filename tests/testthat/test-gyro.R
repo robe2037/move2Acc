@@ -1,4 +1,4 @@
-# Most `gyro` behavior is inherited from `sensor_rcrd` and is exercised by
+# Most `gyro` behavior is inherited from `imu` and is exercised by
 # the `test-acc.R` suite. These tests target only the gyro-specific dispatch
 # and class layer: the concrete `gyro` subclass, its S3 methods, and the
 # same-sensor / cross-sensor combination rules.
@@ -6,7 +6,7 @@
 test_that("gyro() produces an empty gyro vector with the expected class chain", {
   g <- gyro()
 
-  expect_s3_class(g, c("gyro", "sensor_rcrd", "vctrs_rcrd", "vctrs_vctr"), exact = TRUE)
+  expect_s3_class(g, c("gyro", "imu", "vctrs_rcrd", "vctrs_vctr"), exact = TRUE)
   expect_length(g, 0)
 })
 

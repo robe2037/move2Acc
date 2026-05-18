@@ -1,9 +1,9 @@
-#' Set or convert units on sensor burst data
+#' Set or convert units on IMU burst data
 #'
 #' @description
 #' Methods to attach or convert units on the
 #' burst matrices of `acc`, `mag`, and `gyro` vectors. Each method validates
-#' that the target unit is dimensionally compatible with its sensor type:
+#' that the target unit is dimensionally compatible with its IMU class:
 #'
 #' - `acc`: acceleration units (e.g., `"m/s^2"`, `"standard_free_fall"`)
 #' - `mag`: magnetic flux density units (e.g., `"tesla"`, `"uT"`, `"gauss"`)
@@ -27,77 +27,77 @@
 #' a <- acc_example()
 #'
 #' # Attach units to unitless bursts
-#' set_burst_units(a, "m/s^2")
+#' set_imu_units(a, "m/s^2")
 #'
 #' # Convert between units
-#' a_ms2 <- set_burst_units(a, "m/s^2")
-#' set_burst_units(a_ms2, "standard_free_fall")
+#' a_ms2 <- set_imu_units(a, "m/s^2")
+#' set_imu_units(a_ms2, "standard_free_fall")
 #'
 #' # Dimensionally incompatible units error
-#' try(set_burst_units(a, "kg"))
-set_burst_units <- function(x, value, ...) {
-  UseMethod("set_burst_units")
+#' try(set_imu_units(a, "kg"))
+set_imu_units <- function(x, value, ...) {
+  UseMethod("set_imu_units")
 }
 
 #' @export
-set_burst_units.acc <- function(x, value, ...) {
-  set_burst_units_(x, value, reference = "m/s^2", sensor = "acc")
+set_imu_units.acc <- function(x, value, ...) {
+  set_imu_units_(x, value, reference = "m/s^2", sensor = "acc")
 }
 
 #' @export
-set_burst_units.mag <- function(x, value, ...) {
-  set_burst_units_(x, value, reference = "tesla", sensor = "mag")
+set_imu_units.mag <- function(x, value, ...) {
+  set_imu_units_(x, value, reference = "tesla", sensor = "mag")
 }
 
 #' @export
-set_burst_units.gyro <- function(x, value, ...) {
-  set_burst_units_(x, value, reference = "degree/s", sensor = "gyro")
+set_imu_units.gyro <- function(x, value, ...) {
+  set_imu_units_(x, value, reference = "degree/s", sensor = "gyro")
 }
 
 # Also include methods for units::set_units, which may be some users' intuition:
 
 #' @exportS3Method units::set_units
 set_units.acc <- function(x, value, ...) {
-  set_burst_units(x, value)
+  set_imu_units(x, value)
 }
 
 #' @exportS3Method units::set_units
 set_units.mag <- function(x, value, ...) {
-  set_burst_units(x, value)
+  set_imu_units(x, value)
 }
 
 #' @exportS3Method units::set_units
 set_units.gyro <- function(x, value, ...) {
-  set_burst_units(x, value)
+  set_imu_units(x, value)
 }
 
-set_burst_units_ <- function(x, value, reference, sensor) {
+set_imu_units_ <- function(x, value, reference, sensor) {
   assertthat::assert_that(is.character(value), length(value) == 1)
-  
+
   can_convert <- units::ud_are_convertible(reference, value)
-  
+
   if (!can_convert) {
     rlang::abort(c(
       paste0(value, " units not valid for `", sensor, "` vector."),
       i = paste0("Units must be convertible to ", reference)
     ))
   }
-  
-  bursts_converted <- map_bursts(
-    x, 
+
+  bursts_converted <- map_imu(
+    x,
     function(.br) {
       if (is.null(.br)) {
         return(NULL)
       }
-      
+
       nms <- colnames(.br)
       .br <- units::set_units(.br, value, mode = "standard")
       colnames(.br) <- nms
       .br
     }
   )
-  
+
   bursts(x) <- new_burst_list(bursts_converted, sensor = sensor)
-  
+
   x
 }

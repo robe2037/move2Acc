@@ -28,13 +28,13 @@ as_mag <- function(x, ...) {
 #' @rdname as_mag
 #' @export
 as_mag.default <- function(x, ...) {
-  vctrs::vec_cast(x, new_sensor_rcrd("mag"))
+  vctrs::vec_cast(x, new_imu("mag"))
 }
 
 #' @rdname as_mag
 #' @export
 as_mag.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
-  as_sensor(
+  as_imu(
     x,
     sensor = "mag",
     colset = colset,

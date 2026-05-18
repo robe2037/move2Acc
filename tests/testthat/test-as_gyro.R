@@ -1,4 +1,4 @@
-# Pipeline smoke tests for the gyro side of the move2 -> sensor_rcrd converter.
+# Pipeline smoke tests for the gyro side of the move2 -> imu converter.
 # Detailed pipeline behavior (long/burst parsing, min_freq, merge, multi-colset
 # coalescing, drop = FALSE, etc.) is covered by `test-as_acc.R`; these tests
 # confirm that the gyro dispatch wires through correctly and produces `gyro`

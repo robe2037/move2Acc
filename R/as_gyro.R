@@ -28,13 +28,13 @@ as_gyro <- function(x, ...) {
 #' @rdname as_gyro
 #' @export
 as_gyro.default <- function(x, ...) {
-  vctrs::vec_cast(x, new_sensor_rcrd("gyro"))
+  vctrs::vec_cast(x, new_imu("gyro"))
 }
 
 #' @rdname as_gyro
 #' @export
 as_gyro.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
-  as_sensor(
+  as_imu(
     x,
     sensor = "gyro",
     colset = colset,
