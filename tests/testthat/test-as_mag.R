@@ -14,7 +14,7 @@ test_that("as_mag() builds a mag vector from long-format mag data", {
   expect_true(is_mag(r))
   expect_false(is_acc(r))
   # Two bursts separated by the time gap in the fixture
-  expect_length(r, 2)
+  expect_length(r, 10)
   # Each burst retains XYZ axis structure
   expect_identical(colnames(bursts(r)[[1]]), c("X", "Y", "Z"))
 })

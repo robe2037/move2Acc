@@ -40,7 +40,7 @@ flat
 starts(flat)
 
 # Use merge_imu() on flat
-identical(merge_imu(flat), a)
+identical(merge_imu(flat, drop = TRUE), a)
 
 \dontrun{
 # In a dataframe, split and unnest to retain index matching

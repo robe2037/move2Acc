@@ -2,8 +2,8 @@ skip_if_not_installed("move2")
 
 test_that("Can get acc from burst-format acc data", {
   alb_data <- albatrosses()
-  
-  acc <- as_acc(alb_data)
+
+  acc <- as_acc(alb_data, drop = TRUE)
   
   non_na <- which(!is.na(alb_data$eobs_acceleration_axes))
   
@@ -43,8 +43,8 @@ test_that("Can get acc from long-format acc data", {
   # Identify time series gap points
   gap_i <- which(c(TRUE, diff(gulls_data$timestamp[non_na]) > 0.5))
   
-  acc <- as_acc(gulls_data, colset = acc_colset_raw_xyz())
-  
+  acc <- as_acc(gulls_data, colset = acc_colset_raw_xyz(), drop = TRUE)
+
   expect_s3_class(acc, "acc")
   expect_length(acc, length(gap_i))
   expect_true(is_uniform(acc))
@@ -107,20 +107,20 @@ test_that("Can manually specify acc columns in mixed acc type data", {
   d <- move2::mt_stack(albatrosses(), gulls())
   
   expect_identical(
-    as_acc(albatrosses()),
-    as_acc(d, colset = acc_colset_eobs())
+    as_acc(albatrosses(), drop = TRUE),
+    as_acc(d, colset = acc_colset_eobs(), drop = TRUE)
   )
   expect_identical(
-    as_acc(gulls(), colset = acc_colset_raw_xyz()),
-    as_acc(d, colset = acc_colset_raw_xyz())
+    as_acc(gulls(), colset = acc_colset_raw_xyz(), drop = TRUE),
+    as_acc(d, colset = acc_colset_raw_xyz(), drop = TRUE)
   )
   expect_identical(
-    suppressWarnings(as_acc(d)),
-    as_acc(d, colset = list(acc_colset_eobs(), acc_colset_raw_xyz()))
+    suppressWarnings(as_acc(d, drop = TRUE)),
+    as_acc(d, colset = list(acc_colset_eobs(), acc_colset_raw_xyz()), drop = TRUE)
   )
   expect_identical(
-    suppressWarnings(as_acc(d)),
-    as_acc(d, colset = list(acc_colset_raw_xyz(), acc_colset_eobs()))
+    suppressWarnings(as_acc(d, drop = TRUE)),
+    as_acc(d, colset = list(acc_colset_raw_xyz(), acc_colset_eobs()), drop = TRUE)
   )
 })
 
@@ -142,8 +142,8 @@ test_that("Error on duplicate acc rows across colsets", {
 test_that("Automatically get all available colsets", {
   m <- move2::mt_stack(gulls(), albatrosses())
   
-  expect_warning(a <- as_acc(m), "Detected multiple")
-  a2 <- c(as_acc(gulls()), as_acc(albatrosses()))
+  expect_warning(a <- as_acc(m, drop = TRUE), "Detected multiple")
+  a2 <- c(as_acc(gulls(), drop = TRUE), as_acc(albatrosses(), drop = TRUE))
   
   # Ensure same ordering on comparison
   expect_identical(a2[order(starts(a2))], a[order(starts(a))])
@@ -215,8 +215,8 @@ test_that("Can split long-format data into bursts by inferred frequency", {
     track_id_column = "id"
   )
   
-  a <- as_acc(m1)
-  
+  a <- as_acc(m1, drop = TRUE)
+
   expect_length(a, 4)
   expect_equal(purrr::map_int(bursts(a), nrow), c(5, 1, 11, 52))
   expect_equal(as.numeric(freqs(a)), c(2, NA, 2, 1.3333))
@@ -246,18 +246,18 @@ test_that("Can use `min_freq` to avoid building bursts below freq thresh", {
     track_id_column = "id"
   )
   
-  a1 <- as_acc(m1, min_freq = 1)
-  a2 <- as_acc(m1, min_freq = 2)
-  
-  # First bursts should be identical, but final burst should be split 
+  a1 <- as_acc(m1, min_freq = 1, drop = TRUE)
+  a2 <- as_acc(m1, min_freq = 2, drop = TRUE)
+
+  # First bursts should be identical, but final burst should be split
   # fully into length-1 "bursts"
   expect_identical(a2[1:3], a1[1:3])
   expect_length(a2, length(a1) - 1 + nrow(bursts(a1)[[4]]))
   expect_identical(do.call(rbind, bursts(a2)[4:length(a2)]), bursts(a1)[[4]])
   expect_true(all(is.na(freqs(a2)[4:length(a2)])))
-  
-  expect_length(as_acc(m1, min_freq = Inf), nrow(m1))
-  expect_identical(a1, as_acc(m1, min_freq = 0))
+
+  expect_length(as_acc(m1, min_freq = Inf, drop = TRUE), nrow(m1))
+  expect_identical(a1, as_acc(m1, min_freq = 0, drop = TRUE))
   
   # If `drop = FALSE`, partitioned bursts should fill indices that were
   # previously empty, and overall vector length should stay the same.
@@ -276,15 +276,15 @@ test_that("Can drop missing acc values", {
   acc <- as_acc(gulls_data, colset = cols, drop = FALSE)
   acc_i <- which(gulls_data$sensor_type_id == 2365683)
   
-  expect_identical(as_acc(gulls_data, colset = cols), acc[!is.na(acc)])
+  expect_identical(as_acc(gulls_data, colset = cols, drop = TRUE), acc[!is.na(acc)])
   expect_length(acc, nrow(gulls_data))
   expect_equal(
-    is.na(acc[acc_i]), 
+    is.na(acc[acc_i]),
     duplicated(parse_bursts(gulls_data, colset = cols))
   )
-  
+
   acc <- as_acc(albatrosses(), drop = FALSE)
-  expect_identical(as_acc(albatrosses()), acc[!is.na(acc)])
+  expect_identical(as_acc(albatrosses(), drop = TRUE), acc[!is.na(acc)])
 })
 
 test_that("Retain burst dimensions when missing data in some axes", {
@@ -292,7 +292,7 @@ test_that("Retain burst dimensions when missing data in some axes", {
   
   g[["acceleration_raw_x"]][1:100] <- NA
   
-  a <- as_acc(g, colset = acc_colset_raw_xyz())
+  a <- as_acc(g, colset = acc_colset_raw_xyz(), drop = TRUE)
   expect_true(all(purrr::map(bursts(a), ncol) == 3))
 })
 
@@ -352,7 +352,7 @@ test_that("Equivalent data in burst and long format produce same acc", {
     track_id_column = "id"
   )
   
-  expect_identical(as_acc(m1), as_acc(m2))
+  expect_identical(as_acc(m1, drop = TRUE), as_acc(m2, drop = TRUE))
 })
 
 test_that("Coerce to integer for eobs", {

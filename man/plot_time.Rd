@@ -25,7 +25,7 @@ plot_time(acc_example())
 # If bursts come from multiple sources (in this case, deployments),
 # then lines from different bursts may be incorrectly connected:
 alb <- albatrosses()
-a <- as_acc(alb, drop = FALSE)
+a <- as_acc(alb)
 
 plot_time(a)
 

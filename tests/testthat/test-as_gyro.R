@@ -15,7 +15,7 @@ test_that("as_gyro() builds a gyro vector from long-format gyro data", {
   expect_false(is_acc(r))
   expect_false(is_mag(r))
   # Two bursts separated by the time gap in the fixture
-  expect_length(r, 2)
+  expect_length(r, 10)
   # Each burst retains XYZ axis structure
   expect_identical(colnames(bursts(r)[[1]]), c("X", "Y", "Z"))
 })

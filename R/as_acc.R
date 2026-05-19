@@ -53,7 +53,7 @@ as_acc.default <- function(x, ...) {
 
 #' @rdname as_acc
 #' @export
-as_acc.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+as_acc.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = FALSE, ...) {
   as_imu(
     x,
     sensor = "acc",

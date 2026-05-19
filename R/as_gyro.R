@@ -33,7 +33,7 @@ as_gyro.default <- function(x, ...) {
 
 #' @rdname as_gyro
 #' @export
-as_gyro.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+as_gyro.move2 <- function(x, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = FALSE, ...) {
   as_imu(
     x,
     sensor = "gyro",

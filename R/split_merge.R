@@ -10,10 +10,10 @@
 #'   If provided, bursts in `x` will not be merged across different values of
 #'   this vector, even if their timestamps and frequencies align.
 #' @param drop Logical indicating whether to drop entries that have been merged
-#'   into other bursts. If `drop = FALSE`, the output will have the same length
-#'   as the input `x`, with `NA` values at positions where bursts were merged
-#'   into a preceding burst. This is useful for retaining index matching between
-#'   the input and output vectors. Default is `TRUE`.
+#'   into other bursts. If `drop = FALSE` (default), the output will have the
+#'   same length as the input `x`, with `NA` values at positions where bursts
+#'   were merged into a preceding burst. This is useful for retaining index
+#'   matching between the input and output vectors.
 #'
 #' @returns A vector of the same class as `x`.
 #' @export
@@ -26,7 +26,7 @@
 #' )
 #'
 #' merge_imu(a)
-merge_imu <- function(x, ids = NULL, drop = TRUE) {
+merge_imu <- function(x, ids = NULL, drop = FALSE) {
   n <- vec_size(x)
 
   # Work only with non-NA entries; track their original positions
@@ -142,7 +142,7 @@ merge_imu <- function(x, ids = NULL, drop = TRUE) {
 #' starts(flat)
 #'
 #' # Use merge_imu() on flat
-#' identical(merge_imu(flat), a)
+#' identical(merge_imu(flat, drop = TRUE), a)
 #'
 #' \dontrun{
 #' # In a dataframe, split and unnest to retain index matching

@@ -13,7 +13,7 @@ test_that("Can combine adjacent bursts into single burst", {
     start = as.POSIXct(c(0, 3, 6, 20, 50), tz = "UTC")
   )
 
-  a2 <- merge_imu(a)
+  a2 <- merge_imu(a, drop = TRUE)
 
   expect_true(is_acc(a2))
   expect_length(a2, 3)
@@ -41,7 +41,7 @@ test_that("Can merge with drop = FALSE", {
 
   expect_length(a, nrow(d))
   expect_length(a[!is.na(a)], 9)
-  expect_identical(a[!is.na(a)], as_acc(d))
+  expect_identical(a[!is.na(a)], as_acc(d, drop = TRUE))
 })
 
 test_that("Same merged result if drop = TRUE regardless of NAs", {
@@ -60,7 +60,7 @@ test_that("Same merged result if drop = TRUE regardless of NAs", {
     acc(list(NULL), units::set_units(NA, "Hz")),
     a1[2:3]
   )
-  expect_identical(merge_imu(a1), merge_imu(a2))
+  expect_identical(merge_imu(a1, drop = TRUE), merge_imu(a2, drop = TRUE))
 })
 
 test_that("Can combine adjacent bursts with embedded NA", {
@@ -80,12 +80,19 @@ test_that("Can combine adjacent bursts with embedded NA", {
     )
   )
 
-  a2 <- merge_imu(a)
+  a2 <- merge_imu(a, drop = TRUE)
 
   expect_true(is_acc(a2))
   expect_length(a2, 2)
   expect_equal(n_samples(a2), as.integer(c(60, 60)))
   expect_identical(starts(a2), as.POSIXct(c(0, 20), tz = "UTC"))
+  
+  # drop = FALSE should only change indexing, not merged values
+  a3 <- merge_imu(a, drop = FALSE)
+  
+  expect_length(a3, length(a))
+  expect_identical(which(!is.na(a3)), c(1L, 4L))
+  expect_identical(a3[!is.na(a3)], a2)
 })
 
 test_that("drop = FALSE places merged bursts at correct indices", {
@@ -98,7 +105,7 @@ test_that("drop = FALSE places merged bursts at correct indices", {
   a <- as_acc(d, merge_continuous = TRUE, drop = FALSE)
 
   # Start times of merged bursts should match the dropped version
-  expect_identical(starts(a[!is.na(a)]), starts(as_acc(d)))
+  expect_identical(starts(a[!is.na(a)]), starts(as_acc(d, drop = TRUE)))
 
   # Positions of non-NA entries should be a subset of the original burst positions
   a_raw <- as_acc(d, merge_continuous = FALSE, drop = FALSE)
@@ -183,7 +190,7 @@ test_that("Do not combine bursts with different IDs", {
     start = as.POSIXct(c(0, 3, 6, 9), tz = "UTC")
   )
 
-  a2 <- merge_imu(a, ids = c(1, 1, 1, 2))
+  a2 <- merge_imu(a, ids = c(1, 1, 1, 2), drop = TRUE)
 
   expect_length(a2, 2)
   expect_equal(n_samples(a2), as.integer(c(90, 30)))
@@ -219,7 +226,7 @@ test_that("split_imu() on single-element acc returns length-1 list", {
   expect_length(sp, 1)
   expect_true(is_acc(sp[[1]]))
   expect_length(sp[[1]], 4)
-  expect_identical(merge_imu(purrr::reduce(sp, c)), a)
+  expect_identical(merge_imu(purrr::reduce(sp, c), drop = TRUE), a)
 })
 
 test_that("Can split acc at a given interval", {
@@ -326,7 +333,7 @@ test_that("Can recover split continuous data by merging", {
   )
 
   flat <- purrr::reduce(split_imu(a, interval = 0.5), c)
-  expect_identical(merge_imu(flat), a)
+  expect_identical(merge_imu(flat, drop = TRUE), a)
 })
 
 test_that("Can recover split continuous data by merging with NA", {
@@ -337,7 +344,7 @@ test_that("Can recover split continuous data by merging with NA", {
   )
 
   flat <- purrr::reduce(split_imu(a, interval = 0.5), c)
-  expect_identical(merge_imu(flat), a[!is.na(a)])
+  expect_identical(merge_imu(flat, drop = TRUE), a[!is.na(a)])
 })
 
 test_that("split_imu() preserves 1-sample bursts", {
@@ -359,7 +366,7 @@ test_that("split_imu() preserves 1-sample bursts", {
 
   # Round-trip preserves the 1-sample burst
   flat <- purrr::reduce(sp, c)
-  expect_identical(merge_imu(flat), a)
+  expect_identical(merge_imu(flat, drop = TRUE), a)
 })
 
 test_that("Long intervals do not modify input acc", {

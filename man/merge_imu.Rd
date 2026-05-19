@@ -4,7 +4,7 @@
 \alias{merge_imu}
 \title{Merge adjacent bursts in an IMU vector}
 \usage{
-merge_imu(x, ids = NULL, drop = TRUE)
+merge_imu(x, ids = NULL, drop = FALSE)
 }
 \arguments{
 \item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
@@ -14,10 +14,10 @@ If provided, bursts in \code{x} will not be merged across different values of
 this vector, even if their timestamps and frequencies align.}
 
 \item{drop}{Logical indicating whether to drop entries that have been merged
-into other bursts. If \code{drop = FALSE}, the output will have the same length
-as the input \code{x}, with \code{NA} values at positions where bursts were merged
-into a preceding burst. This is useful for retaining index matching between
-the input and output vectors. Default is \code{TRUE}.}
+into other bursts. If \code{drop = FALSE} (default), the output will have the
+same length as the input \code{x}, with \code{NA} values at positions where bursts
+were merged into a preceding burst. This is useful for retaining index
+matching between the input and output vectors.}
 }
 \value{
 A vector of the same class as \code{x}.

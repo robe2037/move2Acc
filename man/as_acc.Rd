@@ -15,7 +15,7 @@ as_acc(x, ...)
   colset = NULL,
   min_freq = 1,
   merge_continuous = TRUE,
-  drop = TRUE,
+  drop = FALSE,
   ...
 )
 }

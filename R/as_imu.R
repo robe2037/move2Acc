@@ -8,7 +8,7 @@ as_imu.default <- function(x, sensor, ...) {
 }
 
 #' @export
-as_imu.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = TRUE, ...) {
+as_imu.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_continuous = TRUE, drop = FALSE, ...) {
   colsets <- parse_colsets(x, colset, sensor)
   dup <- duplicated_imu_rows(x, colsets = colsets)
 
@@ -48,7 +48,7 @@ as_imu.move2 <- function(x, sensor, colset = NULL, min_freq = 1, merge_continuou
 
 # Pipeline internals -----------------------------------------------------------
 
-as_imu_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous = TRUE, drop = TRUE, force_int = NULL, ...) {
+as_imu_move2_ <- function(x, sensor, colset, min_freq = 1, merge_continuous = TRUE, drop = FALSE, force_int = NULL, ...) {
   check_colset(x, colset)
 
   colset_type <- attr(colset, "type")
