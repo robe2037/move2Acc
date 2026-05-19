@@ -26,13 +26,13 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 
 \item{...}{currently not used}
 
-\item{colset}{A \code{mag_colset} object or list of \code{mag_colset} objects
+\item{colset}{An \code{imu_colset} object or list of \code{imu_colset} objects
 specifying the columns of \code{x} that contain magnetometer data. By default,
 constructs bursts for all column sets that are detected in \code{x} that also
 contain data (see \code{\link[=active_mag_colsets]{active_mag_colsets()}}).
 
 Several common colsets are listed under \code{\link[=valid_mag_colsets]{valid_mag_colsets()}}. To
-specify a custom set of columns, use \code{\link[=mag_colset]{mag_colset()}}.}
+specify a custom set of columns, use \code{\link[=imu_colset]{imu_colset()}}.}
 
 \item{min_freq}{Numeric value indicating the
 minimum allowable within-burst data collection frequency when identifying

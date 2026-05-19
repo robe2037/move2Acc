@@ -34,10 +34,9 @@ test_that("Correctly subset active colsets for long-format acc cols", {
   gulls_sub <- gulls_data[, setdiff(colnames(gulls_data), "acceleration_raw_y")]
   expect_identical(
     active_acc_colsets(gulls_sub),
-    list(raw_xyz = new_colset(
+    list(raw_xyz = new_imu_colset(
       c("acceleration_raw_x", "acceleration_raw_z"),
-      type = "long",
-      sensor = "acc"
+      type = "long"
     ))
   )
 })
@@ -75,7 +74,7 @@ test_that("Use data values to determine active colset if multiple present", {
   colsets <- active_acc_colsets(m)
   expect_identical(
     colsets$raw_xyz,
-    new_colset("acceleration_raw_z", type = "long", sensor = "acc")
+    new_imu_colset("acceleration_raw_z", type = "long")
   )
   
   # If all cols in a set are missing, then the next colset will be used
@@ -131,7 +130,7 @@ test_that("is_unique_named_subset correctly identifies subsets", {
 
   # Wrong name-value mapping (Y mapped to X's column)
   expect_false(is_unique_named_subset(
-    acc_colset(y = "acceleration_raw_x"),
+    imu_colset(y = "acceleration_raw_x"),
     tgt
   ))
 
@@ -139,7 +138,7 @@ test_that("is_unique_named_subset correctly identifies subsets", {
   expect_false(is_unique_named_subset(c(tgt["X"], tgt["X"]), tgt))
 
   # Custom columns not in target
-  expect_false(is_unique_named_subset(acc_colset(x = "my_col"), tgt))
+  expect_false(is_unique_named_subset(imu_colset(x = "my_col"), tgt))
 
   # Empty input
   expect_false(is_unique_named_subset(character(0), tgt))
@@ -149,19 +148,19 @@ test_that("is_unique_named_subset correctly identifies subsets", {
   expect_false(is_unique_named_subset(c("A", "B"), c(A = "A", B = "B", C = "C")))
 })
 
-test_that("acc_colset() errors on invalid specifications", {
+test_that("imu_colset() errors on invalid specifications", {
   # No columns specified
-  expect_error(acc_colset(), "No acc columns")
-
-  # Both long and burst args
-  expect_error(
-    acc_colset(x = "x", bursts = "b", axes = "a", frequency = "f"),
-    "not both"
-  )
+  expect_error(imu_colset(), "No IMU data columns specified")
 
   # Incomplete burst args
-  expect_error(acc_colset(bursts = "b"), "requires")
-  expect_error(acc_colset(bursts = "b", axes = "a"), "requires")
+  expect_error(imu_colset(bursts = "b"), "requires")
+  expect_error(imu_colset(bursts = "b", axes = "a"), "requires")
+
+  # Mixed formats
+  expect_error(
+    imu_colset(x = "x", bursts = "b", axes = "a", frequency = "f"),
+    "Cannot mix"
+  )
 })
 
 test_that("Can get colset type from colset", {

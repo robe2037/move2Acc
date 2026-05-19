@@ -2,40 +2,27 @@
 % Please edit documentation in R/colsets.R
 \name{valid_acc_colsets}
 \alias{valid_acc_colsets}
-\alias{acc_colset_eobs}
-\alias{acc_colset_burst}
-\alias{acc_colset_xyz}
-\alias{acc_colset_raw_xyz}
 \title{Valid acceleration data column sets}
 \usage{
 valid_acc_colsets()
-
-acc_colset_eobs()
-
-acc_colset_burst()
-
-acc_colset_xyz()
-
-acc_colset_raw_xyz()
 }
 \value{
-For \code{valid_acc_colsets()}, a list of \code{acc_colset} objects
-containing valid column sets. Otherwise, an \code{acc_colset} object.
+A named list of \code{imu_colset} objects.
 }
 \description{
-These sets of columns can be used by \code{\link[=as_acc]{as_acc()}} when parsing acceleration
-bursts contained in a \code{move2} object. A \code{move2} object must contain one
-of these column sets to be processed by \code{as_acc()}.
+Returns the set of acceleration column layouts that \code{as_acc()} recognizes
+in a \code{move2} object. A \code{move2} object must contain one of these layouts
+to be processed by \code{\link[=as_acc]{as_acc()}}.
+
+The returned list is named by layout:
 \itemize{
-\item \code{acc_colset_eobs()} and \code{acc_colset_burst()} must be present in their entirety
-within a data source to be used when parsing acceleration data.
-\item For \code{acc_colset_xyz()} and \code{acc_colset_raw_xyz()}, any
-subset of the set's columns can be used to parse acceleration
-data.
+\item \code{eobs}, \code{burst} (burst-format): all columns in the set must be present.
+\item \code{xyz}, \code{raw_xyz} (long-format): any subset of the axis columns may be
+present.
 }
 
-To determine the default columns that will be used by \code{as_acc()} for a given
-\code{move2} object, see \code{\link[=active_acc_colsets]{active_acc_colsets()}}.
+To inspect which layouts are active in a given \code{move2} object, see
+\code{\link[=active_acc_colsets]{active_acc_colsets()}}. To build a custom layout, use \code{\link[=imu_colset]{imu_colset()}}.
 }
 \examples{
 valid_acc_colsets()

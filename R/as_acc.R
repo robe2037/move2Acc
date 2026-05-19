@@ -7,13 +7,13 @@
 #'   Ornitela, or similar tracking devices. Most of the time this will be
 #'   either loaded from disk using [move2::mt_read] or downloaded using
 #'   [move2::movebank_download_study].
-#' @param colset An `acc_colset` object or list of `acc_colset` objects
+#' @param colset An `imu_colset` object or list of `imu_colset` objects
 #'   specifying the columns of `x` that contain acceleration data. By default,
 #'   constructs bursts for all column sets that are detected in `x` that also
 #'   contain data (see [active_acc_colsets()]).
 #'
 #'   Several common colsets are listed under [valid_acc_colsets()]. To
-#'   specify a custom set of columns, use [acc_colset()].
+#'   specify a custom set of columns, use [imu_colset()].
 #' @param min_freq Numeric value indicating the
 #'   minimum allowable within-burst data collection frequency when identifying
 #'   bursts in long-format data. Any two adjacent timestamps

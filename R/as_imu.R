@@ -192,19 +192,15 @@ as_imu_move2_long <- function(x,
 # Resolve user-supplied `colset` into a list of validated IMU colsets.
 # Falls back to colsets detected in `x` when `colset` is NULL.
 parse_colsets <- function(x, colset, sensor) {
-  is_colset <- function(obj) inherits(obj, paste0(sensor, "_colset"))
-
   if (!rlang::is_null(colset)) {
-    if (is_colset(colset)) {
+    if (is_imu_colset(colset)) {
       colsets <- colset
-    } else if (rlang::is_list(colset) && all(purrr::map_lgl(colset, is_colset))) {
+    } else if (rlang::is_list(colset) && all(purrr::map_lgl(colset, is_imu_colset))) {
       colsets <- colset
     } else {
       rlang::abort(c(
-        paste0(
-          "`colset` must be a(n) `", sensor, "_colset` object or a list of such objects."
-        ),
-        i = paste0("Use `", sensor, "_colset()` to create an `", sensor, "_colset` object.")
+        "`colset` must be an `imu_colset` object or a list of `imu_colset` objects.",
+        i = "Use `imu_colset()` to create an `imu_colset` object."
       ))
     }
   } else {

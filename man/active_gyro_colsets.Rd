@@ -12,7 +12,7 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
 }
 \value{
-A list of \code{gyro_colset} objects.
+A list of \code{imu_colset} objects.
 }
 \description{
 \code{active_gyro_colsets()} determines the sets of columns that will be used
@@ -36,14 +36,13 @@ A further column provides the sampling frequency of the burst.
 All three of these columns must be present for a burst-format column set
 to be considered active in a \code{move2} object.
 
-The standard long-format column set for data from Movebank is
-\code{\link[=gyro_colset_xyz]{gyro_colset_xyz()}}. The standard burst-format column set for data from
-Movebank is \code{\link[=gyro_colset_burst]{gyro_colset_burst()}}.
+The standard long-format column set for data from Movebank can be found
+with \code{\link[=valid_gyro_colsets]{valid_gyro_colsets()}}.
 
 If your input data use different column names for these columns, use
-\code{\link[=gyro_colset]{gyro_colset()}} to specify the column names that correspond to each of the
-axes (for long-format data) or burst data and associated metadata (for
-burst-format data).
+\code{\link[=imu_colset]{imu_colset()}} to specify
+the column names that correspond to each of the axes (for long-format
+data) or burst data and associated metadata (for burst-format data).
 }
 \seealso{
 \code{\link[=valid_gyro_colsets]{valid_gyro_colsets()}} for currently supported default colsets,

@@ -12,7 +12,7 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
 }
 \value{
-A list of \code{mag_colset} objects.
+A list of \code{imu_colset} objects.
 }
 \description{
 \code{active_mag_colsets()} determines the sets of columns that will be used
@@ -37,13 +37,12 @@ All three of these columns must be present for a burst-format column set
 to be considered active in a \code{move2} object.
 
 Standard long-format column sets for data from
-Movebank include \code{\link[=mag_colset_raw_xyz]{mag_colset_raw_xyz()}} and \code{\link[=mag_colset_xyz]{mag_colset_xyz()}}. The standard
-burst-format column set for data from Movebank is \code{\link[=mag_colset_burst]{mag_colset_burst()}}.
+Movebank can be found with \code{\link[=valid_mag_colsets]{valid_mag_colsets()}}.
 
 If your input data use different column names for these columns, use
-\code{\link[=mag_colset]{mag_colset()}} to specify the column names that correspond to each of the
-axes (for long-format data) or burst data and associated metadata (for
-burst-format data).
+\code{\link[=imu_colset]{imu_colset()}} to specify
+the column names that correspond to each of the axes (for long-format
+data) or burst data and associated metadata (for burst-format data).
 }
 \seealso{
 \code{\link[=valid_mag_colsets]{valid_mag_colsets()}} for currently supported default colsets,

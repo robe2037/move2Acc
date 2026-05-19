@@ -26,13 +26,13 @@ either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded
 
 \item{...}{currently not used}
 
-\item{colset}{A \code{gyro_colset} object or list of \code{gyro_colset} objects
+\item{colset}{An \code{imu_colset} object or list of \code{imu_colset} objects
 specifying the columns of \code{x} that contain gyroscope data. By default,
 constructs bursts for all column sets that are detected in \code{x} that also
 contain data (see \code{\link[=active_gyro_colsets]{active_gyro_colsets()}}).
 
 Several common colsets are listed under \code{\link[=valid_gyro_colsets]{valid_gyro_colsets()}}. To
-specify a custom set of columns, use \code{\link[=gyro_colset]{gyro_colset()}}.}
+specify a custom set of columns, use \code{\link[=imu_colset]{imu_colset()}}.}
 
 \item{min_freq}{Numeric value indicating the
 minimum allowable within-burst data collection frequency when identifying

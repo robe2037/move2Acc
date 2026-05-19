@@ -1,166 +1,111 @@
-#' Specify acceleration data columns
+#' Specify IMU data columns
 #'
 #' @description
-#' Define which columns in a `move2` object contain acceleration data.
-#' Use this function to manually specify the columns that should be used when
-#' constructing an `acc` vector with `as_acc()`.
+#' Define which columns in a `move2` object contain IMU data. Pass the
+#' result as the `colset` argument of [as_acc()], [as_mag()], or [as_gyro()]
+#' to convert those columns into an IMU vector.
 #'
-#' For long-format data (one measurement per row), specify axis columns
-#' with `x`, `y`, and/or `z`.
+#' `imu_colset()` supports two storage formats:
 #'
-#' For burst-format data (where each row contains burst data in a single string),
-#' specify the columns containing the raw burst data, axes, and sampling
-#' frequency.
+#' - **Long-format**: one measurement per row, one column per axis. Specify
+#'   any of `x`, `y`, `z`.
+#' - **Burst-format**: each row holds an entire burst as a space-delimited
+#'   string. Specify all of `bursts`, `axes`, and `frequency`.
 #'
-#' @param x,y,z In long-format data, the column name(s) for the
-#'   X, Y, and/or Z acceleration axes.
-#' @param bursts For burst-format data, the column name containing the raw burst
-#'   strings.
-#' @param axes For burst-format data, the column name containing the axis
-#'   labels.
-#' @param frequency For burst-format data, the column name containing the
-#'   sampling frequency.
+#' The two formats are mutually exclusive within a single colset.
 #'
-#' @returns An `acc_colset` object.
+#' @param x,y,z (Long-format) Column name(s) for the X, Y, and/or Z axes.
+#' @param bursts (Burst-format) Column name containing the raw burst strings.
+#' @param axes (Burst-format) Column name containing the axis labels for
+#'   each burst.
+#' @param frequency (Burst-format) Column name containing the sampling
+#'   frequency for each burst.
 #'
-#' @seealso [active_acc_colsets()] for automatic colset detection, [as_acc()] to
-#'   construct an `acc` vector using a colset specification.
+#' @returns An `imu_colset` object of type `"long"` or `"burst"`.
+#'
+#' @seealso [as_acc()], [as_mag()], [as_gyro()] to apply a colset.
 #'
 #' @export
 #'
 #' @examples
-#' # Specify the column names for long-format data for each axis
-#' acc_colset(x = "my_acc_x", y = "my_acc_y", z = "my_acc_z")
+#' # Long-format: one or more axes
+#' imu_colset(x = "my_x", y = "my_y", z = "my_z")
+#' imu_colset(x = "my_x", y = "my_y")
 #'
-#' # Long format data may consist of a subset of axes
-#' acc_colset(x = "my_acc_x", y = "my_acc_y")
-#'
-#' # Specify the column names for the bursts, axes, and frequency for
-#' # burst-format data
-#' acc_colset(
-#'   bursts = "my_raw_acc",
-#'   axes = "my_axes",
-#'   frequency = "my_freq"
-#' )
-acc_colset <- function(x = NULL,
+#' # Burst-format: all three columns required
+#' imu_colset(bursts = "my_raw", axes = "my_axes", frequency = "my_freq")
+imu_colset <- function(x = NULL,
                        y = NULL,
                        z = NULL,
                        bursts = NULL,
                        axes = NULL,
                        frequency = NULL) {
-  build_colset_(
-    sensor = "acc",
-    x = x,
-    y = y,
-    z = z,
-    bursts = bursts,
-    axes = axes,
-    frequency = frequency
-  )
-}
-
-#' Specify magnetometer data columns
-#'
-#' @description
-#' Define which columns in a `move2` object contain magnetometer data.
-#' Use this function to manually specify the columns that should be used when
-#' constructing a `mag` vector with `as_mag()`.
-#'
-#' For long-format data (one measurement per row), specify axis columns
-#' with `x`, `y`, and/or `z`.
-#'
-#' For burst-format data (where each row contains burst data in a single string),
-#' specify the columns containing the raw burst data, axes, and sampling
-#' frequency.
-#'
-#' @param x,y,z In long-format data, the column name(s) for the
-#'   X, Y, and/or Z magnetometer axes.
-#' @param bursts For burst-format data, the column name containing the raw burst
-#'   strings.
-#' @param axes For burst-format data, the column name containing the axis
-#'   labels.
-#' @param frequency For burst-format data, the column name containing the
-#'   sampling frequency.
-#'
-#' @returns A `mag_colset` object.
-#'
-#' @seealso [active_mag_colsets()] for automatic colset detection, [as_mag()] to
-#'   construct a `mag` vector using a colset specification.
-#'
-#' @export
-#'
-#' @examples
-#' # Specify the column names for long-format data for each axis
-#' mag_colset(x = "my_mag_x", y = "my_mag_y", z = "my_mag_z")
-#'
-#' # Long format data may consist of a subset of axes
-#' mag_colset(x = "my_mag_x", y = "my_mag_y")
-#'
-#' # Specify the column names for the bursts, axes, and frequency for
-#' # burst-format data
-#' mag_colset(
-#'   bursts = "my_raw_mag",
-#'   axes = "my_axes",
-#'   frequency = "my_freq"
-#' )
-mag_colset <- function(x = NULL,
-                       y = NULL,
-                       z = NULL,
-                       bursts = NULL,
-                       axes = NULL,
-                       frequency = NULL) {
-  build_colset_(
-    sensor = "mag",
-    x = x,
-    y = y,
-    z = z,
-    bursts = bursts,
-    axes = axes,
-    frequency = frequency
-  )
-}
-
-#' @export
-print.colset <- function(x, ...) {
-  type <- attr(x, "type")
-  sensor <- class(x)[1]
-
-  if (type == "long") {
-    cat(paste0(
-      "<", sensor, "> long-format [",
-      paste0(names(x), "=", unclass(x), collapse = ", "),
-      "]\n"
-    ))
-  } else {
-    cat(paste0(
-      "<", sensor, "> burst-format [",
-      paste0(names(x), "=", unclass(x), collapse = ", "),
-      "]\n"
+  long_args <- purrr::compact(list(X = x, Y = y, Z = z))
+  burst_args <- purrr::compact(list(bursts = bursts, axes = axes, frequency = frequency))
+  
+  has_long <- length(long_args) > 0
+  has_burst <- length(burst_args) > 0
+  
+  if (has_long && has_burst) {
+    rlang::abort(c(
+      "Cannot mix long-format and burst-format columns in a single imu_colset.",
+      i = "Use either `x`/`y`/`z` (long-format) or `bursts`/`axes`/`frequency` (burst-format)."
     ))
   }
+  
+  if (!has_long && !has_burst) {
+    rlang::abort("No IMU data columns specified.")
+  }
+  
+  if (has_burst) {
+    if (length(burst_args) != 3) {
+      rlang::abort(
+        "Burst format requires `bursts`, `axes`, and `frequency` columns."
+      )
+    }
+    
+    cols <- unlist(burst_args)
+    type <- "burst"
+  } else {
+    cols <- unlist(long_args)
+    type <- "long"
+  }
+  
+  new_imu_colset(cols = cols, type = type)
+}
+
+#' @export
+print.imu_colset <- function(x, ...) {
+  type <- attr(x, "type")
+  
+  cat(paste0(
+    type, "-format [",
+    paste0(names(x), "=", unclass(x), collapse = ", "),
+    "]\n"
+  ))
+  
   invisible(x)
 }
 
-# Default supported colsets --------------------------------------==------------
+# Default supported colsets ----------------------------------------------------
 
 #' Valid acceleration data column sets
 #'
 #' @description
-#' These sets of columns can be used by [as_acc()] when parsing acceleration
-#' bursts contained in a `move2` object. A `move2` object must contain one
-#' of these column sets to be processed by `as_acc()`.
+#' Returns the set of acceleration column layouts that `as_acc()` recognizes
+#' in a `move2` object. A `move2` object must contain one of these layouts
+#' to be processed by [as_acc()].
 #'
-#' - `acc_colset_eobs()` and `acc_colset_burst()` must be present in their entirety
-#' within a data source to be used when parsing acceleration data.
-#' - For `acc_colset_xyz()` and `acc_colset_raw_xyz()`, any
-#' subset of the set's columns can be used to parse acceleration
-#' data.
+#' The returned list is named by layout:
 #'
-#' To determine the default columns that will be used by `as_acc()` for a given
-#' `move2` object, see [active_acc_colsets()].
+#' - `eobs`, `burst` (burst-format): all columns in the set must be present.
+#' - `xyz`, `raw_xyz` (long-format): any subset of the axis columns may be
+#'   present.
 #'
-#' @returns For `valid_acc_colsets()`, a list of `acc_colset` objects
-#'   containing valid column sets. Otherwise, an `acc_colset` object.
+#' To inspect which layouts are active in a given `move2` object, see
+#' [active_acc_colsets()]. To build a custom layout, use [imu_colset()].
+#'
+#' @returns A named list of `imu_colset` objects.
 #'
 #' @export
 #'
@@ -170,79 +115,67 @@ valid_acc_colsets <- function() {
   purrr::map(acc_colset_config(), function(colset) colset$cols)
 }
 
-#' @export
-#' @rdname valid_acc_colsets
 acc_colset_eobs <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       axes = "eobs_acceleration_axes",
       frequency = "eobs_acceleration_sampling_frequency_per_axis",
       bursts = "eobs_accelerations_raw"
     ),
-    type = "burst",
-    sensor = "acc"
+    type = "burst"
   )
 }
 
-#' @export
-#' @rdname valid_acc_colsets
 acc_colset_burst <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       axes = "acceleration_axes",
       frequency = "acceleration_sampling_frequency_per_axis",
       bursts = "accelerations_raw"
     ),
-    type = "burst",
-    sensor = "acc"
+    type = "burst"
   )
 }
 
-#' @export
-#' @rdname valid_acc_colsets
 acc_colset_xyz <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       X = "acceleration_x",
       Y = "acceleration_y",
       Z = "acceleration_z"
     ),
-    type = "long",
-    sensor = "acc"
+    type = "long"
   )
 }
 
-#' @export
-#' @rdname valid_acc_colsets
 acc_colset_raw_xyz <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       X = "acceleration_raw_x",
       Y = "acceleration_raw_y",
       Z = "acceleration_raw_z"
     ),
-    type = "long",
-    sensor = "acc"
+    type = "long"
   )
 }
 
 #' Valid magnetometer data column sets
 #'
 #' @description
-#' These sets of columns can be used by [as_mag()] when parsing magnetometer
-#' bursts contained in a `move2` object. A `move2` object must contain one
-#' of these column sets to be processed by `as_mag()`.
+#' Returns the set of magnetometer column layouts that `as_mag()` recognizes
+#' in a `move2` object. A `move2` object must contain one of these layouts
+#' to be processed by [as_mag()].
 #'
-#' - `mag_colset_burst()` must be present in its entirety within a data
-#' source to be used when parsing magnetometer data.
-#' - For `mag_colset_xyz()` and `mag_colset_raw_xyz()`, any subset of the
-#' set's columns can be used to parse magnetometer data.
+#' The returned list is named by layout:
 #'
-#' To determine the default columns that will be used by `as_mag()` for a given
-#' `move2` object, see [active_mag_colsets()].
+#' - `burst` (burst-format): all columns in the set must be present.
+#' - `xyz`, `raw_xyz` (long-format): any subset of the axis columns may be
+#'   present.
 #'
-#' @returns For `valid_mag_colsets()`, a list of `mag_colset` objects
-#'   containing valid column sets. Otherwise, a `mag_colset` object.
+#' To inspect which layouts are active in a given `move2` object, see
+#' [active_mag_colsets()]. To build a custom layout, use [imu_colset()].
+#'
+#' @returns A named list of `imu_colset` objects.
 #'
 #' @export
 #'
@@ -252,126 +185,55 @@ valid_mag_colsets <- function() {
   purrr::map(mag_colset_config(), function(colset) colset$cols)
 }
 
-#' @export
-#' @rdname valid_mag_colsets
 mag_colset_burst <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       bursts = "magnetic_fields_raw",
       axes = "magnetic_field_axes",
       frequency = "magnetic_field_sampling_frequency_per_axis"
     ),
-    type = "burst",
-    sensor = "mag"
+    type = "burst"
   )
 }
 
-#' @export
-#' @rdname valid_mag_colsets
 mag_colset_xyz <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       X = "magnetic_field_x",
       Y = "magnetic_field_y",
       Z = "magnetic_field_z"
     ),
-    type = "long",
-    sensor = "mag"
+    type = "long"
   )
 }
 
-#' @export
-#' @rdname valid_mag_colsets
 mag_colset_raw_xyz <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       X = "magnetic_field_raw_x",
       Y = "magnetic_field_raw_y",
       Z = "magnetic_field_raw_z"
     ),
-    type = "long",
-    sensor = "mag"
-  )
-}
-
-#' Specify gyroscope data columns
-#'
-#' @description
-#' Define which columns in a `move2` object contain gyroscope data.
-#' Use this function to manually specify the columns that should be used when
-#' constructing a `gyro` vector with `as_gyro()`.
-#'
-#' For long-format data (one measurement per row), specify axis columns
-#' with `x`, `y`, and/or `z`.
-#'
-#' For burst-format data (where each row contains burst data in a single string),
-#' specify the columns containing the raw burst data, axes, and sampling
-#' frequency.
-#'
-#' @param x,y,z In long-format data, the column name(s) for the
-#'   X, Y, and/or Z gyroscope axes.
-#' @param bursts For burst-format data, the column name containing the raw burst
-#'   strings.
-#' @param axes For burst-format data, the column name containing the axis
-#'   labels.
-#' @param frequency For burst-format data, the column name containing the
-#'   sampling frequency.
-#'
-#' @returns A `gyro_colset` object.
-#'
-#' @seealso [active_gyro_colsets()] for automatic colset detection, [as_gyro()]
-#'   to construct a `gyro` vector using a colset specification.
-#'
-#' @export
-#'
-#' @examples
-#' # Specify the column names for long-format data for each axis
-#' gyro_colset(x = "my_gyro_x", y = "my_gyro_y", z = "my_gyro_z")
-#'
-#' # Long format data may consist of a subset of axes
-#' gyro_colset(x = "my_gyro_x", y = "my_gyro_y")
-#'
-#' # Specify the column names for the bursts, axes, and frequency for
-#' # burst-format data
-#' gyro_colset(
-#'   bursts = "my_raw_gyro",
-#'   axes = "my_axes",
-#'   frequency = "my_freq"
-#' )
-gyro_colset <- function(x = NULL,
-                        y = NULL,
-                        z = NULL,
-                        bursts = NULL,
-                        axes = NULL,
-                        frequency = NULL) {
-  build_colset_(
-    sensor = "gyro",
-    x = x,
-    y = y,
-    z = z,
-    bursts = bursts,
-    axes = axes,
-    frequency = frequency
+    type = "long"
   )
 }
 
 #' Valid gyroscope data column sets
 #'
 #' @description
-#' These sets of columns can be used by [as_gyro()] when parsing gyroscope
-#' bursts contained in a `move2` object. A `move2` object must contain one
-#' of these column sets to be processed by `as_gyro()`.
+#' Returns the set of gyroscope column layouts that `as_gyro()` recognizes
+#' in a `move2` object. A `move2` object must contain one of these layouts
+#' to be processed by [as_gyro()].
 #'
-#' - `gyro_colset_burst()` must be present in its entirety within a data
-#' source to be used when parsing gyroscope data.
-#' - For `gyro_colset_xyz()`, any subset of the set's columns can be used to
-#' parse gyroscope data.
+#' The returned list is named by layout:
 #'
-#' To determine the default columns that will be used by `as_gyro()` for a given
-#' `move2` object, see [active_gyro_colsets()].
+#' - `burst` (burst-format): all columns in the set must be present.
+#' - `xyz` (long-format): any subset of the axis columns may be present.
 #'
-#' @returns For `valid_gyro_colsets()`, a list of `gyro_colset` objects
-#'   containing valid column sets. Otherwise, a `gyro_colset` object.
+#' To inspect which layouts are active in a given `move2` object, see
+#' [active_gyro_colsets()]. To build a custom layout, use [imu_colset()].
+#'
+#' @returns A named list of `imu_colset` objects.
 #'
 #' @export
 #'
@@ -381,31 +243,25 @@ valid_gyro_colsets <- function() {
   purrr::map(gyro_colset_config(), function(colset) colset$cols)
 }
 
-#' @export
-#' @rdname valid_gyro_colsets
 gyro_colset_burst <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       bursts = "angular_velocities_raw",
       axes = "gyroscope_axes",
       frequency = "gyroscope_sampling_frequency_per_axis"
     ),
-    type = "burst",
-    sensor = "gyro"
+    type = "burst"
   )
 }
 
-#' @export
-#' @rdname valid_gyro_colsets
 gyro_colset_xyz <- function() {
-  new_colset(
+  new_imu_colset(
     cols = c(
       X = "angular_velocity_x",
       Y = "angular_velocity_y",
       Z = "angular_velocity_z"
     ),
-    type = "long",
-    sensor = "gyro"
+    type = "long"
   )
 }
 
@@ -436,18 +292,16 @@ gyro_colset_xyz <- function() {
 #' to be considered active in a `move2` object.
 #'
 #' Standard long-format column sets for data from
-#' Movebank include [acc_colset_raw_xyz()] and [acc_colset_xyz()]. Standard
-#' burst-format column sets for data from Movebank include [acc_colset_eobs()]
-#' and [acc_colset_burst()].
+#' Movebank can be found with [valid_acc_colsets()].
 #'
 #' If your input data use different column names for these columns, use
-#' [acc_colset()] to specify the column names that correspond to each of the
-#' axes (for long-format data) or burst data and associated metadata (for
-#' burst-format data).
+#' [imu_colset()] to specify
+#' the column names that correspond to each of the axes (for long-format
+#' data) or burst data and associated metadata (for burst-format data).
 #'
 #' @inheritParams as_acc
 #'
-#' @returns A list of `acc_colset` objects.
+#' @returns A list of `imu_colset` objects.
 #'
 #' @export
 #' @rdname acc-cols
@@ -506,17 +360,16 @@ active_acc_colsets <- function(x) {
 #' to be considered active in a `move2` object.
 #'
 #' Standard long-format column sets for data from
-#' Movebank include [mag_colset_raw_xyz()] and [mag_colset_xyz()]. The standard
-#' burst-format column set for data from Movebank is [mag_colset_burst()].
+#' Movebank can be found with [valid_mag_colsets()].
 #'
 #' If your input data use different column names for these columns, use
-#' [mag_colset()] to specify the column names that correspond to each of the
-#' axes (for long-format data) or burst data and associated metadata (for
-#' burst-format data).
+#' [imu_colset()] to specify
+#' the column names that correspond to each of the axes (for long-format
+#' data) or burst data and associated metadata (for burst-format data).
 #'
 #' @inheritParams as_mag
 #'
-#' @returns A list of `mag_colset` objects.
+#' @returns A list of `imu_colset` objects.
 #'
 #' @export
 #'
@@ -550,18 +403,17 @@ active_mag_colsets <- function(x) {
 #' All three of these columns must be present for a burst-format column set
 #' to be considered active in a `move2` object.
 #'
-#' The standard long-format column set for data from Movebank is
-#' [gyro_colset_xyz()]. The standard burst-format column set for data from
-#' Movebank is [gyro_colset_burst()].
+#' The standard long-format column set for data from Movebank can be found
+#' with [valid_gyro_colsets()].
 #'
 #' If your input data use different column names for these columns, use
-#' [gyro_colset()] to specify the column names that correspond to each of the
-#' axes (for long-format data) or burst data and associated metadata (for
-#' burst-format data).
+#' [imu_colset()] to specify
+#' the column names that correspond to each of the axes (for long-format
+#' data) or burst data and associated metadata (for burst-format data).
 #'
 #' @inheritParams as_gyro
 #'
-#' @returns A list of `gyro_colset` objects.
+#' @returns A list of `imu_colset` objects.
 #'
 #' @export
 #'
@@ -571,7 +423,7 @@ active_gyro_colsets <- function(x) {
   active_colsets_(x, "gyro")
 }
 
-# Apply active colset logic in a move2 for a given sensor. Active colsets
+# Apply active colset logic in a move2 for a given IMU class. Active colsets
 # are fully present (if burst-format) and contain data.
 active_colsets_ <- function(x, sensor) {
   config <- switch(
@@ -581,13 +433,13 @@ active_colsets_ <- function(x, sensor) {
     gyro = gyro_colset_config()
   )
   i <- which(purrr::map_lgl(config, function(colset) colset$is_in_(x)))
-
+  
   if (length(i) == 0) {
     abort_missing_colset(sensor)
   }
-
+  
   poss_colsets <- config[i]
-
+  
   colsets <- purrr::compact(
     purrr::map(
       poss_colsets,
@@ -595,32 +447,26 @@ active_colsets_ <- function(x, sensor) {
         colset <- colset_config$cols
         cols_in_x <- intersect(colset, colnames(x))
         cols_present <- cols_in_x[!cols_empty(x, cols_in_x)]
-
+        
         if (!identical(cols_present, as.character(colset))) {
           if (attr(colset, "type") == "burst") {
             # Remove entire colset for types that require all cols present
             return(NULL)
           }
-
+          
           # Rebuild long-format colset with only present columns
-          return(
-            new_colset(
-              cols = cols_present,
-              type = attr(colset, "type"),
-              sensor = sensor
-            )
-          )
+          return(new_imu_colset(cols = cols_present, type = attr(colset, "type")))
         }
-
+        
         colset
       }
     )
   )
-
+  
   if (length(colsets) == 0) {
     abort_missing_colset(sensor)
   }
-
+  
   colsets
 }
 
@@ -634,7 +480,7 @@ active_colsets_ <- function(x, sensor) {
 #' of `as_acc()` to avoid processing duplicated records.
 #'
 #' @inheritParams as_acc
-#' @param colsets List of `acc_colset` objects to check for
+#' @param colsets List of `imu_colset` objects to check for
 #'   overlap. Defaults to the column sets detected by [active_acc_colsets()].
 #'
 #' @returns An integer vector of row indices with duplicated acceleration data
@@ -659,7 +505,7 @@ duplicated_acc_rows <- function(x, colsets = NULL) {
 #' of `as_mag()` to avoid processing duplicated records.
 #'
 #' @inheritParams as_mag
-#' @param colsets List of `mag_colset` objects to check for
+#' @param colsets List of `imu_colset` objects to check for
 #'   overlap. Defaults to the column sets detected by [active_mag_colsets()].
 #'
 #' @returns An integer vector of row indices with duplicated magnetometer data
@@ -684,7 +530,7 @@ duplicated_mag_rows <- function(x, colsets = NULL) {
 #' of `as_gyro()` to avoid processing duplicated records.
 #'
 #' @inheritParams as_gyro
-#' @param colsets List of `gyro_colset` objects to check for
+#' @param colsets List of `imu_colset` objects to check for
 #'   overlap. Defaults to the column sets detected by [active_gyro_colsets()].
 #'
 #' @returns An integer vector of row indices with duplicated gyroscope data
@@ -715,76 +561,24 @@ duplicated_imu_rows <- function(x, colsets = NULL) {
   # Would be nice to return duplicated groups too so user knows what the issue is...
   sort(unique(rows[duplicated(rows) | duplicated(rows, fromLast = TRUE)]))
 }
+
 # Colset construction helpers --------------------------------------------------
 
-# Shared argument handling for sensor colset constructors. Standardizes the
-# parsing of long-format vs. burst-format columns across sensor types, as
-# several sensors have similar Movebank column conventions
-build_colset_ <- function(sensor,
-                          x = NULL,
-                          y = NULL,
-                          z = NULL,
-                          bursts = NULL,
-                          axes = NULL,
-                          frequency = NULL,
-                          call = rlang::caller_env()) {
-  long_args <- purrr::compact(list(X = x, Y = y, Z = z))
-  burst_args <- purrr::compact(list(bursts, axes, frequency))
-
-  has_long <- length(long_args) > 0
-  has_burst <- length(burst_args) > 0
-
-  if (has_long && has_burst) {
-    rlang::abort("Specify axis columns or burst columns, not both.", call = call)
-  }
-
-  if (!has_long && !has_burst) {
-    rlang::abort(paste0("No ", sensor, " columns specified."), call = call)
-  }
-
-  if (has_burst) {
-    if (length(burst_args) != 3) {
-      rlang::abort(
-        "Burst format requires `bursts`, `axes`, and `frequency` columns.",
-        call = call
-      )
-    }
-
-    cols <- c(bursts = bursts, axes = axes, frequency = frequency)
-    type <- "burst"
-  } else {
-    cols <- unlist(long_args)
-    type <- "long"
-  }
-
-  new_colset(cols = cols, type = type, sensor = sensor)
-}
-
-# Internal constructor for sensor colset objects. Each sensor exposes its own
-# public constructor (e.g. `acc_colset()`) which delegates here.
-# The `colset` parent class enables shared S3 dispatch for methods that do
-# not depend on sensor type (e.g. `print`).
-new_colset <- function(cols, type, sensor) {
+# Internal constructor for `imu_colset` objects. Colsets are IMU-class-agnostic:
+# the same colset can be passed to `as_acc()`, `as_mag()`, or `as_gyro()` -
+# the IMU class is determined by which converter you call, not by the colset.
+new_imu_colset <- function(cols, type) {
   type <- rlang::arg_match(type, c("long", "burst"))
-  sensor <- rlang::arg_match(sensor, valid_imu_types())
-
+  
   structure(
     cols,
     type = type,
-    class = c(paste0(sensor, "_colset"), "colset", class(cols))
+    class = c("imu_colset", class(cols))
   )
 }
 
-is_acc_colset <- function(x) {
-  inherits(x, "acc_colset")
-}
-
-is_mag_colset <- function(x) {
-  inherits(x, "mag_colset")
-}
-
-is_gyro_colset <- function(x) {
-  inherits(x, "gyro_colset")
+is_imu_colset <- function(x) {
+  inherits(x, "imu_colset")
 }
 
 # Colset config and validation -------------------------------------------------
@@ -861,7 +655,7 @@ cols_empty <- function(x, cols) {
 assert_all_cols_present <- function(x, cols, call = rlang::caller_env()) {
   if (!all(cols %in% colnames(x))) {
     cols <- cols[which(!cols %in% colnames(x))]
-
+    
     rlang::abort(
       c(
         "Missing columns provided.",

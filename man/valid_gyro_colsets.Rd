@@ -2,33 +2,26 @@
 % Please edit documentation in R/colsets.R
 \name{valid_gyro_colsets}
 \alias{valid_gyro_colsets}
-\alias{gyro_colset_burst}
-\alias{gyro_colset_xyz}
 \title{Valid gyroscope data column sets}
 \usage{
 valid_gyro_colsets()
-
-gyro_colset_burst()
-
-gyro_colset_xyz()
 }
 \value{
-For \code{valid_gyro_colsets()}, a list of \code{gyro_colset} objects
-containing valid column sets. Otherwise, a \code{gyro_colset} object.
+A named list of \code{imu_colset} objects.
 }
 \description{
-These sets of columns can be used by \code{\link[=as_gyro]{as_gyro()}} when parsing gyroscope
-bursts contained in a \code{move2} object. A \code{move2} object must contain one
-of these column sets to be processed by \code{as_gyro()}.
+Returns the set of gyroscope column layouts that \code{as_gyro()} recognizes
+in a \code{move2} object. A \code{move2} object must contain one of these layouts
+to be processed by \code{\link[=as_gyro]{as_gyro()}}.
+
+The returned list is named by layout:
 \itemize{
-\item \code{gyro_colset_burst()} must be present in its entirety within a data
-source to be used when parsing gyroscope data.
-\item For \code{gyro_colset_xyz()}, any subset of the set's columns can be used to
-parse gyroscope data.
+\item \code{burst} (burst-format): all columns in the set must be present.
+\item \code{xyz} (long-format): any subset of the axis columns may be present.
 }
 
-To determine the default columns that will be used by \code{as_gyro()} for a given
-\code{move2} object, see \code{\link[=active_gyro_colsets]{active_gyro_colsets()}}.
+To inspect which layouts are active in a given \code{move2} object, see
+\code{\link[=active_gyro_colsets]{active_gyro_colsets()}}. To build a custom layout, use \code{\link[=imu_colset]{imu_colset()}}.
 }
 \examples{
 valid_gyro_colsets()

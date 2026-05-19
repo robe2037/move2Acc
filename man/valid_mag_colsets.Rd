@@ -2,36 +2,27 @@
 % Please edit documentation in R/colsets.R
 \name{valid_mag_colsets}
 \alias{valid_mag_colsets}
-\alias{mag_colset_burst}
-\alias{mag_colset_xyz}
-\alias{mag_colset_raw_xyz}
 \title{Valid magnetometer data column sets}
 \usage{
 valid_mag_colsets()
-
-mag_colset_burst()
-
-mag_colset_xyz()
-
-mag_colset_raw_xyz()
 }
 \value{
-For \code{valid_mag_colsets()}, a list of \code{mag_colset} objects
-containing valid column sets. Otherwise, a \code{mag_colset} object.
+A named list of \code{imu_colset} objects.
 }
 \description{
-These sets of columns can be used by \code{\link[=as_mag]{as_mag()}} when parsing magnetometer
-bursts contained in a \code{move2} object. A \code{move2} object must contain one
-of these column sets to be processed by \code{as_mag()}.
+Returns the set of magnetometer column layouts that \code{as_mag()} recognizes
+in a \code{move2} object. A \code{move2} object must contain one of these layouts
+to be processed by \code{\link[=as_mag]{as_mag()}}.
+
+The returned list is named by layout:
 \itemize{
-\item \code{mag_colset_burst()} must be present in its entirety within a data
-source to be used when parsing magnetometer data.
-\item For \code{mag_colset_xyz()} and \code{mag_colset_raw_xyz()}, any subset of the
-set's columns can be used to parse magnetometer data.
+\item \code{burst} (burst-format): all columns in the set must be present.
+\item \code{xyz}, \code{raw_xyz} (long-format): any subset of the axis columns may be
+present.
 }
 
-To determine the default columns that will be used by \code{as_mag()} for a given
-\code{move2} object, see \code{\link[=active_mag_colsets]{active_mag_colsets()}}.
+To inspect which layouts are active in a given \code{move2} object, see
+\code{\link[=active_mag_colsets]{active_mag_colsets()}}. To build a custom layout, use \code{\link[=imu_colset]{imu_colset()}}.
 }
 \examples{
 valid_mag_colsets()

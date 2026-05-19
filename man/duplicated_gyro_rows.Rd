@@ -11,7 +11,7 @@ duplicated_gyro_rows(x, colsets = NULL)
 either loaded from disk using \link[move2:mt_read]{move2::mt_read} or downloaded using
 \link[move2:movebank_download_study]{move2::movebank_download_study}.}
 
-\item{colsets}{List of \code{gyro_colset} objects to check for
+\item{colsets}{List of \code{imu_colset} objects to check for
 overlap. Defaults to the column sets detected by \code{\link[=active_gyro_colsets]{active_gyro_colsets()}}.}
 }
 \value{
