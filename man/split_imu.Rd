@@ -7,7 +7,7 @@
 split_imu(x, interval)
 }
 \arguments{
-\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro})}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{interval}{Numeric or units object defining the time intervals at which
 \code{x} will be split. If no units are provided, the interval is assumed to

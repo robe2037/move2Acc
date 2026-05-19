@@ -16,7 +16,7 @@
 \alias{imu_units}
 \alias{is_gyro}
 \alias{is_mag}
-\title{Functions to explore an \code{acc} or \code{mag} vector}
+\title{Functions to explore an IMU vector}
 \usage{
 is_acc(x)
 
@@ -47,12 +47,12 @@ is_gyro(x)
 is_mag(x)
 }
 \arguments{
-\item{x}{An \code{acc} or \code{mag} vector.}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{value}{Replacement value.}
 }
 \description{
-Functions to explore an \code{acc} or \code{mag} vector
+Functions to explore an IMU vector
 }
 \examples{
 x <- acc(

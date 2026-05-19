@@ -1,7 +1,7 @@
 
-#' Functions to explore an `acc` or `mag` vector
+#' Functions to explore an IMU vector
 #'
-#' @param x An `acc` or `mag` vector.
+#' @param x An IMU vector (e.g. `acc`, `mag`, `gyro`).
 #' @param value Replacement value.
 #'
 #' @rdname explore-functions
@@ -111,9 +111,9 @@ imu_units <- function(x) {
   )
 }
 
-#' Filter an `acc` or `mag` vector by burst frequency
+#' Filter an IMU vector by burst frequency
 #'
-#' @param x An `acc` or `mag` vector.
+#' @inheritParams n_axis
 #' @param min_freq,max_freq Numeric or units values indicating the minimum
 #'   and/or maximum frequency thresholds to use when determining the records in
 #'   `x` to retain. Elements in `x` whose frequency falls within these limits

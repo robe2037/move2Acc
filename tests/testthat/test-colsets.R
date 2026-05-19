@@ -105,7 +105,7 @@ test_that("Correctly identify that a non-full burst colset is invalid", {
 
 test_that("Currently supported colsets", {
   expect_identical(
-    valid_acc_colsets(),
+    movebank_acc_colsets(),
     list(
       eobs = acc_colset_eobs(),
       burst = acc_colset_burst(),

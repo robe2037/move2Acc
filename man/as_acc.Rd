@@ -32,7 +32,7 @@ specifying the columns of \code{x} that contain acceleration data. By default,
 constructs bursts for all column sets that are detected in \code{x} that also
 contain data (see \code{\link[=active_acc_colsets]{active_acc_colsets()}}).
 
-Several common colsets are listed under \code{\link[=valid_acc_colsets]{valid_acc_colsets()}}. To
+Several common colsets are listed under \code{\link[=movebank_acc_colsets]{movebank_acc_colsets()}}. To
 specify a custom set of columns, use \code{\link[=imu_colset]{imu_colset()}}.}
 
 \item{min_freq}{Numeric value indicating the

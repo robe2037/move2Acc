@@ -1,12 +1,12 @@
 #' Plot bursts over time
 #'
-#' @param x An `acc` or `mag` vector.
+#' @inheritParams n_axis
 #'
 #' @param time a `POSIXct` with the start time of bursts
 #' @param ylab A character with the y axis label
 #'
 #' @export
-plot_time <- function(x, time, ylab = "Acceleration") {
+plot_time <- function(x, time, ylab = "Value") {
   vec_check_size(time, vec_size(x))
   rlang::check_installed("dygraphs","dplyr")
   dt <- mapply(function(x, n) c(units::drop_units((c(0, seq_len(n))) / x)),

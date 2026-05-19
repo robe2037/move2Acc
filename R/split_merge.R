@@ -5,7 +5,7 @@
 #' start time of the next burst are considered adjacent. Bursts with different
 #' frequencies or axes will not be merged.
 #'
-#' @param x An IMU vector (e.g. `acc`, `mag`, `gyro`)
+#' @inheritParams n_axis
 #' @param ids Vector indicating groups to which the elements in `x` belong.
 #'   If provided, bursts in `x` will not be merged across different values of
 #'   this vector, even if their timestamps and frequencies align.

@@ -12,7 +12,7 @@
 #'   constructs bursts for all column sets that are detected in `x` that also
 #'   contain data (see [active_mag_colsets()]).
 #'
-#'   Several common colsets are listed under [valid_mag_colsets()]. To
+#'   Several common colsets are listed under [movebank_mag_colsets()]. To
 #'   specify a custom set of columns, use [imu_colset()].
 #'
 #' @details The resulting vector will be as long as the input. This means it

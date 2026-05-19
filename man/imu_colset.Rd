@@ -2,7 +2,7 @@
 % Please edit documentation in R/colsets.R
 \name{imu_colset}
 \alias{imu_colset}
-\title{Specify IMU data columns}
+\title{Specify IMU data columns present in a \code{move2} object}
 \usage{
 imu_colset(
   x = NULL,
@@ -32,15 +32,16 @@ Define which columns in a \code{move2} object contain IMU data. Pass the
 result as the \code{colset} argument of \code{\link[=as_acc]{as_acc()}}, \code{\link[=as_mag]{as_mag()}}, or \code{\link[=as_gyro]{as_gyro()}}
 to convert those columns into an IMU vector.
 
-\code{imu_colset()} supports two storage formats:
+\code{move2} objects store IMU data in two ways:
 \itemize{
-\item \strong{Long-format}: one measurement per row, one column per axis. Specify
-any of \code{x}, \code{y}, \code{z}.
-\item \strong{Burst-format}: each row holds an entire burst as a space-delimited
-string. Specify all of \code{bursts}, \code{axes}, and \code{frequency}.
+\item \strong{Long-format} columns store one measurement (possibly for multiple axes)
+in a single row.
+\item \strong{Burst-format} columns store a burst of measurements as a space-delimited
+string. This string must be segmented into axis-specific measurements using
+an associated column that indicates the axes present for the bursted data.
+A further column provides the sampling frequency of the burst. All three
+of these columns must be present to form a valid burst-format column set.
 }
-
-The two formats are mutually exclusive within a single colset.
 }
 \examples{
 # Long-format: one or more axes
@@ -49,7 +50,17 @@ imu_colset(x = "my_x", y = "my_y")
 
 # Burst-format: all three columns required
 imu_colset(bursts = "my_raw", axes = "my_axes", frequency = "my_freq")
+
+# Use a colset to extract IMU data from those columns in a move2 object
+as_acc(gulls(), colset = imu_colset(x = "acceleration_raw_x"))
 }
 \seealso{
-\code{\link[=as_acc]{as_acc()}}, \code{\link[=as_mag]{as_mag()}}, \code{\link[=as_gyro]{as_gyro()}} to apply a colset.
+\code{\link[=as_acc]{as_acc()}}, \code{\link[=as_mag]{as_mag()}}, \code{\link[=as_gyro]{as_gyro()}} to extract IMU data from a move2
+object.
+
+\code{\link[=active_acc_colsets]{active_acc_colsets()}}, \code{\link[=active_mag_colsets]{active_mag_colsets()}}, \code{\link[=active_gyro_colsets]{active_gyro_colsets()}} to
+identify IMU colsets present in a move2 object.
+
+\code{\link[=movebank_acc_colsets]{movebank_acc_colsets()}}, \code{\link[=movebank_mag_colsets]{movebank_mag_colsets()}}, \code{\link[=movebank_gyro_colsets]{movebank_gyro_colsets()}}
+to see column sets provided by Movebank.
 }

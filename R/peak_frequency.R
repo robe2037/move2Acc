@@ -1,7 +1,7 @@
 
 #' Calculate the peak frequency per axis for bursts
 #'
-#' @param x An `acc` or `mag` vector.
+#' @inheritParams n_axis
 #' @param resolution A scalar with the [units][units::units] Hertz
 #'
 #' @returns returns a list with the same length as `x` with the peak frequency per axis

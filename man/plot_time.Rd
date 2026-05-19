@@ -4,10 +4,10 @@
 \alias{plot_time}
 \title{Plot bursts over time}
 \usage{
-plot_time(x, time, ylab = "Acceleration")
+plot_time(x, time, ylab = "Value")
 }
 \arguments{
-\item{x}{An \code{acc} or \code{mag} vector.}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{time}{a \code{POSIXct} with the start time of bursts}
 

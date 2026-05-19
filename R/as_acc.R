@@ -12,7 +12,7 @@
 #'   constructs bursts for all column sets that are detected in `x` that also
 #'   contain data (see [active_acc_colsets()]).
 #'
-#'   Several common colsets are listed under [valid_acc_colsets()]. To
+#'   Several common colsets are listed under [movebank_acc_colsets()]. To
 #'   specify a custom set of columns, use [imu_colset()].
 #' @param min_freq Numeric value indicating the
 #'   minimum allowable within-burst data collection frequency when identifying

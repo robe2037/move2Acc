@@ -7,7 +7,7 @@
 map_imu(x, .f, simplify = FALSE, .progress = FALSE)
 }
 \arguments{
-\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro})}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{.f}{A function to be applied to each element of \code{x}. This can be
 supplied in one of the following ways:

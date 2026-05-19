@@ -7,7 +7,7 @@
 peak_frequency(x, resolution = NA)
 }
 \arguments{
-\item{x}{An \code{acc} or \code{mag} vector.}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{resolution}{A scalar with the \link[units:units]{units} Hertz}
 }

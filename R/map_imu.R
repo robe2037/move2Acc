@@ -19,7 +19,7 @@
 #' - `.fq` accesses each element of the vector returned by [freqs()]
 #' - `.st` accesses each element of the vector returned by [starts()]
 #'
-#' @param x An IMU vector (e.g. `acc`, `mag`, `gyro`)
+#' @inheritParams n_axis
 #' @param .f A function to be applied to each element of `x`. This can be
 #'   supplied in one of the following ways:
 #'   - A named function
