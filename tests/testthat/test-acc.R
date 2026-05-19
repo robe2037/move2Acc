@@ -1,6 +1,4 @@
 test_that("create zero length", {
-  expect_identical(acc(), new_acc())
-  expect_length(new_acc(), 0)
   expect_length(acc(), 0)
 })
 
@@ -197,24 +195,24 @@ test_that("duration is correctly calculated", {
   expect_true(is.na(burst_dur(acc(acc_burst_example(1, 1), NA))))
 })
 
-test_that("burst_units are safely extracted", {
+test_that("imu_units are safely extracted", {
   a <- acc_example()
 
   # Unitless bursts return NA
-  expect_identical(burst_units(a), c(NA_character_, NA_character_))
+  expect_identical(imu_units(a), c(NA_character_, NA_character_))
 
   # Units bursts return unit string
-  a_u <- acc_set_units(a, "m/s^2")
-  expect_identical(burst_units(a_u), c("m/s^2", "m/s^2"))
+  a_u <- set_imu_units(a, "m/s^2")
+  expect_identical(imu_units(a_u), c("m/s^2", "m/s^2"))
 
   # NA acc elements return NA
   a_na <- c(a_u[1], acc(list(NULL), units::set_units(NA, "Hz")), a_u[2])
-  expect_identical(burst_units(a_na), c("m/s^2", NA_character_, "m/s^2"))
+  expect_identical(imu_units(a_na), c("m/s^2", NA_character_, "m/s^2"))
 
   # Mixed units are reported per element
   a_mixed <- c(
-    acc_set_units(a[1], "m/s^2"),
-    acc_set_units(a[2], "standard_free_fall")
+    set_imu_units(a[1], "m/s^2"),
+    set_imu_units(a[2], "standard_free_fall")
   )
-  expect_identical(burst_units(a_mixed), c("m/s^2", "standard_free_fall"))
+  expect_identical(imu_units(a_mixed), c("m/s^2", "standard_free_fall"))
 })

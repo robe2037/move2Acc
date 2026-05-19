@@ -13,7 +13,7 @@ test_that("Can combine adjacent bursts into single burst", {
     start = as.POSIXct(c(0, 3, 6, 20, 50), tz = "UTC")
   )
 
-  a2 <- merge_acc(a)
+  a2 <- merge_imu(a)
 
   expect_true(is_acc(a2))
   expect_length(a2, 3)
@@ -60,7 +60,7 @@ test_that("Same merged result if drop = TRUE regardless of NAs", {
     acc(list(NULL), units::set_units(NA, "Hz")),
     a1[2:3]
   )
-  expect_identical(merge_acc(a1), merge_acc(a2))
+  expect_identical(merge_imu(a1), merge_imu(a2))
 })
 
 test_that("Can combine adjacent bursts with embedded NA", {
@@ -80,7 +80,7 @@ test_that("Can combine adjacent bursts with embedded NA", {
     )
   )
 
-  a2 <- merge_acc(a)
+  a2 <- merge_imu(a)
 
   expect_true(is_acc(a2))
   expect_length(a2, 2)
@@ -125,7 +125,7 @@ test_that("Partial merge with drop = FALSE respects ID boundaries", {
     start = as.POSIXct(c(0, 3, 6, 9), tz = "UTC")
   )
 
-  merged <- merge_acc(a, acc_ids = c("a", "a", "b", "b"), drop = FALSE)
+  merged <- merge_imu(a, ids = c("a", "a", "b", "b"), drop = FALSE)
   
   expect_length(merged, 4)                                
   expect_identical(which(!is.na(merged)), c(1L, 3L))
@@ -146,7 +146,7 @@ test_that("Do not combine bursts with different axes", {
     start = as.POSIXct(c(0, 1, 1.5), tz = "UTC")
   )
 
-  expect_identical(merge_acc(a), a)
+  expect_identical(merge_imu(a), a)
   expect_identical(
     purrr::map(bursts(a), colnames),
     list(c("X", "Y", "Z"), c("X", "Y"), c("X", "Y", "Z"))
@@ -166,12 +166,12 @@ test_that("Do not combine bursts with different frequencies", {
     start = as.POSIXct(c(0, 2, 3), tz = "UTC")
   )
 
-  expect_identical(merge_acc(a), a)
+  expect_identical(merge_imu(a), a)
   expect_identical(as.numeric(freqs(a)), c(10, 20, 10))
 })
 
 test_that("Do not combine bursts with different IDs", {
-  # 4 adjacent bursts, same freq/axes, but acc_ids split at position 3-4
+  # 4 adjacent bursts, same freq/axes, but ids split at position 3-4
   a <- acc(
     c(
       acc_burst_example(1:30),
@@ -183,7 +183,7 @@ test_that("Do not combine bursts with different IDs", {
     start = as.POSIXct(c(0, 3, 6, 9), tz = "UTC")
   )
 
-  a2 <- merge_acc(a, acc_ids = c(1, 1, 1, 2))
+  a2 <- merge_imu(a, ids = c(1, 1, 1, 2))
 
   expect_length(a2, 2)
   expect_equal(n_samples(a2), as.integer(c(90, 30)))
@@ -195,31 +195,31 @@ test_that("Don't combine bursts without start time", {
     frequency = units::set_units(1, "Hz")
   )
   
-  expect_identical(a, merge_acc(a))
+  expect_identical(a, merge_imu(a))
 })
 
 test_that("Handle empty acc vectors when binding", {
-  expect_identical(merge_acc(acc()), acc())
-  expect_identical(merge_acc(c(acc(), acc())), acc())
+  expect_identical(merge_imu(acc()), acc())
+  expect_identical(merge_imu(c(acc(), acc())), acc())
 })
 
-test_that("split_acc() on empty acc returns empty list", {
-  expect_identical(split_acc(acc(), 1), list())
+test_that("split_imu() on empty acc returns empty list", {
+  expect_identical(split_imu(acc(), 1), list())
 })
 
-test_that("split_acc() on single-element acc returns length-1 list", {
+test_that("split_imu() on single-element acc returns length-1 list", {
   a <- acc(
     acc_burst_example(1:20),
     frequency = units::set_units(10, "Hz"),
     start = as.POSIXct(0, tz = "UTC")
   )
 
-  sp <- split_acc(a, 0.5)
+  sp <- split_imu(a, 0.5)
 
   expect_length(sp, 1)
   expect_true(is_acc(sp[[1]]))
   expect_length(sp[[1]], 4)
-  expect_identical(merge_acc(purrr::reduce(sp, c)), a)
+  expect_identical(merge_imu(purrr::reduce(sp, c)), a)
 })
 
 test_that("Can split acc at a given interval", {
@@ -230,7 +230,7 @@ test_that("Can split acc at a given interval", {
   )
 
   interval <- 0.5
-  split <- split_acc(a, interval = interval)
+  split <- split_imu(a, interval = interval)
 
   # Returns a list the same length as the input
   expect_length(split, length(a))
@@ -280,7 +280,7 @@ test_that("Correctly split when burst length not divisible by interval", {
   )
 
   interval <- 0.7
-  split <- split_acc(a, interval = interval)
+  split <- split_imu(a, interval = interval)
   flat <- purrr::reduce(split, c)
   dur <- burst_dur(a)
 
@@ -297,14 +297,14 @@ test_that("Correctly split when burst length not divisible by interval", {
   )
 })
 
-test_that("split_acc() retains NA", {
+test_that("split_imu() retains NA", {
   a <- acc(
-    c(acc_burst_example(1:60, 1:60), new_acc_list(list(NULL)), acc_burst_example(101:140)),
+    c(acc_burst_example(1:60, 1:60), new_burst_list(list(NULL), "acc"), acc_burst_example(101:140)),
     frequency = c(units::set_units(20, "Hz"), units::set_units(NA, "Hz"), units::set_units(40, "Hz")),
     start = as.POSIXct(c(0, 10, 10), tz = "UTC")
   )
 
-  sp <- split_acc(a, 0.5)
+  sp <- split_imu(a, 0.5)
 
   expect_length(sp, length(a))
 
@@ -314,7 +314,7 @@ test_that("split_acc() retains NA", {
 
   # Flattened non-NA results match splitting only the non-NA input
   flat <- purrr::reduce(sp, c)
-  flat_no_na <- purrr::reduce(split_acc(a[!is.na(a)], 0.5), c)
+  flat_no_na <- purrr::reduce(split_imu(a[!is.na(a)], 0.5), c)
   expect_identical(flat[!is.na(flat)], flat_no_na)
 })
 
@@ -325,29 +325,29 @@ test_that("Can recover split continuous data by merging", {
     start = as.POSIXct(c(0, 10), tz = "UTC")
   )
 
-  flat <- purrr::reduce(split_acc(a, interval = 0.5), c)
-  expect_identical(merge_acc(flat), a)
+  flat <- purrr::reduce(split_imu(a, interval = 0.5), c)
+  expect_identical(merge_imu(flat), a)
 })
 
 test_that("Can recover split continuous data by merging with NA", {
   a <- acc(
-    c(acc_burst_example(1:60, 1:60), new_acc_list(list(NULL)), acc_burst_example(101:140)),
+    c(acc_burst_example(1:60, 1:60), new_burst_list(list(NULL), "acc"), acc_burst_example(101:140)),
     frequency = c(units::set_units(20, "Hz"), units::set_units(NA, "Hz"), units::set_units(40, "Hz")),
     start = as.POSIXct(c(0, 10, 10), tz = "UTC")
   )
 
-  flat <- purrr::reduce(split_acc(a, interval = 0.5), c)
-  expect_identical(merge_acc(flat), a[!is.na(a)])
+  flat <- purrr::reduce(split_imu(a, interval = 0.5), c)
+  expect_identical(merge_imu(flat), a[!is.na(a)])
 })
 
-test_that("split_acc() preserves 1-sample bursts", {
+test_that("split_imu() preserves 1-sample bursts", {
   a <- acc(
     c(acc_burst_example(42, 43), acc_burst_example(1:20, 1:20)),
     frequency = units::set_units(10, "Hz"),
     start = as.POSIXct(c(0, 5), tz = "UTC")
   )
 
-  sp <- split_acc(a, 0.5)
+  sp <- split_imu(a, 0.5)
 
   # 1-sample burst should pass through unchanged
   expect_length(sp[[1]], 1)
@@ -359,7 +359,7 @@ test_that("split_acc() preserves 1-sample bursts", {
 
   # Round-trip preserves the 1-sample burst
   flat <- purrr::reduce(sp, c)
-  expect_identical(merge_acc(flat), a)
+  expect_identical(merge_imu(flat), a)
 })
 
 test_that("Long intervals do not modify input acc", {
@@ -369,7 +369,7 @@ test_that("Long intervals do not modify input acc", {
     start = as.POSIXct(c(0, 10), tz = "UTC")
   )
 
-  split <- split_acc(a, interval = max(burst_dur(a)))
+  split <- split_imu(a, interval = max(burst_dur(a)))
   expect_identical(purrr::reduce(split, c), a)
 })
 
@@ -380,30 +380,30 @@ test_that("Can standardize interval units when splitting", {
     start = as.POSIXct(c(0, 10), tz = "UTC")
   )
 
-  split <- split_acc(a, interval = 0.5)
+  split <- split_imu(a, interval = 0.5)
   flat <- purrr::reduce(split, c)
 
   # Default should be in 1/freq units
   expect_length(flat, 8)
   expect_identical(
     split,
-    split_acc(a, interval = units::set_units(0.5 / 1000, "s"))
+    split_imu(a, interval = units::set_units(0.5 / 1000, "s"))
   )
 })
 
-test_that("split_acc() errors on invalid interval", {
+test_that("split_imu() errors on invalid interval", {
   a <- acc(
     acc_burst_example(1:20),
     frequency = units::set_units(10, "Hz"),
     start = as.POSIXct(0, tz = "UTC")
   )
 
-  expect_error(split_acc(a, 0), "`interval` must be a positive")
-  expect_error(split_acc(a, -1), "`interval` must be a positive")
+  expect_error(split_imu(a, 0), "`interval` must be a positive")
+  expect_error(split_imu(a, -1), "`interval` must be a positive")
   
 })
 
-test_that("split_acc() round-trip in dataframe workflow", {
+test_that("split_imu() round-trip in dataframe workflow", {
   skip_if_not_installed("dplyr")
   skip_if_not_installed("tidyr")
   
@@ -412,7 +412,7 @@ test_that("split_acc() round-trip in dataframe workflow", {
     c(
       acc_burst_example(1:60, 1:60),
       acc_burst_example(61:100, 61:100),
-      new_acc_list(list(NULL)),
+      new_burst_list(list(NULL), "acc"),
       acc_burst_example(42, 43),
       acc_burst_example(101:140)
     ),
@@ -432,9 +432,9 @@ test_that("split_acc() round-trip in dataframe workflow", {
 
   # Split, unnest, re-merge with row_id to prevent cross-row merging, filter
   result <- tbl |>
-    dplyr::mutate(a = split_acc(a, units::set_units(1, "s"))) |>
+    dplyr::mutate(a = split_imu(a, units::set_units(1, "s"))) |>
     tidyr::unnest(a) |>
-    dplyr::mutate(a2 = merge_acc(a, acc_ids = row_id, drop = FALSE)) |>
+    dplyr::mutate(a2 = merge_imu(a, ids = row_id, drop = FALSE)) |>
     dplyr::filter(!is.na(a2))
 
   # NA row drops after filter, all others recover

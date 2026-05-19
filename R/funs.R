@@ -1,7 +1,7 @@
 
-#' Functions to explore an `acc` vector
+#' Functions to explore an IMU vector
 #'
-#' @param x an acc vector
+#' @param x An IMU vector (e.g. `acc`, `mag`, `gyro`).
 #' @param value Replacement value.
 #'
 #' @rdname explore-functions
@@ -46,12 +46,6 @@ is_uniform<-function(x){
     all(duplicated(na.omit(freqs(x)))[-1]) &&
     all(duplicated(purrr::map(bursts(x[!is.na(x)]), colnames))[-1]) &&
     all(duplicated(purrr::map_lgl(bursts(x[!is.na(x)]), inherits, "units"))[-1])
-}
-
-#' @rdname explore-functions
-#' @export
-is.na.acc <- function(x) {
-  vctrs::vec_detect_missing(x)
 }
 
 #' @export
@@ -107,9 +101,9 @@ n_samples <- function(x) {
 
 #' @export
 #' @rdname explore-functions
-burst_units <- function(x) {
-  map_acc(
-    x, 
+imu_units <- function(x) {
+  map_imu(
+    x,
     function(.br) {
       tryCatch(as.character(units(.br)), error = function(cnd) NA_character_)
     },
@@ -117,9 +111,9 @@ burst_units <- function(x) {
   )
 }
 
-#' Filter an acc vector by burst frequency
+#' Filter an IMU vector by burst frequency
 #'
-#' @param x An `acc` vector
+#' @inheritParams n_axis
 #' @param min_freq,max_freq Numeric or units values indicating the minimum
 #'   and/or maximum frequency thresholds to use when determining the records in
 #'   `x` to retain. Elements in `x` whose frequency falls within these limits
@@ -129,7 +123,7 @@ burst_units <- function(x) {
 #'   frequency should be retained in the output. By default, these elements
 #'   are removed.
 #'
-#' @returns An `acc` vector
+#' @returns A vector of the same class as `x`.
 #' @export
 #'
 #' @examples
@@ -149,34 +143,10 @@ filter_freq <- function(x, min_freq = 0, max_freq = Inf, keep_na = FALSE) {
   x[freqs(x) <= max_freq & freqs(x) >= min_freq | is.na(freqs(x))]
 }
 
-#' @export
-#' @rdname explore-functions
-is_acc <- function(x) {
-  inherits(x, "acc")
-}
-
 # TODO finish function and export?
 static_acc <- function(x) {
   # should this return a list or a dataframe
   # TODO fix NA
   lapply(bursts(x)[!is.na(x)], colMeans)
-}
-
-#' @export
-vec_ptype2.acc.acc <- function(x, y, ...) {
-  freq_common <- vctrs::vec_ptype2(freqs(x), freqs(y))
-  start_common <- vctrs::vec_ptype2(starts(x), starts(y))
-
-  new_acc(
-    bursts = new_acc_list(list()),
-    frequency = freq_common,
-    start = start_common
-  )
-}
-
-#' @export
-vec_cast.acc.acc <- function(x, to, ...) {
-  freqs(x) <- units::set_units(freqs(x), units::deparse_unit(freqs(to)), mode = "standard")
-  x                                                                                                                                    
 }
 

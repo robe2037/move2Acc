@@ -1,20 +1,25 @@
-test_that("Can validate colsets", {
-  expect_true(is_valid_acc_colset(acc_colset_eobs()))
-  expect_true(is_valid_acc_colset(acc_colset_burst()))
-  expect_true(is_valid_acc_colset(acc_colset_xyz()))
-  expect_true(is_valid_acc_colset(acc_colset_raw_xyz()))
-  
+test_that("Config predicates validate colsets against supported defaults", {
+  matches_any <- function(cols, config) {
+    any(purrr::map_lgl(config, function(entry) entry$is_(cols)))
+  }
+  cfg <- acc_colset_config()
+
+  expect_true(matches_any(acc_colset_eobs(), cfg))
+  expect_true(matches_any(acc_colset_burst(), cfg))
+  expect_true(matches_any(acc_colset_xyz(), cfg))
+  expect_true(matches_any(acc_colset_raw_xyz(), cfg))
+
   # Burst-format acc cols must contain all listed cols
-  expect_false(is_valid_acc_colset(acc_colset_eobs()[1:2]))
-  expect_false(is_valid_acc_colset(acc_colset_burst()[1]))
-  
+  expect_false(matches_any(acc_colset_eobs()[1:2], cfg))
+  expect_false(matches_any(acc_colset_burst()[1], cfg))
+
   # Long-format acc cols can consist of a subset of allowable cols
-  expect_true(is_valid_acc_colset(acc_colset_xyz()[1:2]))
-  expect_true(is_valid_acc_colset(acc_colset_raw_xyz()[3]))
-  
+  expect_true(matches_any(acc_colset_xyz()[1:2], cfg))
+  expect_true(matches_any(acc_colset_raw_xyz()[3], cfg))
+
   # Duplicates excluded
-  expect_false(is_valid_acc_colset(c(acc_colset_raw_xyz(), acc_colset_xyz())))
-  expect_false(is_valid_acc_colset(c(acc_colset_xyz(), acc_colset_xyz())))
+  expect_false(matches_any(c(acc_colset_raw_xyz(), acc_colset_xyz()), cfg))
+  expect_false(matches_any(c(acc_colset_xyz(), acc_colset_xyz()), cfg))
 })
 
 test_that("Can find active colsets in move2 object", {
@@ -29,7 +34,7 @@ test_that("Correctly subset active colsets for long-format acc cols", {
   gulls_sub <- gulls_data[, setdiff(colnames(gulls_data), "acceleration_raw_y")]
   expect_identical(
     active_acc_colsets(gulls_sub),
-    list(raw_xyz = new_acc_colset(
+    list(raw_xyz = new_imu_colset(
       c("acceleration_raw_x", "acceleration_raw_z"),
       type = "long"
     ))
@@ -54,7 +59,7 @@ test_that("Error if no colset detected", {
   
   expect_error(
     active_acc_colsets(alb_data),
-    "Could not identify a full acceleration column set"
+    "Could not identify a full acc column set"
   )
 })
 
@@ -69,7 +74,7 @@ test_that("Use data values to determine active colset if multiple present", {
   colsets <- active_acc_colsets(m)
   expect_identical(
     colsets$raw_xyz,
-    new_acc_colset("acceleration_raw_z", type = "long")
+    new_imu_colset("acceleration_raw_z", type = "long")
   )
   
   # If all cols in a set are missing, then the next colset will be used
@@ -100,7 +105,7 @@ test_that("Correctly identify that a non-full burst colset is invalid", {
 
 test_that("Currently supported colsets", {
   expect_identical(
-    valid_acc_colsets(),
+    movebank_acc_colsets(),
     list(
       eobs = acc_colset_eobs(),
       burst = acc_colset_burst(),
@@ -125,7 +130,7 @@ test_that("is_unique_named_subset correctly identifies subsets", {
 
   # Wrong name-value mapping (Y mapped to X's column)
   expect_false(is_unique_named_subset(
-    acc_colset(acc_y = "acceleration_raw_x"),
+    imu_colset(y = "acceleration_raw_x"),
     tgt
   ))
 
@@ -133,7 +138,7 @@ test_that("is_unique_named_subset correctly identifies subsets", {
   expect_false(is_unique_named_subset(c(tgt["X"], tgt["X"]), tgt))
 
   # Custom columns not in target
-  expect_false(is_unique_named_subset(acc_colset(acc_x = "my_col"), tgt))
+  expect_false(is_unique_named_subset(imu_colset(x = "my_col"), tgt))
 
   # Empty input
   expect_false(is_unique_named_subset(character(0), tgt))
@@ -143,19 +148,19 @@ test_that("is_unique_named_subset correctly identifies subsets", {
   expect_false(is_unique_named_subset(c("A", "B"), c(A = "A", B = "B", C = "C")))
 })
 
-test_that("acc_colset() errors on invalid specifications", {
+test_that("imu_colset() errors on invalid specifications", {
   # No columns specified
-  expect_error(acc_colset(), "No acc columns")
-
-  # Both long and burst args
-  expect_error(
-    acc_colset(acc_x = "x", bursts = "b", axes = "a", frequency = "f"),
-    "not both"
-  )
+  expect_error(imu_colset(), "No IMU data columns specified")
 
   # Incomplete burst args
-  expect_error(acc_colset(bursts = "b"), "requires")
-  expect_error(acc_colset(bursts = "b", axes = "a"), "requires")
+  expect_error(imu_colset(bursts = "b"), "requires")
+  expect_error(imu_colset(bursts = "b", axes = "a"), "requires")
+
+  # Mixed formats
+  expect_error(
+    imu_colset(x = "x", bursts = "b", axes = "a", frequency = "f"),
+    "Cannot mix"
+  )
 })
 
 test_that("Can get colset type from colset", {

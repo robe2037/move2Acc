@@ -78,29 +78,29 @@ test_that("Can manually specify acc columns to use for parsing", {
   cols <- acc_colset_raw_xyz()
   
   a <- as_acc(gulls(), colset = cols)
-  i <- which_acc_vals(gulls(), colset = cols)
+  i <- which_imu_vals(gulls(), colset = cols)
   
   expect_equal(
-    unlist(map_acc(a, ~ .br[, 1])),
+    unlist(map_imu(a, ~ .br[, 1])),
     gulls()[[cols[[1]]]][i]
   )
   expect_equal(
-    unlist(map_acc(a, ~ .br[, 2])),
+    unlist(map_imu(a, ~ .br[, 2])),
     gulls()[[cols[[2]]]][i]
   )
   expect_equal(
-    unlist(map_acc(a, ~ .br[, 3])),
+    unlist(map_imu(a, ~ .br[, 3])),
     gulls()[[cols[[3]]]][i]
   )
 })
 
 test_that("Can manually specify a subset of long-format cols", {
-  col <- acc_colset(acc_y = "acceleration_raw_y")
+  col <- imu_colset(y = "acceleration_raw_y")
   
   a <- as_acc(gulls(), colset = col)
-  i <- which_acc_vals(gulls(), colset = col)
+  i <- which_imu_vals(gulls(), colset = col)
   
-  expect_equal(unlist(map_acc(a, ~ .br[, 1])), gulls()[[as.character(col)]][i])
+  expect_equal(unlist(map_imu(a, ~ .br[, 1])), gulls()[[as.character(col)]][i])
 })
 
 test_that("Can manually specify acc columns in mixed acc type data", {
@@ -135,7 +135,7 @@ test_that("Error on duplicate acc rows across colsets", {
   
   expect_error(
     suppressWarnings(as_acc(m)),
-    "multiple sources of acceleration data"
+    "multiple sources of acc data"
   )
 })
 
@@ -188,7 +188,7 @@ test_that("Multi-colset drop = TRUE is subset of drop = FALSE", {
 
 test_that("Correctly error on bad colset specifications", {
   expect_error(as_acc(gulls(), colset = acc_colset_eobs()), "Missing columns")
-  expect_error(as_acc(gulls(), colset = "foobar"), "must be an `acc_colset`")
+  expect_error(as_acc(gulls(), colset = "foobar"), "must be an `imu_colset`")
 })
 
 test_that("Can split long-format data into bursts by inferred frequency", {
@@ -376,7 +376,7 @@ test_that("Coerce to integer for eobs", {
     track_id_column = "id"
   )
   
-  expect_warning(a <- as_acc(m), "Detected numeric acceleration")
+  expect_warning(a <- as_acc(m), "Detected numeric values")
   expect_identical(unlist(bursts(a)), rep(1:10, 3))
 })
 
@@ -413,13 +413,13 @@ test_that("as_acc() checks long-format coltypes", {
     as_acc(g, colset = acc_colset_raw_xyz()),
     "Detected non-numeric columns"
   )
-  expect_silent(as_acc(g, colset = acc_colset(acc_y = "acceleration_raw_y")))
+  expect_silent(as_acc(g, colset = imu_colset(y = "acceleration_raw_y")))
 })
 
 test_that("as_acc() rejects plain character vector for colset", {
   expect_error(
     as_acc(albatrosses(), colset = c("eobs_accelerations_raw")),
-    "acc_colset"
+    "must be an `imu_colset`"
   )
 })
 
@@ -428,11 +428,14 @@ test_that("as_acc() errors on swapped burst column types", {
   
   # Swap bursts and frequency columns
   expect_error(
-    as_acc(a, colset = acc_colset(
-      bursts = "eobs_acceleration_sampling_frequency_per_axis",
-      axes = "eobs_acceleration_axes",
-      frequency = "eobs_accelerations_raw"
-    )),
+    as_acc(
+      a, 
+      colset = imu_colset(
+        bursts = "eobs_acceleration_sampling_frequency_per_axis",
+        axes = "eobs_acceleration_axes",
+        frequency = "eobs_accelerations_raw"
+      )
+    ),
     "must be character"
   )
 })
@@ -447,7 +450,7 @@ test_that("Custom burst-format colset works end-to-end", {
   colnames(alb)[colnames(alb) == "eobs_accelerations_raw"] <- "my_bursts"
   
   # Use the eobs columns via a custom colset (equivalent to acc_colset_eobs())
-  custom <- acc_colset(
+  custom <- imu_colset(
     bursts = "my_bursts",
     axes = "my_axes",
     frequency = "my_freq"
@@ -470,11 +473,7 @@ test_that("Custom long-format colset works end-to-end", {
   colnames(gul)[colnames(gul) == "acceleration_raw_z"] <- "acc_z"
   
   # Use the eobs columns via a custom colset (equivalent to acc_colset_eobs())
-  custom <- acc_colset(
-    acc_x = "acc_x",
-    acc_y = "acc_y",
-    acc_z = "acc_z"
-  )
+  custom <- imu_colset(x = "acc_x", y = "acc_y", z = "acc_z")
   
   # adjust for fact that eobs uses force_int = TRUE, but custom cols don't
   expect_identical(

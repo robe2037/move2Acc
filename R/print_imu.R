@@ -2,7 +2,7 @@
 NULL
 
 #' @export
-format.acc <- function(x, ...) {
+format.imu <- function(x, ...) {
   format_one <- function(x) {
     if (is.null(x)) {
       return(NA_character_)
@@ -22,7 +22,7 @@ format.acc <- function(x, ...) {
 }
 
 #' @export
-obj_print_data.acc <- function(x, ...) {
+obj_print_data.imu <- function(x, ...) {
   if (length(x) != 0) {
     print(format(x), quote = FALSE)
   }
@@ -38,13 +38,34 @@ vec_ptype_full.acc <- function(x, ...) {
   "acceleration"
 }
 
+#' @export
+vec_ptype_abbr.mag <- function(x, ...) {
+  "mag"
+}
+
+#' @export
+vec_ptype_full.mag <- function(x, ...) {
+  "magnetometer"
+}
+
+#' @export
+vec_ptype_abbr.gyro <- function(x, ...) {
+  "gyro"
+}
+
+#' @export
+vec_ptype_full.gyro <- function(x, ...) {
+  "gyroscope"
+}
+
 # todo does this need export?
-pillar_shaft.acc <- function(x, ...) {
+pillar_shaft.imu <- function(x, ...) {
   out <- format(x)
   pillar::new_pillar_shaft_simple(out, align = "right")
 }
+
 #' @export
-obj_print_footer.acc <- function(x, ...) {
+obj_print_footer.imu <- function(x, ...) {
   f <- freqs(x)[!is.na(x)]
 
   if (length(unique(f)) <= 1) {

@@ -2,12 +2,12 @@
 % Please edit documentation in R/funs.R
 \name{filter_freq}
 \alias{filter_freq}
-\title{Filter an acc vector by burst frequency}
+\title{Filter an IMU vector by burst frequency}
 \usage{
 filter_freq(x, min_freq = 0, max_freq = Inf, keep_na = FALSE)
 }
 \arguments{
-\item{x}{An \code{acc} vector}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{min_freq, max_freq}{Numeric or units values indicating the minimum
 and/or maximum frequency thresholds to use when determining the records in
@@ -20,10 +20,10 @@ frequency should be retained in the output. By default, these elements
 are removed.}
 }
 \value{
-An \code{acc} vector
+A vector of the same class as \code{x}.
 }
 \description{
-Filter an acc vector by burst frequency
+Filter an IMU vector by burst frequency
 }
 \examples{
 a <- acc_example()

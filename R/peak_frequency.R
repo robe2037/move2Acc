@@ -1,7 +1,7 @@
 
-#' Calculate the peak frequency per axis for acceleration bursts
+#' Calculate the peak frequency per axis for bursts
 #'
-#' @param x An `acc` vector
+#' @inheritParams n_axis
 #' @param resolution A scalar with the [units][units::units] Hertz
 #'
 #' @returns returns a list with the same length as `x` with the peak frequency per axis
@@ -9,7 +9,7 @@
 #' @details
 #'
 #' To increase the resolution of the result zero padding can be used. This can be controlled using the resolution
-#' argument. Note that increasing resolution without increasing the number of samples in a acceleration burst has a
+#' argument. Note that increasing resolution without increasing the number of samples in a burst has a
 #' limited ability to get closer to the true frequency.
 #'
 #' @export
@@ -50,7 +50,7 @@ peak_frequency <- function(x, resolution = NA) {
     return(as.list(rep(NA_real_, length(x))))
   }
 
-  peak_freq_non_na <- map_acc(
+  peak_freq_non_na <- map_imu(
     x[!x_na],
     function(.br, .fq) peak_freq_(.br, .fq, resolution = resolution)
   )

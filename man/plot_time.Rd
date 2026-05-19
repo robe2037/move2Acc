@@ -2,30 +2,28 @@
 % Please edit documentation in R/plot_time.R
 \name{plot_time}
 \alias{plot_time}
-\title{Plot acceleration bursts over time}
+\title{Plot bursts over time}
 \usage{
-plot_time(x, ylab = "Acceleration")
+plot_time(x, ylab = "Value")
 }
 \arguments{
-\item{x}{an acc vector}
+\item{x}{An IMU vector (e.g. \code{acc}, \code{mag}, \code{gyro}).}
 
 \item{ylab}{A character with the y axis label}
 }
 \description{
-Plot the trace of acceleration values from an \code{acc()} with time on the
-x-axis.
+Plot the trace of IMU values from an IMU vector with time on the x-axis.
 }
 \details{
-If the bursts in the input \code{acc()} come from multiple sources, traces may
-be combined incorrectly. See examples.
+If the bursts in the input come from multiple sources, traces may be
+combined incorrectly. See examples.
 }
 \examples{
-\dontshow{if (rlang::is_installed(c("dygraphs", "move2"))) (if (getRversion() >= "3.4") withAutoprint else force)(\{ # examplesIf}
+\dontshow{if (rlang::is_installed(c("dygraphs", "move2"))) withAutoprint(\{ # examplesIf}
 plot_time(acc_example())
 
-# If acceleration comes from multiple sources (in this case,
-# deployments), then lines from different bursts may be incorrectly
-# connected:
+# If bursts come from multiple sources (in this case, deployments),
+# then lines from different bursts may be incorrectly connected:
 alb <- albatrosses()
 a <- as_acc(alb, drop = FALSE)
 
