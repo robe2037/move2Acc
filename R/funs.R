@@ -111,38 +111,6 @@ imu_units <- function(x) {
   )
 }
 
-#' Filter an IMU vector by burst frequency
-#'
-#' @inheritParams n_axis
-#' @param min_freq,max_freq Numeric or units values indicating the minimum
-#'   and/or maximum frequency thresholds to use when determining the records in
-#'   `x` to retain. Elements in `x` whose frequency falls within these limits
-#'   are kept in the output. If no units are provided, values are considered to
-#'   be in hertz.
-#' @param keep_na Logical indicating whether elements of `x` with a missing
-#'   frequency should be retained in the output. By default, these elements
-#'   are removed.
-#'
-#' @returns A vector of the same class as `x`.
-#' @export
-#'
-#' @examples
-#' a <- acc_example()
-#' 
-#' freqs(a)
-#'
-#' filter_freq(a, 2.5)
-filter_freq <- function(x, min_freq = 0, max_freq = Inf, keep_na = FALSE) {
-  min_freq <- units::set_units(min_freq, units(freqs(x)), mode = "standard")
-  max_freq <- units::set_units(max_freq, units(freqs(x)), mode = "standard")
-  
-  if (!keep_na) {
-    x <- x[!is.na(freqs(x))]
-  }
-  
-  x[freqs(x) <= max_freq & freqs(x) >= min_freq | is.na(freqs(x))]
-}
-
 # TODO finish function and export?
 static_acc <- function(x) {
   # should this return a list or a dataframe
