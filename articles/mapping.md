@@ -1,0 +1,109 @@
+# Mapping acceleration data
+
+In this vignette we will show how you can create an interactive map of
+an animal track where acceleration measurement at linked to the
+positions where the animal has been recorded.
+
+Lets first get example data, here we download the tracks of two
+albatrosses.
+
+``` r
+
+library(move2Acc)
+require(dplyr, quietly = TRUE)
+require(move2, quietly = TRUE)
+require(leaflet, quietly = TRUE)
+albatross_data <- movebank_download_study(
+  "Galapagos Albatrosses",
+  individual_local_identifier = c("4264-84830852", "4266-84831108"),
+  sensor_type_id = c("acceleration", "gps")
+)
+```
+
+Next we create a `acceleration` column in the `move2` object
+
+``` r
+
+albatross_data <- albatross_data %>%
+  mutate(acceleration = as_acc(.))
+```
+
+In the `move2` object accelerations are not connected to the location
+observations. Therefore we need to match the acceleration measurements
+to the location records. For these eobs tags we see that the
+acceleration measurements are recorded after the location has been
+recorded. Here we can use that with
+[`dplyr::left_join()`](https://dplyr.tidyverse.org/reference/mutate-joins.html)
+to find the associated records. An alternative would be to do a linear
+interpolation of the location to the time of the acceleration
+measurement using
+[`move2::mt_interpolate()`](https://bartk.gitlab.io/move2/reference/mt_interpolate.html).
+
+``` r
+
+merged_data <- albatross_data |>
+  filter(!sf::st_is_empty(geometry)) |>
+  select(-acceleration) |>
+  left_join(
+    albatross_data |>
+      select(eobs_start_timestamp, acceleration) |>
+      filter(!is.na(acceleration)) |>
+      sf::st_drop_geometry(),
+    join_by(
+      closest(eobs_start_timestamp < eobs_start_timestamp),
+      individual_local_identifier == individual_local_identifier
+    ),
+    suffix = c(".gps", ".acceleration")
+  )
+hist(
+  as.numeric(merged_data$timestamp.acceleration - merged_data$timestamp.gps,
+    units = "secs"
+  ),
+  main = "Time difference between gps acceleration",
+  xlab = "Time difference [seconds]"
+)
+```
+
+In this histogram we see that there is generally only a few seconds
+between the acceleration measurements and the gps record. Only on rare
+occasions it is more then 10 seconds.
+
+Now we can use the merged data to plot a map:
+
+``` r
+
+pal <- colorFactor("Set1", mt_track_id(albatross_data))
+accRange <- quantile(
+  unlist(vctrs::field(merged_data$acceleration, "bursts")),
+  probs = c(.0001, .9999)
+)
+leaflet() %>%
+  addTiles() %>%
+  addPolylines(
+    data = mt_track_lines(albatross_data |>
+      filter(!sf::st_is_empty(geometry))),
+    color = ~ pal(individual_local_identifier)
+  ) %>%
+  addCircleMarkers(
+    data = merged_data, 
+    color = ~ pal(individual_local_identifier),
+    popup = leafpop::popupGraph(
+      mapply(
+        function(x, range) {
+          dygraphs::dyAxis(x, name = "y", valueRange = unname(range))
+        },
+        mapply(plot_time, merged_data$acceleration,
+          merged_data$timestamp.acceleration,
+          SIMPLIFY = FALSE
+        ),
+        MoreArgs = list(range = accRange),
+        SIMPLIFY = FALSE
+      ),
+      "html", height = 350, width = 600
+    )
+  ) %>%
+  addLegend(
+    pal = pal,
+    values = mt_track_id(albatross_data)
+  )
+```

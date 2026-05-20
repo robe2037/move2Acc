@@ -1,0 +1,164 @@
+# Introduction to move2Acc
+
+``` r
+
+library(move2Acc)
+```
+
+The goal of the package is to create a vector representation of
+acceleration bursts in R. Acceleration bursts are a frequently collected
+by animal tracking devices and consist of measurements of the
+acceleration in one till three axis. These measurements are recorded
+with a fixed frequency for a few seconds. These burst are frequently
+considered one “instantaneous” sample of the activity or behavior of an
+animal.
+
+By creating a vector representation it becomes more easy to manipulate
+these bursts and for example add them to a data frame.
+
+## Creating a burst
+
+To create a acceleration vector a list of acceleration measurements are
+combined with the measurement frequency. Each element of the list is a
+matrix with the columns being the axis the acceleration is measured in
+and the rows being the repeated measurements.
+
+``` r
+
+x <- acc(
+  bursts = list(cbind(
+    x = sin(1:30 / 10),
+    y = cos(1:30 / 10),
+    z = 1:30 / 10
+  )),
+  frequency = units::as_units(40, "Hz")
+)
+x
+```
+
+When printed it reports the average acceleration for each axis of each
+burst and the measurement frequency. Multiple bursts can be combined
+with diverse properties can be combined.
+
+``` r
+
+y <- acc(
+  bursts = list(
+    cbind(x = sin(1:20 / 10), y = cos(1:20 / 10)),
+    cbind(x = sin(1:20 / 10 + 2), y = cos(1:20 / 10 + 3))
+  ),
+  frequency = units::as_units(30, "Hz")
+)
+y
+c(x, y)
+```
+
+## Loading data
+
+Naturally most of the time data won’t be generated directly in R but
+rather loaded from local files or databases like movebank. For data from
+movebank some quick conversion options have been build. These take
+`move2` objects as an input. For now conversion functions for data from
+eobs and ornitella tags exists.
+
+Here is an example for eobs tags. When the `as_acc` function is applied
+to a `move2` it attempts to detect the columns representing the
+acceleration data.
+
+``` r
+
+require(dplyr, quietly = TRUE)
+require(move2, quietly = TRUE)
+kinkajous_data <- movebank_download_study("Kinkajous on Pipeline Road Panama",
+  sensor_type_id = c("acceleration", "gps"), "license-md5" = "6e1743b4b2a919df0f3b4167c94786d9"
+)
+kinkajous_data <- kinkajous_data %>%
+  mutate(acceleration = as_acc(.)) %>%
+  select(acceleration)
+tail(kinkajous_data)
+```
+
+The same can be done with ornitella data.
+
+``` r
+
+d <- as.Date("2021-3-3")
+
+lbbg_data <- movebank_download_study("LBBG_ZEEBRUGGE - Lesser black-backed gulls ",
+  sensor_type_id = c("gps", "acceleration"),
+  timestamp_start = as.POSIXct(d),
+  timestamp_end = as.POSIXct(d + 1)
+)
+lbbg_data <- lbbg_data %>%
+  mutate(acceleration = as_acc(.)) %>%
+  filter(!is.na(acceleration) | sensor_type_id==653) %>%
+  select(acceleration)
+lbbg_data
+```
+
+``` r
+
+mt_stack(lbbg_data, kinkajous_data)
+```
+
+## Exploring data
+
+## Plotting
+
+With the `plot_time` function it is possible to explor the acceleration
+bursts. In this plot you can zoom using your mouse.
+
+``` r
+
+plot_time(lbbg_data$acceleration, mt_time(lbbg_data))
+```
+
+Alternatively you can plot one burst directly, in this case showing the
+clear wing beats on the z axis.
+
+``` r
+
+plot_time(lbbg_data$acceleration[340], mt_time(lbbg_data)[340])
+```
+
+We can also visualize one burst in three dimensions showing the cyclic
+patterns in the acceleration.
+
+``` r
+
+bb<-vctrs::field(lbbg_data$acceleration[340],"bursts")[[1]]
+b<-units::drop_units(bb)
+e<-0.1
+persp(z=matrix(min(b[,'tilt_z'])-e, ncol=2, nrow=2),
+      x=range(b[,'tilt_x']),
+      y=range(b[,'tilt_y']),       
+      xlim=range(b[,'tilt_x'])+c(-e,e),
+      ylim=range(b[,'tilt_y'])+c(-e,e), 
+      zlim=range(b[,'tilt_z'])+c(-e,e),
+      border=NA,
+      xlab=paste0("X [",as.character(units(bb)),']'), 
+      ticktype = "detailed", cex.axis = 0.65,
+      ylab=paste0("Y [",as.character(units(bb)),']'), 
+      zlab=paste0("Z [",as.character(units(bb)),']'), 
+      theta = -160, phi = 20, expand = 0.5, col = "white", scale=F)->p
+# Draw line on bottom of plot
+lines(trans3d(b[,'tilt_x'],b[,'tilt_y'],min(b[,'tilt_z'])-e,p), col="tomato")
+# Lines to connect observations to bottom
+apply(b,1, function(x, bottom){
+  lines(trans3d(x['tilt_x'],x['tilt_y'],c(x['tilt_z'], bottom-e),p), col="gray")
+}, bottom=min(b[,'tilt_z']))
+
+lines(trans3d(b[,'tilt_x'],b[,'tilt_y'],b[,'tilt_z'],p), col="red")
+points(trans3d(b[,'tilt_x'],b[,'tilt_y'],b[,'tilt_z'],p), col="red", pch=19)
+```
+
+``` r
+
+plot_time(lbbg_data$acceleration[334], mt_time(lbbg_data)[340])
+bb<-vctrs::field(lbbg_data$acceleration[334],"bursts")[[1]]
+
+z<-bb[,3]
+m1<-Mod(fft(c(z,rep(units::set_units(0, 'standard_free_fall'), length(z)*199))))
+(which.max(tail(head(m1, round(length(m1)/2)),-200))+200)*
+vctrs::field(lbbg_data$acceleration[340],"frequency") /(nrow(bb)*200)
+```

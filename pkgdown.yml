@@ -1,0 +1,10 @@
+pandoc: 3.8.3
+pkgdown: 2.2.0
+pkgdown_sha: ~
+articles:
+  mapping: mapping.html
+  move2Acc: move2Acc.html
+last_built: 2026-05-20T08:00Z
+urls:
+  reference: https://robe2037.github.io/move2Acc/reference
+  article: https://robe2037.github.io/move2Acc/articles
